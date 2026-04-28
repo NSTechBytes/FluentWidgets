@@ -9,6 +9,10 @@ var ROUND_LINE_SHAPE_HEIGHT = 60 * SCALE;
 var ROUND_LINE_SHAPE_RADIUS = 30 * SCALE;
 var ROUND_LINE_SHAPE_THICKNESS = 6 * SCALE;
 
+var ICON_SIZE = 24 * SCALE;
+var ICON_OFFSET_X = (ROUND_LINE_SHAPE_WIDTH - ICON_SIZE) / 2;
+var ICON_OFFSET_Y = (ROUND_LINE_SHAPE_HEIGHT - ICON_SIZE) / 2;
+
 function getBackgroundColor() {
     if (JSON_DATA.APPEARANCE.THEME == "dark") {
         return JSON_DATA.APPEARANCE.THEME_DARK_CONFIG.BACKGROUND_COLOR
@@ -27,7 +31,16 @@ function getSubtleColor() {
     }
 }
 
-function addRoundLine(ID_PARAM, X_PARAM, Y_PARAM) {
+function getIconColor() {
+    if (JSON_DATA.APPEARANCE.THEME == "dark") {
+        return JSON_DATA.APPEARANCE.THEME_DARK_CONFIG.ICON_COLOR
+    }
+    else {
+        return JSON_DATA.APPEARANCE.THEME_LIGHT_CONFIG.ICON_COLOR
+    }
+}
+
+function addRoundLine(ID_PARAM, X_PARAM, Y_PARAM, ICON_PATH) {
     ui.addRoundLine({
         id: ID_PARAM,
         radius: ROUND_LINE_SHAPE_RADIUS,
@@ -40,6 +53,17 @@ function addRoundLine(ID_PARAM, X_PARAM, Y_PARAM) {
         lineColor: JSON_DATA.APPEARANCE.LOW_LEVEL_COLOR,
         lineColorBg: getSubtleColor(),
         capType: "round"
+    });
+    
+    // Add icon in the center of the ring
+    ui.addImage({
+        id: ID_PARAM + "-icon",
+        x: X_PARAM + ICON_OFFSET_X,
+        y: Y_PARAM + ICON_OFFSET_Y,
+        width: ICON_SIZE,
+        height: ICON_SIZE,
+        path: ICON_PATH,
+        imageTint: getIconColor()
     });
 }
 
@@ -59,10 +83,12 @@ function wideStyle() {
     var START_X = (BACKGROUND_WIDTH - TOTAL_WIDTH) / 2;
     var CENTER_Y = (BACKGROUND_HEIGHT - ROUND_LINE_SHAPE_HEIGHT) / 3;
 
-    addRoundLine("cpu-ring", START_X, CENTER_Y);
-    addRoundLine("memory-ring", START_X + ROUND_LINE_SHAPE_WIDTH + RING_SPACING, CENTER_Y);
-    addRoundLine("disk-ring", START_X + (ROUND_LINE_SHAPE_WIDTH + RING_SPACING) * 2, CENTER_Y);
-    addRoundLine("net-ring", START_X + (ROUND_LINE_SHAPE_WIDTH + RING_SPACING) * 3, CENTER_Y);
+    var ICONS_PATH = "assets/icons/";
+    
+    addRoundLine("cpu-ring", START_X, CENTER_Y, ICONS_PATH + "cpu.png");
+    addRoundLine("memory-ring", START_X + ROUND_LINE_SHAPE_WIDTH + RING_SPACING, CENTER_Y, ICONS_PATH + "memory.png");
+    addRoundLine("disk-ring", START_X + (ROUND_LINE_SHAPE_WIDTH + RING_SPACING) * 2, CENTER_Y, ICONS_PATH + "disk.png");
+    addRoundLine("net-ring", START_X + (ROUND_LINE_SHAPE_WIDTH + RING_SPACING) * 3, CENTER_Y, ICONS_PATH + "network.png");
     ui.endUpdate();
 }
 
