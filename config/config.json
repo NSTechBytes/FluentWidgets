@@ -1,0 +1,25 @@
+{
+    "version": "1.0.0",
+    "SCALE": "1",
+    "BB_STYLE": {
+        "BLUR_TYPE": "blur",
+        "ROUND_TYPE": "round"
+    },
+    "APPEARANCE": {
+        "THEME": "dark",
+        "LOW_LEVEL_COLOR": "rgb(45, 210, 85)",
+        "MEDIUM_LEVEL_COLOR": "yellow",
+        "HIGH_LEVEL_COLOR": "red",
+        "ACCENT_COLOR": "#0078D4",
+        "THEME_DARK_CONFIG": {
+            "BACKGROUND_COLOR": "rgba(18, 18, 18, 0.2)",
+            "FONT_COLOR": "white",
+            "SUBTLE_COLOR": "rgba(255, 255, 255, 0.1)"
+        },
+        "THEME_LIGHT_CONFIG": {
+            "BACKGROUND_COLOR": "rgba(255, 255, 255, 0.2)",
+            "FONT_COLOR": "black",
+            "SUBTLE_COLOR": "rgba(0, 0, 0, 0.1)"
+        }
+    }
+}
