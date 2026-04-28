@@ -1,9 +1,6 @@
 var JSON_DATA = ipcRenderer.invoke("getJSON");
 var SCALE = JSON_DATA.SCALE;
 
-var BACKGROUND_WIDTH = 350 * SCALE;
-var BACKGROUND_HEIGHT = 160 * SCALE;
-
 var ROUND_LINE_SHAPE_WIDTH = 60 * SCALE;
 var ROUND_LINE_SHAPE_HEIGHT = 60 * SCALE;
 var ROUND_LINE_SHAPE_RADIUS = 30 * SCALE;
@@ -13,6 +10,14 @@ var ICON_SIZE = 24 * SCALE;
 var ICON_OFFSET_X = (ROUND_LINE_SHAPE_WIDTH - ICON_SIZE) / 2;
 var ICON_OFFSET_Y = (ROUND_LINE_SHAPE_HEIGHT - ICON_SIZE) / 2;
 
+var ICONS_PATH = "assets/icons/";
+
+var MAX_DISK_SPEED = 1000000000; // 1 GB/s in bytes
+var MAX_NETWORK_SPEED = 1000000000; // 1 Gbps in bytes
+
+//============================================================================
+// Functions to get colors based on the theme   
+//============================================================================
 function getBackgroundColor() {
     if (JSON_DATA.APPEARANCE.THEME == "dark") {
         return JSON_DATA.APPEARANCE.THEME_DARK_CONFIG.BACKGROUND_COLOR
@@ -40,7 +45,16 @@ function getIconColor() {
     }
 }
 
-function addRoundLine(ID_PARAM, X_PARAM, Y_PARAM, ICON_PATH) {
+function getTextColor() {
+    if (JSON_DATA.APPEARANCE.THEME == "dark") {
+        return JSON_DATA.APPEARANCE.THEME_DARK_CONFIG.FONT_COLOR
+    }
+    else {
+        return JSON_DATA.APPEARANCE.THEME_LIGHT_CONFIG.FONT_COLOR
+    }
+}
+
+function addElements(ID_PARAM, X_PARAM, Y_PARAM, ICON_PATH) {
     ui.addRoundLine({
         id: ID_PARAM,
         radius: ROUND_LINE_SHAPE_RADIUS,
@@ -54,7 +68,7 @@ function addRoundLine(ID_PARAM, X_PARAM, Y_PARAM, ICON_PATH) {
         lineColorBg: getSubtleColor(),
         capType: "round"
     });
-    
+
     // Add icon in the center of the ring
     ui.addImage({
         id: ID_PARAM + "-icon",
@@ -65,10 +79,33 @@ function addRoundLine(ID_PARAM, X_PARAM, Y_PARAM, ICON_PATH) {
         path: ICON_PATH,
         imageTint: getIconColor()
     });
+
+    ui.addText({
+        id: ID_PARAM + "-text",
+        x: X_PARAM + ROUND_LINE_SHAPE_WIDTH / 2,
+        y: Y_PARAM + ROUND_LINE_SHAPE_HEIGHT + 12 * SCALE,
+        width: ROUND_LINE_SHAPE_WIDTH,
+        height: 20 * SCALE,
+        text: "0%",
+        fontSize: 20 * SCALE,
+        fontColor: getTextColor(),
+        textAlign: "center",
+        fontFace: "Segoe UI"
+    });
 }
 
 function wideStyle() {
+
+    var BACKGROUND_WIDTH = 350 * SCALE;
+    var BACKGROUND_HEIGHT = 160 * SCALE;
+
+    var RING_SPACING = 22 * SCALE;
+    var TOTAL_WIDTH = (ROUND_LINE_SHAPE_WIDTH * 4) + (RING_SPACING * 3);
+    var START_X = (BACKGROUND_WIDTH - TOTAL_WIDTH) / 2;
+    var CENTER_Y = (BACKGROUND_HEIGHT - ROUND_LINE_SHAPE_HEIGHT) / 3;
+
     ui.beginUpdate();
+
     ui.addShape({
         id: "background_Shape",
         type: "rectangle",
@@ -78,26 +115,14 @@ function wideStyle() {
         fillColor: getBackgroundColor()
     });
 
-    var RING_SPACING = 22 * SCALE;
-    var TOTAL_WIDTH = (ROUND_LINE_SHAPE_WIDTH * 4) + (RING_SPACING * 3);
-    var START_X = (BACKGROUND_WIDTH - TOTAL_WIDTH) / 2;
-    var CENTER_Y = (BACKGROUND_HEIGHT - ROUND_LINE_SHAPE_HEIGHT) / 3;
-
-    var ICONS_PATH = "assets/icons/";
-    
-    addRoundLine("cpu-ring", START_X, CENTER_Y, ICONS_PATH + "cpu.png");
-    addRoundLine("memory-ring", START_X + ROUND_LINE_SHAPE_WIDTH + RING_SPACING, CENTER_Y, ICONS_PATH + "memory.png");
-    addRoundLine("disk-ring", START_X + (ROUND_LINE_SHAPE_WIDTH + RING_SPACING) * 2, CENTER_Y, ICONS_PATH + "disk.png");
-    addRoundLine("net-ring", START_X + (ROUND_LINE_SHAPE_WIDTH + RING_SPACING) * 3, CENTER_Y, ICONS_PATH + "network.png");
+    addElements("cpu-ring", START_X, CENTER_Y, ICONS_PATH + "cpu.png");
+    addElements("memory-ring", START_X + ROUND_LINE_SHAPE_WIDTH + RING_SPACING, CENTER_Y, ICONS_PATH + "memory.png");
+    addElements("disk-ring", START_X + (ROUND_LINE_SHAPE_WIDTH + RING_SPACING) * 2, CENTER_Y, ICONS_PATH + "disk.png");
+    addElements("net-ring", START_X + (ROUND_LINE_SHAPE_WIDTH + RING_SPACING) * 3, CENTER_Y, ICONS_PATH + "network.png");
     ui.endUpdate();
 }
 
-
 wideStyle()
-
-// Maximum values for converting speeds to percentages
-var MAX_DISK_SPEED = 1000000000; // 1 GB/s in bytes
-var MAX_NETWORK_SPEED = 1000000000; // 1 Gbps in bytes
 
 function getLevelColor(PERCENT) {
     if (PERCENT >= 0 && PERCENT < 70) {
@@ -109,10 +134,16 @@ function getLevelColor(PERCENT) {
     }
 }
 
-function updateRingColor(RING_ID, PERCENT) {
+function updateRingContent(RING_ID, PERCENT) {
     if (ui.isElementExist(RING_ID)) {
         ui.setElementProperty(RING_ID, "value", PERCENT / 100);
         ui.setElementProperty(RING_ID, "lineColor", getLevelColor(PERCENT));
+
+        // Update the percentage text
+        var TEXT_ID = RING_ID + "-text";
+        if (ui.isElementExist(TEXT_ID)) {
+            ui.setElementProperty(TEXT_ID, "text", Math.round(PERCENT) + "%");
+        }
     }
 }
 
@@ -126,16 +157,16 @@ ipcRenderer.on("monitor-window-stats", (event, data) => {
     MEMORY_USAGE = data.memory;
     DISK_USAGE = data.disk;
     NETWORK_USAGE = data.network;
-    
+
     ui.beginUpdate();
     // CPU and Memory are already percentages (0-100)
-    updateRingColor("cpu-ring", CPU_USAGE);
-    updateRingColor("memory-ring", MEMORY_USAGE);
-    
+    updateRingContent("cpu-ring", CPU_USAGE);
+    updateRingContent("memory-ring", MEMORY_USAGE);
+
     // Disk and Network are speeds in bytes/sec, convert to percentage
     var DISK_PERCENT = calculatePercent(DISK_USAGE, MAX_DISK_SPEED);
     var NETWORK_PERCENT = calculatePercent(NETWORK_USAGE, MAX_NETWORK_SPEED);
-    updateRingColor("disk-ring", DISK_PERCENT);
-    updateRingColor("net-ring", NETWORK_PERCENT);
+    updateRingContent("disk-ring", DISK_PERCENT);
+    updateRingContent("net-ring", NETWORK_PERCENT);
     ui.endUpdate();
 });

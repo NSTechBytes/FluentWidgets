@@ -6,7 +6,7 @@
         "ROUND_TYPE": "round"
     },
     "APPEARANCE": {
-        "THEME": "black",
+        "THEME": "dark",
         "LOW_LEVEL_COLOR": "rgb(45, 210, 85)",
         "MEDIUM_LEVEL_COLOR": "yellow",
         "HIGH_LEVEL_COLOR": "red",
