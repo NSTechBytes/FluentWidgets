@@ -38,7 +38,13 @@ function monitorWindowStats() {
     const MEMORY_USAGE = memory.usagePercent();
     const DISK_USAGE = disk.writeSpeed();
     const NETWORK_USAGE = network.rxSpeed();
-    ipcMain.send("monitor-window-stats", { cpu: CPU_USAGE, memory: MEMORY_USAGE, disk: DISK_USAGE, network: NETWORK_USAGE });
+
+    ipcMain.send("monitor-window-stats", { 
+        cpu: CPU_USAGE, 
+        memory: MEMORY_USAGE, 
+        disk: DISK_USAGE, 
+        network: NETWORK_USAGE
+    });
 }
 
 function loadMonitorWindow() {
