@@ -76,6 +76,23 @@ function wideStyle() {
         capType: "round"
     }
 
+    let ICON_ELEMENT_STYLE = {
+        y: CENTER_Y + ICON_OFFSET_Y,
+        width: ICON_SIZE,
+        height: ICON_SIZE,
+        imageTint: getIconColor()
+    }
+
+    let TEXT_ELEMENT_STYLE = {
+        y: CENTER_Y + ROUND_LINE_SHAPE_HEIGHT + 12 * SCALE,
+        width: ROUND_LINE_SHAPE_WIDTH,
+        height: 20 * SCALE,
+        text: "0%",
+        fontSize: 20 * SCALE,
+        fontColor: getTextColor(),
+        textAlign: "center",
+        fontFace: "Segoe UI"
+    }
     ui.beginUpdate();
 
     ui.addShape({
@@ -95,23 +112,13 @@ function wideStyle() {
     ui.addImage({
         id: "cpu-ring-icon",
         x: START_X + ICON_OFFSET_X,
-        y: CENTER_Y + ICON_OFFSET_Y,
-        width: ICON_SIZE,
-        height: ICON_SIZE,
         path: ICONS_PATH + "cpu.png",
-        imageTint: getIconColor()
+        ...ICON_ELEMENT_STYLE
     });
     ui.addText({
         id: "cpu-ring-text",
         x: START_X + ROUND_LINE_SHAPE_WIDTH / 2,
-        y: CENTER_Y + ROUND_LINE_SHAPE_HEIGHT + 12 * SCALE,
-        width: ROUND_LINE_SHAPE_WIDTH,
-        height: 20 * SCALE,
-        text: "0%",
-        fontSize: 20 * SCALE,
-        fontColor: getTextColor(),
-        textAlign: "center",
-        fontFace: "Segoe UI"
+        ...TEXT_ELEMENT_STYLE
     });
 
     ui.addRoundLine({
@@ -122,23 +129,13 @@ function wideStyle() {
     ui.addImage({
         id: "memory-ring-icon",
         x: START_X + ROUND_LINE_SHAPE_WIDTH + RING_SPACING + ICON_OFFSET_X,
-        y: CENTER_Y + ICON_OFFSET_Y,
-        width: ICON_SIZE,
-        height: ICON_SIZE,
         path: ICONS_PATH + "memory.png",
-        imageTint: getIconColor()
+        ...ICON_ELEMENT_STYLE
     });
     ui.addText({
         id: "memory-ring-text",
         x: START_X + ROUND_LINE_SHAPE_WIDTH + RING_SPACING + ROUND_LINE_SHAPE_WIDTH / 2,
-        y: CENTER_Y + ROUND_LINE_SHAPE_HEIGHT + 12 * SCALE,
-        width: ROUND_LINE_SHAPE_WIDTH,
-        height: 20 * SCALE,
-        text: "0%",
-        fontSize: 20 * SCALE,
-        fontColor: getTextColor(),
-        textAlign: "center",
-        fontFace: "Segoe UI"
+        ...TEXT_ELEMENT_STYLE
     });
 
     ui.addRoundLine({
@@ -149,23 +146,13 @@ function wideStyle() {
     ui.addImage({
         id: "disk-ring-icon",
         x: START_X + (ROUND_LINE_SHAPE_WIDTH + RING_SPACING) * 2 + ICON_OFFSET_X,
-        y: CENTER_Y + ICON_OFFSET_Y,
-        width: ICON_SIZE,
-        height: ICON_SIZE,
         path: ICONS_PATH + "disk.png",
-        imageTint: getIconColor()
+        ...ICON_ELEMENT_STYLE
     });
     ui.addText({
         id: "disk-ring-text",
         x: START_X + (ROUND_LINE_SHAPE_WIDTH + RING_SPACING) * 2 + ROUND_LINE_SHAPE_WIDTH / 2,
-        y: CENTER_Y + ROUND_LINE_SHAPE_HEIGHT + 12 * SCALE,
-        width: ROUND_LINE_SHAPE_WIDTH,
-        height: 20 * SCALE,
-        text: "0%",
-        fontSize: 20 * SCALE,
-        fontColor: getTextColor(),
-        textAlign: "center",
-        fontFace: "Segoe UI"
+        ...TEXT_ELEMENT_STYLE
     });
 
     // Network Ring with text
@@ -177,23 +164,13 @@ function wideStyle() {
     ui.addImage({
         id: "net-ring-icon",
         x: START_X + (ROUND_LINE_SHAPE_WIDTH + RING_SPACING) * 3 + ICON_OFFSET_X,
-        y: CENTER_Y + ICON_OFFSET_Y,
-        width: ICON_SIZE,
-        height: ICON_SIZE,
         path: ICONS_PATH + "network.png",
-        imageTint: getIconColor()
+        ...ICON_ELEMENT_STYLE
     });
     ui.addText({
         id: "net-ring-text",
         x: START_X + (ROUND_LINE_SHAPE_WIDTH + RING_SPACING) * 3 + ROUND_LINE_SHAPE_WIDTH / 2,
-        y: CENTER_Y + ROUND_LINE_SHAPE_HEIGHT + 12 * SCALE,
-        width: ROUND_LINE_SHAPE_WIDTH,
-        height: 20 * SCALE,
-        text: "0%",
-        fontSize: 20 * SCALE,
-        fontColor: getTextColor(),
-        textAlign: "center",
-        fontFace: "Segoe UI"
+        ...TEXT_ELEMENT_STYLE
     });
 
     ui.endUpdate();
@@ -211,6 +188,23 @@ function mediumStyle() {
     var TOTAL_HEIGHT = (ROUND_LINE_SHAPE_HEIGHT * 2) + RING_SPACING;
     var START_Y = (BACKGROUND_HEIGHT - TOTAL_HEIGHT) / 2;
 
+    let ROUND_LINE_ELEMENT_STYLE = {
+        thickness: ROUND_LINE_SHAPE_THICKNESS,
+        radius: ROUND_LINE_SHAPE_RADIUS,
+        value: 0,
+        width: ROUND_LINE_SHAPE_WIDTH,
+        height: ROUND_LINE_SHAPE_HEIGHT,
+        lineColor: JSON_DATA.APPEARANCE.LOW_LEVEL_COLOR,
+        lineColorBg: getSubtleColor(),
+        capType: "round"
+    }
+
+    let ICON_ELEMENT_STYLE = {
+        width: ICON_SIZE,
+        height: ICON_SIZE,
+        imageTint: getIconColor()
+    }
+
     ui.beginUpdate();
 
     ui.addShape({
@@ -225,95 +219,59 @@ function mediumStyle() {
     // Row 1: CPU and Memory
     ui.addRoundLine({
         id: "cpu-ring",
-        radius: ROUND_LINE_SHAPE_RADIUS,
         x: START_X,
         y: START_Y,
-        thickness: ROUND_LINE_SHAPE_THICKNESS,
-        value: 0,
-        width: ROUND_LINE_SHAPE_WIDTH,
-        height: ROUND_LINE_SHAPE_HEIGHT,
-        lineColor: JSON_DATA.APPEARANCE.LOW_LEVEL_COLOR,
-        lineColorBg: getSubtleColor(),
-        capType: "round"
+        ...ROUND_LINE_ELEMENT_STYLE
     });
     ui.addImage({
         id: "cpu-ring-icon",
         x: START_X + ICON_OFFSET_X,
         y: START_Y + ICON_OFFSET_Y,
-        width: ICON_SIZE,
-        height: ICON_SIZE,
         path: ICONS_PATH + "cpu.png",
-        imageTint: getIconColor()
+        ...ICON_ELEMENT_STYLE
     });
 
     ui.addRoundLine({
         id: "memory-ring",
-        radius: ROUND_LINE_SHAPE_RADIUS,
         x: START_X + ROUND_LINE_SHAPE_WIDTH + RING_SPACING,
         y: START_Y,
-        thickness: ROUND_LINE_SHAPE_THICKNESS,
-        value: 0,
-        width: ROUND_LINE_SHAPE_WIDTH,
-        height: ROUND_LINE_SHAPE_HEIGHT,
-        lineColor: JSON_DATA.APPEARANCE.LOW_LEVEL_COLOR,
-        lineColorBg: getSubtleColor(),
-        capType: "round"
+        ...ROUND_LINE_ELEMENT_STYLE
     });
     ui.addImage({
         id: "memory-ring-icon",
         x: START_X + ROUND_LINE_SHAPE_WIDTH + RING_SPACING + ICON_OFFSET_X,
         y: START_Y + ICON_OFFSET_Y,
-        width: ICON_SIZE,
-        height: ICON_SIZE,
         path: ICONS_PATH + "memory.png",
-        imageTint: getIconColor()
+        ...ICON_ELEMENT_STYLE
     });
 
     // Row 2: Disk and Network
     ui.addRoundLine({
         id: "disk-ring",
-        radius: ROUND_LINE_SHAPE_RADIUS,
         x: START_X,
         y: START_Y + ROUND_LINE_SHAPE_HEIGHT + RING_SPACING,
-        thickness: ROUND_LINE_SHAPE_THICKNESS,
-        value: 0,
-        width: ROUND_LINE_SHAPE_WIDTH,
-        height: ROUND_LINE_SHAPE_HEIGHT,
-        lineColor: JSON_DATA.APPEARANCE.LOW_LEVEL_COLOR,
-        lineColorBg: getSubtleColor(),
-        capType: "round"
+        ...ROUND_LINE_ELEMENT_STYLE
     });
     ui.addImage({
         id: "disk-ring-icon",
         x: START_X + ICON_OFFSET_X,
         y: START_Y + ROUND_LINE_SHAPE_HEIGHT + RING_SPACING + ICON_OFFSET_Y,
-        width: ICON_SIZE,
-        height: ICON_SIZE,
         path: ICONS_PATH + "disk.png",
-        imageTint: getIconColor()
+        ...ICON_ELEMENT_STYLE
     });
 
     ui.addRoundLine({
         id: "net-ring",
-        radius: ROUND_LINE_SHAPE_RADIUS,
         x: START_X + ROUND_LINE_SHAPE_WIDTH + RING_SPACING,
         y: START_Y + ROUND_LINE_SHAPE_HEIGHT + RING_SPACING,
-        thickness: ROUND_LINE_SHAPE_THICKNESS,
-        value: 0,
-        width: ROUND_LINE_SHAPE_WIDTH,
-        height: ROUND_LINE_SHAPE_HEIGHT,
-        lineColor: JSON_DATA.APPEARANCE.LOW_LEVEL_COLOR,
-        lineColorBg: getSubtleColor(),
-        capType: "round"
+        ...ROUND_LINE_ELEMENT_STYLE
     });
     ui.addImage({
         id: "net-ring-icon",
         x: START_X + ROUND_LINE_SHAPE_WIDTH + RING_SPACING + ICON_OFFSET_X,
         y: START_Y + ROUND_LINE_SHAPE_HEIGHT + RING_SPACING + ICON_OFFSET_Y,
-        width: ICON_SIZE,
-        height: ICON_SIZE,
         path: ICONS_PATH + "network.png",
-        imageTint: getIconColor()
+        ...ICON_ELEMENT_STYLE
     });
 
     ui.endUpdate();
@@ -326,6 +284,25 @@ function smallStyle() {
 
     var CENTER_X = (BACKGROUND_WIDTH - ROUND_LINE_SHAPE_WIDTH) / 2;
     var CENTER_Y = (BACKGROUND_HEIGHT - ROUND_LINE_SHAPE_HEIGHT) / 2;
+
+    let ROUND_LINE_ELEMENT_STYLE = {
+        y: CENTER_Y,
+        thickness: ROUND_LINE_SHAPE_THICKNESS,
+        radius: ROUND_LINE_SHAPE_RADIUS,
+        value: 0,
+        width: ROUND_LINE_SHAPE_WIDTH,
+        height: ROUND_LINE_SHAPE_HEIGHT,
+        lineColor: JSON_DATA.APPEARANCE.LOW_LEVEL_COLOR,
+        lineColorBg: getSubtleColor(),
+        capType: "round"
+    }
+
+    let ICON_ELEMENT_STYLE = {
+        y: CENTER_Y + ICON_OFFSET_Y,
+        width: ICON_SIZE,
+        height: ICON_SIZE,
+        imageTint: getIconColor()
+    }
 
     ui.beginUpdate();
 
@@ -340,32 +317,21 @@ function smallStyle() {
 
     ui.addRoundLine({
         id: "cpu-ring",
-        radius: ROUND_LINE_SHAPE_RADIUS,
         x: CENTER_X,
-        y: CENTER_Y,
-        thickness: ROUND_LINE_SHAPE_THICKNESS,
-        value: 0,
-        width: ROUND_LINE_SHAPE_WIDTH,
-        height: ROUND_LINE_SHAPE_HEIGHT,
-        lineColor: JSON_DATA.APPEARANCE.LOW_LEVEL_COLOR,
-        lineColorBg: getSubtleColor(),
-        capType: "round"
+        ...ROUND_LINE_ELEMENT_STYLE
     });
     ui.addImage({
         id: "cpu-ring-icon",
         x: CENTER_X + ICON_OFFSET_X,
-        y: CENTER_Y + ICON_OFFSET_Y,
-        width: ICON_SIZE,
-        height: ICON_SIZE,
         path: ICONS_PATH + "cpu.png",
-        imageTint: getIconColor()
+        ...ICON_ELEMENT_STYLE
     });
 
     ui.endUpdate();
 }
 
 // Choose which style to use: wideStyle(), mediumStyle(), or smallStyle()
-mediumStyle()
+wideStyle()
 
 function getLevelColor(PERCENT) {
     if (PERCENT >= 0 && PERCENT < 70) {
