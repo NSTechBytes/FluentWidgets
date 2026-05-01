@@ -119,6 +119,45 @@ function loadMonitorWindow() {
 // Clock Window Functions
 // ==========================================
 
+function updateClockStyle(style) {
+  JSON_DATA.WINDOW_STYLES.CLOCK_WINDOW = style;
+  json.write(JSON_FILE_PATH, JSON_DATA);
+  setClockContextMenu();
+  CLOCK_WINDOW.refresh();
+}
+
+function setClockContextMenu() {
+  const currentStyle = JSON_DATA.WINDOW_STYLES.CLOCK_WINDOW;
+  CLOCK_WINDOW.setContextMenu([
+    {
+      text: "Wide",
+      checked: currentStyle === "wide",
+      action: () => updateClockStyle("wide"),
+    },
+    {
+      text: "Large",
+      checked: currentStyle === "large",
+      action: () => updateClockStyle("large"),
+    },
+  ]);
+}
+
+function loadClockWidget() {
+  CLOCK_WINDOW = new widgetWindow({
+    id: "CLOCK_WINDOW",
+    script: "ui/clockWindow.ui.js",
+    show: false,
+  });
+  applyBB(String(CLOCK_WINDOW.getHandle()));
+  setClockContextMenu();
+  publishClockData();
+  CLOCK_TIMER = setInterval(publishClockData, 1000);
+  CLOCK_WINDOW.show();
+}
+
+// loadMonitorWindow();
+loadClockWidget();
+
 function publishClockData() {
   const timeFormat = JSON_DATA.USE_24_HOUR_FORMAT ? "%H:%M" : "%I:%M";
   const timeStr = time.time(timeFormat);
@@ -129,18 +168,3 @@ function publishClockData() {
   ipcMain.send("secondsUpdate", secondsStr);
   ipcMain.send("dateUpdate", dateStr);
 }
-
-function loadClockWidget() {
-  CLOCK_WINDOW = new widgetWindow({
-    id: "CLOCK_WINDOW",
-    script: "ui/clockWindow.ui.js",
-    show: false,
-  });
-  applyBB(String(CLOCK_WINDOW.getHandle()));
-  publishClockData();
-  CLOCK_TIMER = setInterval(publishClockData, 1000);
-  CLOCK_WINDOW.show();
-}
-
-// loadMonitorWindow();
-loadClockWidget();

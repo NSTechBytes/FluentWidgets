@@ -9,7 +9,7 @@
     },
     "WINDOW_STYLES": {
         "MONITOR_WINDOW": "small",
-        "CLOCK_WINDOW": "wide"
+        "CLOCK_WINDOW": "large"
     },
     "APPEARANCE": {
         "THEME": "dark",

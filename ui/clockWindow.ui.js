@@ -83,18 +83,162 @@ function wideStyle() {
 
 // Style selection
 
+function largeStyle() {
+  var SIZE = 360 * SCALE;
+  var CENTER = SIZE / 2;
+
+  ui.beginUpdate();
+
+  // Background
+  ui.addShape({
+    id: "background_Shape",
+    type: "rectangle",
+    width: SIZE,
+    height: SIZE,
+    fillColor: getBackgroundColor(),
+  });
+
+  ui.addShape({
+    id: "ellipse_Shape",
+    type: "ellipse",
+    x: 10 * SCALE,
+    y: 10 * SCALE,
+    width: SIZE - 20 * SCALE,
+    height: SIZE - 20 * SCALE,
+    strokeWidth: 0 * SCALE,
+    fillColor: getBackgroundColor(),
+  });
+
+  // Face
+  var faceImage =
+    JSON_DATA.APPEARANCE.THEME === "dark"
+      ? "assets/icons/face-1.png"
+      : "assets/icons/face-0.png";
+  ui.addImage({
+    id: "clock-face",
+    x: 10 * SCALE,
+    y: 10 * SCALE,
+    width: SIZE - 20 * SCALE,
+    height: SIZE - 20 * SCALE,
+    path: faceImage,
+  });
+
+  // Hands (Initial at 12:00:00)
+  ui.addShape({
+    id: "hour-hand",
+    type: "line",
+    startX: CENTER,
+    startY: CENTER,
+    endX: CENTER,
+    endY: CENTER - 60 * SCALE,
+    strokeColor: getTextColor(),
+    strokeWidth: 8 * SCALE,
+    strokeDashCap: "round",
+  });
+
+  ui.addShape({
+    id: "minute-hand",
+    type: "line",
+    startX: CENTER,
+    startY: CENTER,
+    endX: CENTER,
+    endY: CENTER - 100 * SCALE,
+    strokeColor: getTextColor(),
+    strokeWidth: 5 * SCALE,
+    strokeDashCap: "round",
+  });
+
+  ui.addShape({
+    id: "second-hand",
+    type: "line",
+    startX: CENTER,
+    startY: CENTER,
+    endX: CENTER,
+    endY: CENTER - 120 * SCALE,
+    strokeColor: "orange",
+    strokeWidth: 2 * SCALE,
+    strokeDashCap: "round",
+  });
+
+  // Center pin
+  ui.addShape({
+    id: "pin",
+    type: "ellipse",
+    x: CENTER - 6 * SCALE,
+    y: CENTER - 6 * SCALE,
+    width: 12 * SCALE,
+    height: 12 * SCALE,
+    fillColor: "orange",
+    strokeColor: getTextColor(),
+    strokeWidth: 2 * SCALE,
+  });
+
+  ui.endUpdate();
+}
+
+// Style selection
 if (CURRENT_STYLE === "wide") wideStyle();
+else if (CURRENT_STYLE === "large") largeStyle();
 else wideStyle(); // Default
 
+var HOUR = 0;
+var MINUTE = 0;
+var SECOND = 0;
+
+function updateHands() {
+  if (CURRENT_STYLE !== "large") return;
+
+  var CENTER = (360 * SCALE) / 2;
+
+  // Hour hand (360/12 = 30 degrees per hour, 30/60 = 0.5 degrees per minute)
+  var hourAngle = (HOUR % 12) * 30 + MINUTE * 0.5;
+  var hourRad = (hourAngle * Math.PI) / 180;
+  var hourLen = 60 * SCALE;
+  ui.setElementProperties("hour-hand", {
+    endX: CENTER + hourLen * Math.sin(hourRad),
+    endY: CENTER - hourLen * Math.cos(hourRad),
+  });
+
+  // Minute hand (360/60 = 6 degrees per minute)
+  var minAngle = MINUTE * 6;
+  var minRad = (minAngle * Math.PI) / 180;
+  var minLen = 105 * SCALE;
+  ui.setElementProperties("minute-hand", {
+    endX: CENTER + minLen * Math.sin(minRad),
+    endY: CENTER - minLen * Math.cos(minRad),
+  });
+
+  // Second hand (360/60 = 6 degrees per second)
+  var secAngle = SECOND * 6;
+  var secRad = (secAngle * Math.PI) / 180;
+  var secLen = 125 * SCALE;
+  ui.setElementProperties("second-hand", {
+    endX: CENTER + secLen * Math.sin(secRad),
+    endY: CENTER - secLen * Math.cos(secRad),
+  });
+}
+
 ipcRenderer.on("timeUpdate", (event, timeStr) => {
-  if (ui.isElementExist("time-text")) {
-    ui.setElementProperty("time-text", "text", timeStr);
+  if (CURRENT_STYLE === "wide") {
+    if (ui.isElementExist("time-text")) {
+      ui.setElementProperty("time-text", "text", timeStr);
+    }
+  } else if (CURRENT_STYLE === "large") {
+    var parts = timeStr.split(":");
+    HOUR = parseInt(parts[0]);
+    MINUTE = parseInt(parts[1]);
+    updateHands();
   }
 });
 
 ipcRenderer.on("secondsUpdate", (event, secondsStr) => {
-  if (ui.isElementExist("seconds-text")) {
-    ui.setElementProperty("seconds-text", "text", secondsStr);
+  if (CURRENT_STYLE === "wide") {
+    if (ui.isElementExist("seconds-text")) {
+      ui.setElementProperty("seconds-text", "text", secondsStr);
+    }
+  } else if (CURRENT_STYLE === "large") {
+    SECOND = parseInt(secondsStr);
+    updateHands();
   }
 });
 
