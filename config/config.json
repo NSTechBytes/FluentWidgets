@@ -6,7 +6,8 @@
         "ROUND_TYPE": "round"
     },
     "WINDOW_STYLES": {
-        "MONITOR_WINDOW": "small"
+        "MONITOR_WINDOW": "small",
+        "CLOCK_WINDOW": "wide"
     },
     "APPEARANCE": {
         "THEME": "dark",

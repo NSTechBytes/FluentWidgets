@@ -1,6 +1,6 @@
 import { widgetWindow, addon, app } from "novadesk";
 import * as fs from "fs";
-import { json, cpu, memory, network, disk } from "system";
+import { json, cpu, memory, network, disk, power, time } from "system";
 
 var JSON_DATA = {};
 var JSON_FILE_PATH = path.join(
@@ -11,6 +11,9 @@ var JSON_FILE_PATH = path.join(
 
 var MONITOR_WINDOW = null;
 var MONITOR_WINDOW_TIMER = null;
+
+var CLOCK_WINDOW = null;
+var CLOCK_TIMER = null;
 
 const bb_Addon = addon.load(path.join(__addonsPath, "BlurBehind"));
 
@@ -107,4 +110,32 @@ function loadMonitorWindow() {
   MONITOR_WINDOW_TIMER = setInterval(monitorWindowStats, 1000);
 }
 
-loadMonitorWindow();
+function loadClockWidget() {
+  CLOCK_WINDOW = new widgetWindow({
+    id: "CLOCK_WINDOW",
+    script: "ui/clockWindow.ui.js",
+    show: false,
+  });
+  applyBB(String(CLOCK_WINDOW.getHandle()));
+  CLOCK_WINDOW.show();
+}
+
+// loadMonitorWindow();
+loadClockWidget();
+
+function publishClockData() {
+  const timeStr = time.time("%H:%M");
+  const secondsStr = time.time("%S");
+  const dateStr = time.time("%A, %B %d");
+
+  ipcMain.send("timeUpdate", timeStr);
+  ipcMain.send("secondsUpdate", secondsStr);
+  ipcMain.send("dateUpdate", dateStr);
+}
+
+setInterval(publishClockData, 1000);
+publishClockData();
+
+setInterval(() => {
+  ipcMain.send("heartbeat", { timestamp: time.timeStamp() });
+}, 1000);
