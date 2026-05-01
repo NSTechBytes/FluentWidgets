@@ -554,7 +554,12 @@ function largeStyle() {
 }
 
 // Choose which style to use: wideStyle(), mediumStyle(), smallStyle(), or largeStyle()
-largeStyle();
+var CURRENT_STYLE = JSON_DATA.WINDOW_STYLES.MONITOR_WINDOW;
+if (CURRENT_STYLE === "small") smallStyle();
+else if (CURRENT_STYLE === "medium") mediumStyle();
+else if (CURRENT_STYLE === "wide") wideStyle();
+else if (CURRENT_STYLE === "large") largeStyle();
+else largeStyle(); // Default to large if unknown
 
 function getLevelColor(PERCENT) {
   if (PERCENT >= 0 && PERCENT < 70) {

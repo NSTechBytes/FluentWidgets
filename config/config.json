@@ -5,6 +5,9 @@
         "BLUR_TYPE": "blur",
         "ROUND_TYPE": "round"
     },
+    "WINDOW_STYLES": {
+        "MONITOR_WINDOW": "small"
+    },
     "APPEARANCE": {
         "THEME": "dark",
         "LOW_LEVEL_COLOR": "rgb(45, 210, 85)",
