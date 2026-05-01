@@ -133,7 +133,6 @@ function largeStyle() {
     endY: CENTER - 60 * SCALE,
     strokeColor: getTextColor(),
     strokeWidth: 8 * SCALE,
-    strokeDashCap: "round",
   });
 
   ui.addShape({
@@ -145,7 +144,6 @@ function largeStyle() {
     endY: CENTER - 100 * SCALE,
     strokeColor: getTextColor(),
     strokeWidth: 5 * SCALE,
-    strokeDashCap: "round",
   });
 
   ui.addShape({
@@ -157,7 +155,6 @@ function largeStyle() {
     endY: CENTER - 120 * SCALE,
     strokeColor: "orange",
     strokeWidth: 2 * SCALE,
-    strokeDashCap: "round",
   });
 
   // Center pin
