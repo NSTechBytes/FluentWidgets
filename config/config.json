@@ -1,6 +1,7 @@
 {
     "version": "1.0.0",
     "SCALE": "1",
+    "FONT_TYPE": "Segoe UI",
     "BB_STYLE": {
         "BLUR_TYPE": "blur",
         "ROUND_TYPE": "round"
@@ -18,13 +19,13 @@
         "THEME_DARK_CONFIG": {
             "BACKGROUND_COLOR": "rgba(18, 18, 18, 0.2)",
             "FONT_COLOR": "white",
-            "SUBTLE_COLOR": "rgba(255, 255, 255, 0.1)",
+            "SUBTLE_COLOR": "rgba(255, 255, 255, 0.2)",
             "ICON_COLOR": "white"
         },
         "THEME_LIGHT_CONFIG": {
             "BACKGROUND_COLOR": "rgba(255, 255, 255, 0.2)",
             "FONT_COLOR": "black",
-            "SUBTLE_COLOR": "rgba(0, 0, 0, 0.1)",
+            "SUBTLE_COLOR": "rgba(0, 0, 0, 0.2)",
             "ICON_COLOR": "black"
         }
     }

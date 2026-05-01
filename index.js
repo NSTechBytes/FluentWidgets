@@ -46,6 +46,10 @@ function applyBB(hwnd) {
   );
 }
 
+// ==========================================
+// Monitor Window Functions
+// ==========================================
+
 function monitorWindowStats() {
   const CPU_USAGE = cpu.usage();
   const MEMORY_USAGE = memory.usagePercent();
@@ -106,22 +110,14 @@ function loadMonitorWindow() {
   });
   applyBB(String(MONITOR_WINDOW.getHandle()));
   setMonitorContextMenu();
-  MONITOR_WINDOW.show();
+  monitorWindowStats();
   MONITOR_WINDOW_TIMER = setInterval(monitorWindowStats, 1000);
+  MONITOR_WINDOW.show();
 }
 
-function loadClockWidget() {
-  CLOCK_WINDOW = new widgetWindow({
-    id: "CLOCK_WINDOW",
-    script: "ui/clockWindow.ui.js",
-    show: false,
-  });
-  applyBB(String(CLOCK_WINDOW.getHandle()));
-  CLOCK_WINDOW.show();
-}
-
-// loadMonitorWindow();
-loadClockWidget();
+// ==========================================
+// Clock Window Functions
+// ==========================================
 
 function publishClockData() {
   const timeStr = time.time("%H:%M");
@@ -133,9 +129,17 @@ function publishClockData() {
   ipcMain.send("dateUpdate", dateStr);
 }
 
-setInterval(publishClockData, 1000);
-publishClockData();
+function loadClockWidget() {
+  CLOCK_WINDOW = new widgetWindow({
+    id: "CLOCK_WINDOW",
+    script: "ui/clockWindow.ui.js",
+    show: false,
+  });
+  applyBB(String(CLOCK_WINDOW.getHandle()));
+  publishClockData();
+  CLOCK_TIMER = setInterval(publishClockData, 1000);
+  CLOCK_WINDOW.show();
+}
 
-setInterval(() => {
-  ipcMain.send("heartbeat", { timestamp: time.timeStamp() });
-}, 1000);
+// loadMonitorWindow();
+loadClockWidget();

@@ -1,11 +1,21 @@
 var JSON_DATA = ipcRenderer.invoke("getJSON");
 var SCALE = JSON_DATA.SCALE;
+var FONT_TYPE = JSON_DATA.FONT_TYPE;
+var CURRENT_STYLE = JSON_DATA.WINDOW_STYLES.CLOCK_WINDOW;
 
 function getBackgroundColor() {
   if (JSON_DATA.APPEARANCE.THEME == "dark") {
     return JSON_DATA.APPEARANCE.THEME_DARK_CONFIG.BACKGROUND_COLOR;
   } else {
     return JSON_DATA.APPEARANCE.THEME_LIGHT_CONFIG.BACKGROUND_COLOR;
+  }
+}
+
+function getSubtleColor() {
+  if (JSON_DATA.APPEARANCE.THEME == "dark") {
+    return JSON_DATA.APPEARANCE.THEME_DARK_CONFIG.SUBTLE_COLOR;
+  } else {
+    return JSON_DATA.APPEARANCE.THEME_LIGHT_CONFIG.SUBTLE_COLOR;
   }
 }
 
@@ -40,7 +50,7 @@ function wideStyle() {
     text: "00:00",
     fontSize: 90 * SCALE,
     fontColor: getTextColor(),
-    fontFace: "Segoe UI Semilight",
+    fontFace: FONT_TYPE,
     textAlign: "center",
   });
 
@@ -51,10 +61,9 @@ function wideStyle() {
     y: 30 * SCALE,
     text: "00",
     fontSize: 35 * SCALE,
-    fontColor: getTextColor(),
-    fontFace: "Segoe UI Semilight",
+    fontColor: getSubtleColor(),
+    fontFace: FONT_TYPE,
     textAlign: "left",
-    opacity: 120,
   });
 
   // Date
@@ -65,7 +74,7 @@ function wideStyle() {
     text: "Date Loading...",
     fontSize: 22 * SCALE,
     fontColor: getTextColor(),
-    fontFace: "Segoe UI",
+    fontFace: FONT_TYPE,
     textAlign: "center",
   });
 
@@ -73,7 +82,7 @@ function wideStyle() {
 }
 
 // Style selection
-var CURRENT_STYLE = JSON_DATA.WINDOW_STYLES.CLOCK_WINDOW;
+
 if (CURRENT_STYLE === "wide") wideStyle();
 else wideStyle(); // Default
 
