@@ -120,7 +120,8 @@ function loadMonitorWindow() {
 // ==========================================
 
 function publishClockData() {
-  const timeStr = time.time("%H:%M");
+  const timeFormat = JSON_DATA.USE_24_HOUR_FORMAT ? "%H:%M" : "%I:%M";
+  const timeStr = time.time(timeFormat);
   const secondsStr = time.time("%S");
   const dateStr = time.time("%A, %B %d");
 

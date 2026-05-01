@@ -2,6 +2,7 @@
     "version": "1.0.0",
     "SCALE": "1",
     "FONT_TYPE": "Segoe UI",
+    "USE_24_HOUR_FORMAT": false,
     "BB_STYLE": {
         "BLUR_TYPE": "blur",
         "ROUND_TYPE": "round"
