@@ -30,6 +30,11 @@ function parseJSON() {
     );
     JSON_DATA = json.read(JSON_FILE_PATH);
   }
+
+  if (!JSON_DATA.RUNTIME) JSON_DATA.RUNTIME = {};
+  if (typeof JSON_DATA.RUNTIME.CLOCK_RENDER_ID !== "number") {
+    JSON_DATA.RUNTIME.CLOCK_RENDER_ID = 0;
+  }
 }
 
 parseJSON();
@@ -121,14 +126,38 @@ function loadMonitorWindow() {
 
 function updateClockStyle(style) {
   JSON_DATA.WINDOW_STYLES.CLOCK_WINDOW = style;
+  JSON_DATA.RUNTIME.CLOCK_RENDER_ID += 1;
   json.write(JSON_FILE_PATH, JSON_DATA);
-  setClockContextMenu();
+
+  // Avoid visual flicker while changing widget style.
+  if (CLOCK_TIMER) {
+    clearInterval(CLOCK_TIMER);
+    CLOCK_TIMER = null;
+  }
+
   CLOCK_WINDOW.refresh();
+  setClockContextMenu();
+
+  // Delay first publish slightly so refreshed UI script is fully ready.
+  setTimeout(() => {
+    publishClockData();
+    CLOCK_TIMER = setInterval(publishClockData, 1000);
+  }, 120);
 }
 
 function setClockContextMenu() {
   const currentStyle = JSON_DATA.WINDOW_STYLES.CLOCK_WINDOW;
   CLOCK_WINDOW.setContextMenu([
+    {
+      text: "Small",
+      checked: currentStyle === "small",
+      action: () => updateClockStyle("small"),
+    },
+    {
+      text: "Medium",
+      checked: currentStyle === "medium",
+      action: () => updateClockStyle("medium"),
+    },
     {
       text: "Wide",
       checked: currentStyle === "wide",
@@ -162,7 +191,21 @@ function publishClockData() {
   const timeFormat = JSON_DATA.USE_24_HOUR_FORMAT ? "%H:%M" : "%I:%M";
   const timeStr = time.time(timeFormat);
   const secondsStr = time.time("%S");
+  const hour24 = parseInt(time.time("%H"), 10);
+  const minute = parseInt(time.time("%M"), 10);
+  const second = parseInt(secondsStr, 10);
   const dateStr = time.time("%A, %B %d");
+
+  ipcMain.send("clockUpdate", {
+    style: JSON_DATA.WINDOW_STYLES.CLOCK_WINDOW,
+    renderId: JSON_DATA.RUNTIME.CLOCK_RENDER_ID,
+    hour24: hour24,
+    minute: minute,
+    second: second,
+    timeText: timeStr,
+    secondsText: secondsStr,
+    dateText: dateStr,
+  });
 
   ipcMain.send("timeUpdate", timeStr);
   ipcMain.send("secondsUpdate", secondsStr);
