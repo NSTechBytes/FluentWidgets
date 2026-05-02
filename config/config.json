@@ -3,6 +3,11 @@
     "SCALE": "1",
     "FONT_TYPE": "Segoe UI",
     "USE_24_HOUR_FORMAT": false,
+    "LOCATION": {
+        "CITY_NAME": "London",
+        "LATITUDE": 51.5072,
+        "LONGITUDE": -0.1276
+    },
     "BB_STYLE": {
         "BLUR_TYPE": "blur",
         "ROUND_TYPE": "round"
@@ -10,7 +15,8 @@
     "WINDOW_STYLES": {
         "MONITOR_WINDOW": "small",
         "CLOCK_WINDOW": "large",
-        "CALENDAR_WINDOW": "wide"
+        "CALENDAR_WINDOW": "wide",
+        "WEATHER_WINDOW": "large"
     },
     "APPEARANCE": {
         "THEME": "dark",

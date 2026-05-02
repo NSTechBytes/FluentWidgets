@@ -1,6 +1,6 @@
 import { widgetWindow, addon, app } from "novadesk";
 import * as fs from "fs";
-import { json, cpu, memory, network, disk, power, time } from "system";
+import { json, cpu, memory, network, disk, power, time, webFetch } from "system";
 
 var JSON_DATA = {};
 var JSON_FILE_PATH = path.join(
@@ -17,6 +17,9 @@ var CLOCK_TIMER = null;
 
 var CALENDAR_WINDOW = null;
 var CALENDAR_TIMER = null;
+
+var WEATHER_WINDOW = null;
+var WEATHER_TIMER = null;
 
 const bb_Addon = addon.load(path.join(__addonsPath, "BlurBehind"));
 
@@ -190,6 +193,7 @@ function loadClockWidget() {
 // loadMonitorWindow();
 loadClockWidget();
 loadCalendarWidget();
+loadWeatherWidget();
 
 function publishClockData() {
   const timeFormat = JSON_DATA.USE_24_HOUR_FORMAT ? "%H:%M" : "%I:%M";
@@ -323,4 +327,117 @@ function loadCalendarWidget() {
   publishCalendarData();
   CALENDAR_TIMER = setInterval(publishCalendarData, 60000); // Refresh every minute
   CALENDAR_WINDOW.show();
+}
+
+// ==========================================
+// Weather Window Functions
+// ==========================================
+
+function updateWeatherStyle(style) {
+  JSON_DATA.WINDOW_STYLES.WEATHER_WINDOW = style;
+  json.write(JSON_FILE_PATH, JSON_DATA);
+
+  if (WEATHER_TIMER) {
+    clearInterval(WEATHER_TIMER);
+    WEATHER_TIMER = null;
+  }
+
+  WEATHER_WINDOW.refresh();
+  setWeatherContextMenu();
+
+  setTimeout(() => {
+    publishWeatherData();
+    WEATHER_TIMER = setInterval(publishWeatherData, 600000); // refresh every 10 min
+  }, 120);
+}
+
+function setWeatherContextMenu() {
+  const currentStyle = JSON_DATA.WINDOW_STYLES.WEATHER_WINDOW;
+  WEATHER_WINDOW.setContextMenu([
+    {
+      text: "Small",
+      checked: currentStyle === "small",
+      action: () => updateWeatherStyle("small"),
+    },
+    {
+      text: "Medium",
+      checked: currentStyle === "medium",
+      action: () => updateWeatherStyle("medium"),
+    },
+    {
+      text: "Wide",
+      checked: currentStyle === "wide",
+      action: () => updateWeatherStyle("wide"),
+    },
+    {
+      text: "Large",
+      checked: currentStyle === "large",
+      action: () => updateWeatherStyle("large"),
+    },
+  ]);
+}
+
+async function publishWeatherData() {
+  try {
+    const lat = JSON_DATA.LOCATION ? JSON_DATA.LOCATION.LATITUDE : 51.5072;
+    const lon = JSON_DATA.LOCATION ? JSON_DATA.LOCATION.LONGITUDE : -0.1276;
+    const cityName = JSON_DATA.LOCATION ? JSON_DATA.LOCATION.CITY_NAME : "London";
+    
+    const response = await webFetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m&hourly=temperature_2m&daily=temperature_2m_max,temperature_2m_min&timezone=auto`);
+    const data = typeof response === "string" ? JSON.parse(response) : response;
+
+    const currentTemp = Math.round(data.current.temperature_2m);
+    
+    // Find current hour index by stripping minutes from current.time
+    const currentTime = data.current.time; // e.g. "2026-05-02T11:15"
+    const currentHourTime = currentTime.substring(0, 13) + ":00"; // "2026-05-02T11:00"
+    let hourIndex = data.hourly.time.indexOf(currentHourTime);
+    if (hourIndex === -1) hourIndex = 0;
+
+    const hourlyForecast = [];
+    for (let i = 0; i < 6; i++) {
+      let idx = hourIndex + i;
+      if (idx < data.hourly.time.length) {
+        let timeStr = data.hourly.time[idx].split("T")[1].split(":")[0]; // "11:00" -> "11"
+        let temp = Math.round(data.hourly.temperature_2m[idx]);
+        hourlyForecast.push({ time: timeStr, temp: temp });
+      }
+    }
+
+    const dailyForecast = [];
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    for (let i = 0; i < 6; i++) {
+      if (i < data.daily.time.length) {
+        let dateObj = new Date(data.daily.time[i]);
+        let dayName = dayNames[dateObj.getDay()];
+        let min = Math.round(data.daily.temperature_2m_min[i]);
+        let max = Math.round(data.daily.temperature_2m_max[i]);
+        dailyForecast.push({ day: dayName, min: min, max: max });
+      }
+    }
+
+    ipcMain.send("weatherUpdate", {
+      cityName: cityName,
+      currentTemp: currentTemp,
+      hourlyForecast: hourlyForecast,
+      dailyForecast: dailyForecast,
+      todayHigh: dailyForecast[0] ? dailyForecast[0].max : 0,
+      todayLow: dailyForecast[0] ? dailyForecast[0].min : 0
+    });
+  } catch (e) {
+    console.error("Failed to fetch weather: " + e);
+  }
+}
+
+function loadWeatherWidget() {
+  WEATHER_WINDOW = new widgetWindow({
+    id: "WEATHER_WINDOW",
+    script: "ui/weatherWindow.ui.js",
+    show: false,
+  });
+  applyBB(String(WEATHER_WINDOW.getHandle()));
+  setWeatherContextMenu();
+  publishWeatherData();
+  WEATHER_TIMER = setInterval(publishWeatherData, 600000); // 10 minutes
+  WEATHER_WINDOW.show();
 }
