@@ -223,13 +223,39 @@ function publishClockData() {
 function updateCalendarStyle(style) {
   JSON_DATA.WINDOW_STYLES.CALENDAR_WINDOW = style;
   json.write(JSON_FILE_PATH, JSON_DATA);
-  setCalendarContextMenu();
+
+  if (CALENDAR_TIMER) {
+    clearInterval(CALENDAR_TIMER);
+    CALENDAR_TIMER = null;
+  }
+
   CALENDAR_WINDOW.refresh();
+  setCalendarContextMenu();
+
+  setTimeout(() => {
+    publishCalendarData();
+    CALENDAR_TIMER = setInterval(publishCalendarData, 60000);
+  }, 16);
 }
 
 function setCalendarContextMenu() {
   const currentStyle = JSON_DATA.WINDOW_STYLES.CALENDAR_WINDOW;
   CALENDAR_WINDOW.setContextMenu([
+    {
+      text: "Small",
+      checked: currentStyle === "small",
+      action: () => updateCalendarStyle("small"),
+    },
+    {
+      text: "Medium",
+      checked: currentStyle === "medium",
+      action: () => updateCalendarStyle("medium"),
+    },
+    {
+      text: "Wide",
+      checked: currentStyle === "wide",
+      action: () => updateCalendarStyle("wide"),
+    },
     {
       text: "Large",
       checked: currentStyle === "large",
@@ -244,8 +270,32 @@ function publishCalendarData() {
   const month = now.getMonth();
   const date = now.getDate();
 
-  const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+  const monthNames = [
+    "JANUARY",
+    "FEBRUARY",
+    "MARCH",
+    "APRIL",
+    "MAY",
+    "JUNE",
+    "JULY",
+    "AUGUST",
+    "SEPTEMBER",
+    "OCTOBER",
+    "NOVEMBER",
+    "DECEMBER",
+  ];
   const monthName = monthNames[month];
+
+  const dayNames = [
+    "SUNDAY",
+    "MONDAY",
+    "TUESDAY",
+    "WEDNESDAY",
+    "THURSDAY",
+    "FRIDAY",
+    "SATURDAY",
+  ];
+  const dayName = dayNames[now.getDay()];
 
   const firstDay = new Date(year, month, 1);
   let startDay = firstDay.getDay();
@@ -255,9 +305,10 @@ function publishCalendarData() {
 
   ipcMain.send("calendarUpdate", {
     monthName: monthName,
+    dayName: dayName,
     startDay: startDay,
     daysInMonth: daysInMonth,
-    currentDate: date
+    currentDate: date,
   });
 }
 
