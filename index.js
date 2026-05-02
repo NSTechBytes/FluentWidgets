@@ -15,6 +15,9 @@ var MONITOR_WINDOW_TIMER = null;
 var CLOCK_WINDOW = null;
 var CLOCK_TIMER = null;
 
+var CALENDAR_WINDOW = null;
+var CALENDAR_TIMER = null;
+
 const bb_Addon = addon.load(path.join(__addonsPath, "BlurBehind"));
 
 function parseJSON() {
@@ -186,6 +189,7 @@ function loadClockWidget() {
 
 // loadMonitorWindow();
 loadClockWidget();
+loadCalendarWidget();
 
 function publishClockData() {
   const timeFormat = JSON_DATA.USE_24_HOUR_FORMAT ? "%H:%M" : "%I:%M";
@@ -210,4 +214,62 @@ function publishClockData() {
   ipcMain.send("timeUpdate", timeStr);
   ipcMain.send("secondsUpdate", secondsStr);
   ipcMain.send("dateUpdate", dateStr);
+}
+
+// ==========================================
+// Calendar Window Functions
+// ==========================================
+
+function updateCalendarStyle(style) {
+  JSON_DATA.WINDOW_STYLES.CALENDAR_WINDOW = style;
+  json.write(JSON_FILE_PATH, JSON_DATA);
+  setCalendarContextMenu();
+  CALENDAR_WINDOW.refresh();
+}
+
+function setCalendarContextMenu() {
+  const currentStyle = JSON_DATA.WINDOW_STYLES.CALENDAR_WINDOW;
+  CALENDAR_WINDOW.setContextMenu([
+    {
+      text: "Large",
+      checked: currentStyle === "large",
+      action: () => updateCalendarStyle("large"),
+    },
+  ]);
+}
+
+function publishCalendarData() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const date = now.getDate();
+
+  const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+  const monthName = monthNames[month];
+
+  const firstDay = new Date(year, month, 1);
+  let startDay = firstDay.getDay();
+  startDay = startDay === 0 ? 6 : startDay - 1; // Mon=0, Sun=6
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  ipcMain.send("calendarUpdate", {
+    monthName: monthName,
+    startDay: startDay,
+    daysInMonth: daysInMonth,
+    currentDate: date
+  });
+}
+
+function loadCalendarWidget() {
+  CALENDAR_WINDOW = new widgetWindow({
+    id: "CALENDAR_WINDOW",
+    script: "ui/calendarWindow.ui.js",
+    show: false,
+  });
+  applyBB(String(CALENDAR_WINDOW.getHandle()));
+  setCalendarContextMenu();
+  publishCalendarData();
+  CALENDAR_TIMER = setInterval(publishCalendarData, 60000); // Refresh every minute
+  CALENDAR_WINDOW.show();
 }

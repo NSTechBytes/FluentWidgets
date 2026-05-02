@@ -8,6 +8,16 @@ var SMALL_IMAGE_FACE =
     ? "assets/icons/small-face-1.png"
     : "assets/icons/small-face-0.png";
 
+var LARGE_IMAGE_FACE =
+  JSON_DATA.APPEARANCE.THEME === "dark"
+    ? "assets/icons/face-1.png"
+    : "assets/icons/face-0.png";
+
+var HOUR = 0;
+var MINUTE = 0;
+var SECOND = 0;
+var CLOCK_GEOMETRY = CLOCK_GEOMETRY || null;
+
 function getBackgroundColor() {
   if (JSON_DATA.APPEARANCE.THEME == "dark") {
     return JSON_DATA.APPEARANCE.THEME_DARK_CONFIG.BACKGROUND_COLOR;
@@ -32,61 +42,6 @@ function getTextColor() {
   }
 }
 
-function wideStyle() {
-  var BACKGROUND_WIDTH = 350 * SCALE;
-  var BACKGROUND_HEIGHT = 160 * SCALE;
-
-  ui.beginUpdate();
-
-  ui.addShape({
-    id: "background_Shape",
-    type: "rectangle",
-    width: BACKGROUND_WIDTH,
-    height: BACKGROUND_HEIGHT,
-    strokeWidth: 0,
-    fillColor: getBackgroundColor(),
-  });
-
-  // Time (HH:MM)
-  ui.addText({
-    id: "time-text",
-    x: BACKGROUND_WIDTH / 2 - 15 * SCALE,
-    y: 5 * SCALE,
-    text: "00:00",
-    fontSize: 90 * SCALE,
-    fontColor: getTextColor(),
-    fontFace: FONT_TYPE,
-    textAlign: "center",
-  });
-
-  // Seconds (SS)
-  ui.addText({
-    id: "seconds-text",
-    x: BACKGROUND_WIDTH / 2 + 110 * SCALE,
-    y: 30 * SCALE,
-    text: "00",
-    fontSize: 35 * SCALE,
-    fontColor: getSubtleColor(),
-    fontFace: FONT_TYPE,
-    textAlign: "left",
-  });
-
-  // Date
-  ui.addText({
-    id: "date-text",
-    x: BACKGROUND_WIDTH / 2,
-    y: 115 * SCALE,
-    text: "Date Loading...",
-    fontSize: 22 * SCALE,
-    fontColor: getTextColor(),
-    fontFace: FONT_TYPE,
-    textAlign: "center",
-  });
-
-  ui.endUpdate();
-}
-
-// Style selection
 function smallStyle() {
   let SIZE = 75 * SCALE;
   let CENTER = SIZE / 2;
@@ -177,17 +132,13 @@ function mediumStyle() {
     fillColor: getBackgroundColor(),
   });
 
-  var faceImage =
-    JSON_DATA.APPEARANCE.THEME === "dark"
-      ? "assets/icons/face-1.png"
-      : "assets/icons/face-0.png";
   ui.addImage({
     id: "clock-face",
     x: PADDING,
     y: PADDING,
     width: FACE_SIZE,
     height: FACE_SIZE,
-    path: faceImage,
+    path: LARGE_IMAGE_FACE,
   });
 
   ui.addShape({
@@ -238,6 +189,60 @@ function mediumStyle() {
   ui.endUpdate();
 }
 
+function wideStyle() {
+  var BACKGROUND_WIDTH = 350 * SCALE;
+  var BACKGROUND_HEIGHT = 160 * SCALE;
+
+  ui.beginUpdate();
+
+  ui.addShape({
+    id: "background_Shape",
+    type: "rectangle",
+    width: BACKGROUND_WIDTH,
+    height: BACKGROUND_HEIGHT,
+    strokeWidth: 0,
+    fillColor: getBackgroundColor(),
+  });
+
+  // Time (HH:MM)
+  ui.addText({
+    id: "time-text",
+    x: BACKGROUND_WIDTH / 2 - 15 * SCALE,
+    y: 5 * SCALE,
+    text: "00:00",
+    fontSize: 90 * SCALE,
+    fontColor: getTextColor(),
+    fontFace: FONT_TYPE,
+    textAlign: "center",
+  });
+
+  // Seconds (SS)
+  ui.addText({
+    id: "seconds-text",
+    x: BACKGROUND_WIDTH / 2 + 110 * SCALE,
+    y: 30 * SCALE,
+    text: "00",
+    fontSize: 35 * SCALE,
+    fontColor: getSubtleColor(),
+    fontFace: FONT_TYPE,
+    textAlign: "left",
+  });
+
+  // Date
+  ui.addText({
+    id: "date-text",
+    x: BACKGROUND_WIDTH / 2,
+    y: 115 * SCALE,
+    text: "Date Loading...",
+    fontSize: 22 * SCALE,
+    fontColor: getTextColor(),
+    fontFace: FONT_TYPE,
+    textAlign: "center",
+  });
+
+  ui.endUpdate();
+}
+
 function largeStyle() {
   var SIZE = 360 * SCALE;
   var CENTER = SIZE / 2;
@@ -265,18 +270,13 @@ function largeStyle() {
     fillColor: getBackgroundColor(),
   });
 
-  // Face
-  var faceImage =
-    JSON_DATA.APPEARANCE.THEME === "dark"
-      ? "assets/icons/face-1.png"
-      : "assets/icons/face-0.png";
   ui.addImage({
     id: "clock-face",
     x: 10 * SCALE,
     y: 10 * SCALE,
     width: SIZE - 20 * SCALE,
     height: SIZE - 20 * SCALE,
-    path: faceImage,
+    path: LARGE_IMAGE_FACE,
   });
 
   // Hands (Initial at 12:00:00)
@@ -336,11 +336,6 @@ else if (CURRENT_STYLE === "wide") wideStyle();
 else if (CURRENT_STYLE === "large") largeStyle();
 else wideStyle(); // Default
 
-var HOUR = 0;
-var MINUTE = 0;
-var SECOND = 0;
-var CLOCK_GEOMETRY = CLOCK_GEOMETRY || null;
-
 function setClockGeometry(size, hourLen, minLen, secLen) {
   CLOCK_GEOMETRY = {
     center: size / 2,
@@ -379,23 +374,6 @@ function updateHands() {
     endY: CENTER - CLOCK_GEOMETRY.secLen * Math.cos(secRad),
   });
 }
-
-// function seedHandsFromSystemTime() {
-//   if (
-//     CURRENT_STYLE !== "large" &&
-//     CURRENT_STYLE !== "medium" &&
-//     CURRENT_STYLE !== "small"
-//   )
-//     return;
-
-//   var now = new Date();
-//   HOUR = now.getHours();
-//   MINUTE = now.getMinutes();
-//   SECOND = now.getSeconds();
-//   updateHands();
-// }
-
-// seedHandsFromSystemTime();
 
 ipcRenderer.on("timeUpdate", (event, timeStr) => {
   if (CURRENT_STYLE === "wide") {
