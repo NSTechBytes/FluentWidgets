@@ -1,6 +1,6 @@
 import { widgetWindow, addon, app } from "novadesk";
 import * as fs from "fs";
-import { json, cpu, memory, network, disk, power, time, webFetch } from "system";
+import { json, cpu, memory, network, disk, time, webFetch } from "system";
 
 var JSON_DATA = {};
 var JSON_FILE_PATH = path.join(
@@ -21,7 +21,11 @@ var CALENDAR_TIMER = null;
 var WEATHER_WINDOW = null;
 var WEATHER_TIMER = null;
 
+var PLAYER_WINDOW = null;
+var PLAYER_TIMER = null;
+
 const bb_Addon = addon.load(path.join(__addonsPath, "BlurBehind"));
+const np_Addon = addon.load(path.join(__addonsPath, "NowPlaying"));
 
 function parseJSON() {
   if (!fs.exists(JSON_FILE_PATH)) {
@@ -189,11 +193,6 @@ function loadClockWidget() {
   CLOCK_TIMER = setInterval(publishClockData, 1000);
   CLOCK_WINDOW.show();
 }
-
-// loadMonitorWindow();
-loadClockWidget();
-loadCalendarWidget();
-loadWeatherWidget();
 
 function publishClockData() {
   const timeFormat = JSON_DATA.USE_24_HOUR_FORMAT ? "%H:%M" : "%I:%M";
@@ -381,13 +380,17 @@ async function publishWeatherData() {
   try {
     const lat = JSON_DATA.LOCATION ? JSON_DATA.LOCATION.LATITUDE : 51.5072;
     const lon = JSON_DATA.LOCATION ? JSON_DATA.LOCATION.LONGITUDE : -0.1276;
-    const cityName = JSON_DATA.LOCATION ? JSON_DATA.LOCATION.CITY_NAME : "London";
-    
-    const response = await webFetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m&hourly=temperature_2m&daily=temperature_2m_max,temperature_2m_min&timezone=auto`);
+    const cityName = JSON_DATA.LOCATION
+      ? JSON_DATA.LOCATION.CITY_NAME
+      : "London";
+
+    const response = await webFetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m&hourly=temperature_2m&daily=temperature_2m_max,temperature_2m_min&timezone=auto`,
+    );
     const data = typeof response === "string" ? JSON.parse(response) : response;
 
     const currentTemp = Math.round(data.current.temperature_2m);
-    
+
     // Find current hour index by stripping minutes from current.time
     const currentTime = data.current.time; // e.g. "2026-05-02T11:15"
     const currentHourTime = currentTime.substring(0, 13) + ":00"; // "2026-05-02T11:00"
@@ -422,7 +425,7 @@ async function publishWeatherData() {
       hourlyForecast: hourlyForecast,
       dailyForecast: dailyForecast,
       todayHigh: dailyForecast[0] ? dailyForecast[0].max : 0,
-      todayLow: dailyForecast[0] ? dailyForecast[0].min : 0
+      todayLow: dailyForecast[0] ? dailyForecast[0].min : 0,
     });
   } catch (e) {
     console.error("Failed to fetch weather: " + e);
@@ -441,3 +444,33 @@ function loadWeatherWidget() {
   WEATHER_TIMER = setInterval(publishWeatherData, 600000); // 10 minutes
   WEATHER_WINDOW.show();
 }
+
+// ==========================================
+// Player Window Functions
+// ==========================================
+
+function loadPlayerWidget() {
+  PLAYER_WINDOW = new widgetWindow({
+    id: "PLAYER_WINDOW",
+    script: "ui/playerWindow.ui.js",
+    show: false,
+  });
+
+  applyBB(String(PLAYER_WINDOW.getHandle()));
+  PLAYER_TIMER = setInterval(publishNowPlayingData, 1000);
+  PLAYER_WINDOW.show();
+}
+
+function publishNowPlayingData() {
+  const stats = np_Addon.stats();
+  // console.log(JSON.stringify(stats, null, 2));
+  ipcMain.send("nowPlayingUpdate", stats);
+}
+
+publishNowPlayingData();
+
+// loadMonitorWindow();
+// loadClockWidget();
+// loadCalendarWidget();
+// loadWeatherWidget();
+loadPlayerWidget();
