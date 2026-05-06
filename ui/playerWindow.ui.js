@@ -6,6 +6,10 @@ var DEFAULT_THUMBNAIL = "assets/player/music.png";
 var PLAY_ICON = "assets/player/pause.png";
 var PAUSE_ICON = "assets/player/play.png";
 
+//============================================================================
+// Color getter functions
+//============================================================================
+
 function getBackgroundColor() {
   if (JSON_DATA.APPEARANCE.THEME == "dark") {
     return JSON_DATA.APPEARANCE.THEME_DARK_CONFIG.BACKGROUND_COLOR;
@@ -14,12 +18,19 @@ function getBackgroundColor() {
   }
 }
 
+//============================================================================
+// Media control functions
+//============================================================================
+
 function playPauseMusic() {
   ipcRenderer.send("playPause");
 }
 
+//============================================================================
+// Overlay functions
+//============================================================================
+
 function hideOverlay() {
-  ui.removeElementsByGroup("overlay");
   if (ui.isElementExist("overlay_shape")) ui.removeElementById("overlay_shape");
   if (ui.isElementExist("overlay_image")) ui.removeElementById("overlay_image");
 }
@@ -50,7 +61,8 @@ function showOverlayOfNoMedia() {
 }
 
 function showOverlayForSmallStyle() {
-  if (ui.isElementExist("overlay_shape")) return;
+  if (ui.isElementExist("overlay_shape") || ui.isElementExist("overlay_image"))
+    return;
 
   var SIZE = 75 * SCALE;
   if (NOWPLAYING_DATA && NOWPLAYING_DATA.available) {
@@ -62,7 +74,6 @@ function showOverlayForSmallStyle() {
       width: SIZE,
       height: SIZE,
       fillColor: "rgba(0,0,0,0.8)",
-      group: "overlay",
       onLeftMouseUp: function () {
         playPauseMusic();
         if (NOWPLAYING_DATA) {
@@ -78,7 +89,6 @@ function showOverlayForSmallStyle() {
       height: SIZE / 2,
       preserveAspectRatio: "crop",
       path: NOWPLAYING_DATA.state == 1 ? PLAY_ICON : PAUSE_ICON,
-      group: "overlay",
     });
   } else {
     ui.addShape({
@@ -89,10 +99,14 @@ function showOverlayForSmallStyle() {
       width: SIZE,
       height: SIZE,
       fillColor: "rgba(0,0,0,0.8)",
-      group: "overlay",
     });
   }
 }
+
+//============================================================================
+// Styles
+//============================================================================
+
 function smallStyle() {
   var SIZE = 75 * SCALE;
   ui.beginUpdate();
@@ -125,6 +139,16 @@ function smallStyle() {
   ui.endUpdate();
 }
 
+smallStyle();
+
+if (JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW == "small") {
+  showOverlayOfNoMedia();
+}
+
+//============================================================================
+// Events
+//============================================================================
+
 ipcRenderer.on("nowPlayingUpdate", (event, data) => {
   // console.log(JSON.stringify(data, null, 2));
   NOWPLAYING_DATA = data;
@@ -136,22 +160,20 @@ ipcRenderer.on("nowPlayingUpdate", (event, data) => {
     }
   }
 
-  if (
-    NOWPLAYING_DATA &&
-    NOWPLAYING_DATA.available &&
-    JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW == "small"
-  ) {
-    if (ui.isElementExist("overlay_shape_no_media")) {
-      ui.removeElementById("overlay_shape_no_media");
-    }
-  } else if (JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW == "small") {
-    if (!ui.isElementExist("overlay_shape_no_media")) {
-      showOverlayOfNoMedia();
+  var hasMedia = NOWPLAYING_DATA && NOWPLAYING_DATA.available;
+  var isSmall = JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW == "small";
+
+  if (isSmall) {
+    if (hasMedia) {
+      if (ui.isElementExist("overlay_shape_no_media")) {
+        ui.removeElementById("overlay_shape_no_media");
+      }
+    } else {
+      if (!ui.isElementExist("overlay_shape_no_media")) {
+        showOverlayOfNoMedia();
+      }
     }
   }
 
   updateOverlay();
 });
-
-smallStyle();
-showOverlayOfNoMedia();
