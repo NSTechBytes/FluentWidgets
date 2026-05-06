@@ -467,6 +467,12 @@ function publishNowPlayingData() {
   ipcMain.send("nowPlayingUpdate", stats);
 }
 
+function playPauseMusic() {
+  np_Addon.playPause();
+}
+
+ipcMain.on("playPause", playPauseMusic);
+
 publishNowPlayingData();
 
 // loadMonitorWindow();
