@@ -17,7 +17,7 @@
         "CLOCK_WINDOW": "large",
         "CALENDAR_WINDOW": "wide",
         "WEATHER_WINDOW": "large",
-        "PLAYER_WINDOW": "small"
+        "PLAYER_WINDOW": "medium"
     },
     "APPEARANCE": {
         "THEME": "dark",
@@ -28,12 +28,13 @@
         "THEME_DARK_CONFIG": {
             "BACKGROUND_COLOR": "rgba(18, 18, 18, 0.2)",
             "FONT_COLOR": "white",
-            "SUBTLE_COLOR": "rgba(255, 255, 255, 0.2)",
+            "SUBTLE_FONT_COLOR": "rgba(255, 255, 255, 0.2)",
             "ICON_COLOR": "white"
         },
         "THEME_LIGHT_CONFIG": {
             "BACKGROUND_COLOR": "rgba(255, 255, 255, 0.2)",
             "FONT_COLOR": "black",
+            "SUBTLE_FONT_COLOR": "rgba(0, 0, 0, 0.2)",
             "SUBTLE_COLOR": "rgba(0, 0, 0, 0.2)",
             "ICON_COLOR": "black"
         }

@@ -471,7 +471,17 @@ function playPauseMusic() {
   np_Addon.playPause();
 }
 
+function nextMusic() {
+  np_Addon.next();
+}
+
+function previousMusic() {
+  np_Addon.previous();
+}
+
 ipcMain.on("playPause", playPauseMusic);
+ipcMain.on("next", nextMusic);
+ipcMain.on("previous", previousMusic);
 
 publishNowPlayingData();
 
