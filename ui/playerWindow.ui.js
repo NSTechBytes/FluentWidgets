@@ -65,16 +65,16 @@ function hideOverlay() {
 }
 
 function updateOverlay() {
-  if (NOWPLAYING_DATA && ui.isElementExist("overlay_image")) {
-    ui.setElementProperty(
-      "overlay_image",
-      "path",
-      NOWPLAYING_DATA.state == 1 ? PLAY_ICON : PAUSE_ICON,
-    );
+  var path = (NOWPLAYING_DATA && NOWPLAYING_DATA.state == 1) ? PLAY_ICON : PAUSE_ICON;
+  if (ui.isElementExist("overlay_image")) {
+    ui.setElementProperty("overlay_image", "path", path);
+  }
+  if (ui.isElementExist("play_pause_image")) {
+    ui.setElementProperty("play_pause_image", "path", path);
   }
 }
 
-function showOverlayOfNoMedia() {
+function showOverlayOfNoMediaForSmallStyle() {
   if (ui.isElementExist("overlay_shape_no_media")) return;
 
   var SIZE = 75 * SCALE;
@@ -132,6 +132,46 @@ function showOverlayForSmallStyle() {
   }
 }
 
+function showOverlayOfNoMediaForMediumStyle() {
+  if (ui.isElementExist("overlay_shape_no_media")) return;
+
+  var SIZE = 160 * SCALE;
+  var CONTAINER_SIZE = SIZE / 1.8;
+
+  ui.addShape({
+    id: "overlay_shape_no_media",
+    type: "rectangle",
+    x: 10 * SCALE,
+    y: 10 * SCALE,
+    width: CONTAINER_SIZE,
+    height: CONTAINER_SIZE,
+    radius: 8,
+    strokeWidth: 0,
+    fillColor: "rgba(0,0,0,0.5)",
+  });
+}
+
+function showOverlayOfNoMediaForWideStyle() {
+  if (ui.isElementExist("overlay_shape_no_media")) return;
+
+  var BACKGROUND_WIDTH = 350 * SCALE;
+  var BACKGROUND_HEIGHT = 160 * SCALE;
+  var CONTAINER_SIZE = BACKGROUND_WIDTH / 2.8;
+  var CONTAINER_HEIGHT = BACKGROUND_HEIGHT / 1.25;
+
+  ui.addShape({
+    id: "overlay_shape_no_media",
+    type: "rectangle",
+    x: 10 * SCALE,
+    y: 15 * SCALE,
+    width: CONTAINER_SIZE,
+    height: CONTAINER_HEIGHT,
+    radius: 8,
+    strokeWidth: 0,
+    fillColor: "rgba(0,0,0,0.5)",
+  });
+}
+
 function showOverlayForMediumStyle() {
   var SIZE = 160 * SCALE;
   var CONTAINER_SIZE = SIZE / 1.8;
@@ -140,8 +180,6 @@ function showOverlayForMediumStyle() {
     return;
 
   ui.beginUpdate();
-
-  // if (NOWPLAYING_DATA && NOWPLAYING_DATA.available) {
 
   ui.addShape({
     id: "overlay_shape",
@@ -191,7 +229,7 @@ function showOverlayForMediumStyle() {
 
   ui.endUpdate();
 }
-// }
+
 //============================================================================
 // Styles
 //============================================================================
@@ -314,11 +352,139 @@ function mediumStyle() {
   ui.endUpdate();
 }
 
-mediumStyle();
+function wideStyle() {
+  var BACKGROUND_WIDTH = 350 * SCALE;
+  var BACKGROUND_HEIGHT = 160 * SCALE;
 
-// if (JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW == "small") {
-//   showOverlayOfNoMedia();
-// }
+  var CONTAINER_WIDTH = BACKGROUND_WIDTH / 2.8;
+  var CONTAINER_HEIGHT = BACKGROUND_HEIGHT / 1.25;
+
+  ui.beginUpdate();
+  ui.addShape({
+    id: "background_Shape",
+    type: "rectangle",
+    width: BACKGROUND_WIDTH,
+    height: BACKGROUND_HEIGHT,
+    strokeWidth: 0,
+    fillColor: getBackgroundColor(),
+  });
+
+  ui.addShape({
+    id: "container",
+    x: 10 * SCALE,
+    y: 15 * SCALE,
+    type: "rectangle",
+    width: CONTAINER_WIDTH,
+    height: CONTAINER_HEIGHT,
+    strokeWidth: 0,
+    radius: 8
+  });
+
+  ui.addShape({
+    id: "container_mask",
+    type: "rectangle",
+    width: CONTAINER_WIDTH,
+    height: CONTAINER_HEIGHT,
+    strokeWidth: 0,
+    fillColor: "rgba(200,200,200,0.1)",
+    container: "container"
+  });
+
+  ui.addImage({
+    id: "thumbnail",
+    x: 0,
+    y: 0,
+    width: CONTAINER_WIDTH,
+    height: CONTAINER_HEIGHT,
+    preserveAspectRatio: "crop",
+    path: DEFAULT_THUMBNAIL,
+    container: "container"
+  });
+
+  ui.addText({
+    id: "songTitle",
+    text: "No Media Playing",
+    x: 10 * SCALE + CONTAINER_WIDTH + 20 * SCALE,
+    y: 35 * SCALE,
+    width: BACKGROUND_WIDTH - (10 * SCALE + CONTAINER_WIDTH + 30 * SCALE),
+    fontSize: 18,
+    fontColor: getFontColor(),
+    fontFamily: "Segoe UI",
+    fontWeight: "bold",
+    textAlign: "left",
+    textClip: "ellipsis",
+  });
+
+  ui.addText({
+    id: "artistName",
+    text: "-",
+    x: (ui.getElementProperty("songTitle", "x") + ui.getElementProperty("songTitle", "width") / 2),
+    y: 75 * SCALE,
+    width: BACKGROUND_WIDTH - (10 * SCALE + CONTAINER_WIDTH + 30 * SCALE),
+    fontSize: 16,
+    fontColor: getFontSubtleColor(),
+    fontFamily: "Segoe UI",
+    fontWeight: "lighter",
+    textAlign: "center",
+    textClip: "ellipsis"
+  });
+
+  var CONTROL_SIZE = 25 * SCALE;
+  var CONTROLS_Y = 110 * SCALE;
+  var RIGHT_AREA_START = 10 * SCALE + CONTAINER_WIDTH;
+  var RIGHT_AREA_WIDTH = BACKGROUND_WIDTH - RIGHT_AREA_START - 10 * SCALE;
+  var CENTER_X = RIGHT_AREA_START + RIGHT_AREA_WIDTH / 2;
+
+  ui.addImage({
+    id: "previous_image",
+    x: CENTER_X - (CONTROL_SIZE * 1.5) - (15 * SCALE),
+    y: CONTROLS_Y,
+    width: CONTROL_SIZE,
+    height: CONTROL_SIZE,
+    path: PREVIOUS_ICON,
+    onLeftMouseUp: function () {
+      previousMusic();
+    }
+  });
+
+  ui.addImage({
+    id: "play_pause_image",
+    x: CENTER_X - (CONTROL_SIZE / 2),
+    y: CONTROLS_Y,
+    width: CONTROL_SIZE,
+    height: CONTROL_SIZE,
+    path: (NOWPLAYING_DATA && NOWPLAYING_DATA.state == 1) ? PLAY_ICON : PAUSE_ICON,
+    onLeftMouseUp: function () {
+      playPauseMusic();
+    }
+  });
+
+  ui.addImage({
+    id: "next_image",
+    x: CENTER_X + (CONTROL_SIZE / 2) + (15 * SCALE),
+    y: CONTROLS_Y,
+    width: CONTROL_SIZE,
+    height: CONTROL_SIZE,
+    path: NEXT_ICON,
+    onLeftMouseUp: function () {
+      nextMusic();
+    }
+  });
+
+  ui.endUpdate();
+}
+wideStyle();
+
+if (JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW == "small") {
+  showOverlayOfNoMediaForSmallStyle();
+}
+if (JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW == "medium") {
+  showOverlayOfNoMediaForMediumStyle();
+}
+
+if (JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW == "wide") {
+  showOverlayOfNoMediaForWideStyle();
+}
 
 //============================================================================
 // Events
@@ -351,6 +517,8 @@ ipcRenderer.on("nowPlayingUpdate", (event, data) => {
 
   var hasMedia = NOWPLAYING_DATA && NOWPLAYING_DATA.available;
   var isSmall = JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW == "small";
+  var isMedium = JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW == "medium";
+  var isWide = JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW == "wide";
 
   if (isSmall) {
     if (hasMedia) {
@@ -359,10 +527,33 @@ ipcRenderer.on("nowPlayingUpdate", (event, data) => {
       }
     } else {
       if (!ui.isElementExist("overlay_shape_no_media")) {
-        showOverlayOfNoMedia();
+        showOverlayOfNoMediaForSmallStyle();
       }
     }
   }
 
+  if (isMedium) {
+    if (hasMedia) {
+      if (ui.isElementExist("overlay_shape_no_media")) {
+        ui.removeElementById("overlay_shape_no_media");
+      }
+    } else {
+      if (!ui.isElementExist("overlay_shape_no_media")) {
+        showOverlayOfNoMediaForMediumStyle();
+      }
+    }
+  }
+
+  if (isWide) {
+    if (hasMedia) {
+      if (ui.isElementExist("overlay_shape_no_media")) {
+        ui.removeElementById("overlay_shape_no_media");
+      }
+    } else {
+      if (!ui.isElementExist("overlay_shape_no_media")) {
+        showOverlayOfNoMediaForWideStyle();
+      }
+    }
+  }
   updateOverlay();
 });
