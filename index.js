@@ -396,8 +396,29 @@ function publishNowPlayingData() {
   ipcMain.send("nowPlayingUpdate", nowPlaying.stats());
 }
 
+function updatePlayerStyle(style) {
+  config.WINDOW_STYLES.PLAYER_WINDOW = style;
+  json.write(CONFIG_PATH, config);
+
+  if (playerTimer) {
+    clearInterval(playerTimer);
+    playerTimer = null;
+  }
+
+  playerWindow.refresh();
+  playerWindow.setContextMenu(buildStyleMenu(style, updatePlayerStyle));
+
+  setTimeout(() => {
+    publishNowPlayingData();
+    playerTimer = setInterval(publishNowPlayingData, 1000);
+  }, 120);
+}
+
 function loadPlayerWidget() {
   playerWindow = createWidgetWindow("PLAYER_WINDOW", "ui/playerWindow.ui.js");
+  playerWindow.setContextMenu(
+    buildStyleMenu(config.WINDOW_STYLES.PLAYER_WINDOW, updatePlayerStyle),
+  );
   playerTimer = setInterval(publishNowPlayingData, 1000);
   playerWindow.show();
 }

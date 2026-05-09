@@ -357,10 +357,13 @@ function largeStyle() {
 }
 
 // =============================================================================
-// Initial Render (always large — player only has one visual layout)
+// Initial Render
 // =============================================================================
 
-largeStyle();
+if (playerStyle === "small")  smallStyle();
+else if (playerStyle === "medium") mediumStyle();
+else if (playerStyle === "wide")   wideStyle();
+else largeStyle();
 
 // Show "no media" placeholder overlays based on the configured style
 if (playerStyle === "small")  showOverlayOfNoMediaForSmallStyle();
