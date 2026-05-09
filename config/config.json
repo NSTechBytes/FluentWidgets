@@ -17,7 +17,7 @@
         "CLOCK_WINDOW": "large",
         "CALENDAR_WINDOW": "wide",
         "WEATHER_WINDOW": "large",
-        "PLAYER_WINDOW": "wide"
+        "PLAYER_WINDOW": "large"
     },
     "APPEARANCE": {
         "THEME": "dark",
