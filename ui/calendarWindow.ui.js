@@ -22,9 +22,9 @@ function getThemeColors() {
 }
 
 function getBackgroundColor() { return getThemeColors().BACKGROUND; }
-function getSubtleColor()      { return getThemeColors().SUBTLE; }
-function getTextColor()        { return getThemeColors().FONT; }
-function getAccentColor()      { return JSON_DATA.APPEARANCE.ACCENT_COLOR; }
+function getSubtleColor() { return getThemeColors().SUBTLE; }
+function getTextColor() { return getThemeColors().FONT; }
+function getAccentColor() { return JSON_DATA.APPEARANCE.ACCENT_COLOR; }
 
 // =============================================================================
 // Widget Size Helper
@@ -45,7 +45,7 @@ function largeStyle() {
 
   ui.beginUpdate();
 
-  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, radius: 20 * SCALE, fillColor: getBackgroundColor() });
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, fillColor: getBackgroundColor() });
   ui.addText({ id: "month-text", x: 35 * SCALE, y: 35 * SCALE, text: "MONTH", fontSize: 24 * SCALE, fontColor: getAccentColor(), fontFace: FONT_TYPE, textAlign: "left" });
 
   // This highlight ellipse is hidden off-screen until we place it over today's cell
@@ -91,11 +91,11 @@ function wideStyle() {
 
   ui.beginUpdate();
 
-  ui.addShape({ id: "background_Shape", type: "rectangle", width: W, height: H, radius: 12 * SCALE, fillColor: getBackgroundColor() });
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: W, height: H, fillColor: getBackgroundColor() });
 
   // Left column — large date display
-  ui.addText({ id: "day-name-text",      x: 20 * SCALE, y: 15 * SCALE, text: "DAY", fontSize: 14 * SCALE, fontColor: getAccentColor(),   fontFace: FONT_TYPE, textAlign: "left" });
-  ui.addText({ id: "current-date-text",  x: 20 * SCALE, y: 40 * SCALE, text: "0",   fontSize: 60 * SCALE, fontColor: getTextColor(), fontFace: FONT_TYPE, textAlign: "left" });
+  ui.addText({ id: "day-name-text", x: 20 * SCALE, y: 15 * SCALE, text: "DAY", fontSize: 14 * SCALE, fontColor: getAccentColor(), fontFace: FONT_TYPE, textAlign: "left" });
+  ui.addText({ id: "current-date-text", x: 20 * SCALE, y: 40 * SCALE, text: "0", fontSize: 60 * SCALE, fontColor: getTextColor(), fontFace: FONT_TYPE, textAlign: "left" });
 
   // Right column — mini grid
   ui.addText({ id: "month-text", x: 186 * SCALE, y: 15 * SCALE, text: "MONTH", fontSize: 14 * SCALE, fontColor: getAccentColor(), fontFace: FONT_TYPE, textAlign: "left" });
@@ -121,9 +121,9 @@ function smallStyle() {
 
   ui.beginUpdate();
 
-  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, radius: 12 * SCALE, fillColor: getBackgroundColor() });
-  ui.addText({ id: "day-name-text",     x: SIZE / 2, y: 12 * SCALE, text: "DAY", fontSize: 10 * SCALE, fontColor: getAccentColor(),   fontFace: FONT_TYPE, fontWeight: "bold", textAlign: "center" });
-  ui.addText({ id: "current-date-text", x: SIZE / 2, y: 20 * SCALE, text: "0",   fontSize: 34 * SCALE, fontColor: getTextColor(), fontFace: FONT_TYPE, textAlign: "center" });
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, fillColor: getBackgroundColor() });
+  ui.addText({ id: "day-name-text", x: SIZE / 2, y: 12 * SCALE, text: "DAY", fontSize: 10 * SCALE, fontColor: getAccentColor(), fontFace: FONT_TYPE, fontWeight: "bold", textAlign: "center" });
+  ui.addText({ id: "current-date-text", x: SIZE / 2, y: 20 * SCALE, text: "0", fontSize: 34 * SCALE, fontColor: getTextColor(), fontFace: FONT_TYPE, textAlign: "center" });
 
   ui.endUpdate();
 }
@@ -133,7 +133,7 @@ function mediumStyle() {
 
   ui.beginUpdate();
 
-  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, radius: 12 * SCALE, fillColor: getBackgroundColor() });
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, fillColor: getBackgroundColor() });
   ui.addText({ id: "month-text", x: 13 * SCALE, y: 15 * SCALE, text: "MONTH", fontSize: 14 * SCALE, fontColor: getAccentColor(), fontFace: FONT_TYPE, textAlign: "left" });
   ui.addShape({ id: "current-day-highlight", type: "ellipse", x: -100, y: -100, width: 20 * SCALE, height: 20 * SCALE, fillColor: getAccentColor(), strokeWidth: 0, opacity: 0 });
 
@@ -156,10 +156,10 @@ function mediumStyle() {
 // Initial Render
 // =============================================================================
 
-if (currentStyle === "large")  largeStyle();
-else if (currentStyle === "wide")   wideStyle();
+if (currentStyle === "large") largeStyle();
+else if (currentStyle === "wide") wideStyle();
 else if (currentStyle === "medium") mediumStyle();
-else if (currentStyle === "small")  smallStyle();
+else if (currentStyle === "small") smallStyle();
 else largeStyle();
 
 // =============================================================================
@@ -179,7 +179,7 @@ ipcRenderer.on("calendarUpdate", (event, data) => {
 
   // Day name + large date numeral (wide & small only)
   if (currentStyle === "wide" || currentStyle === "small") {
-    if (ui.isElementExist("day-name-text"))     ui.setElementProperty("day-name-text",     "text", data.dayName);
+    if (ui.isElementExist("day-name-text")) ui.setElementProperty("day-name-text", "text", data.dayName);
     if (ui.isElementExist("current-date-text")) ui.setElementProperty("current-date-text", "text", String(data.currentDate));
   }
 
@@ -212,14 +212,14 @@ ipcRenderer.on("calendarUpdate", (event, data) => {
           let x, y, ox, oy;
 
           if (currentStyle === "large") {
-            x = 45 * SCALE + col * 45 * SCALE;  y = 130 * SCALE + row * 40 * SCALE;
+            x = 45 * SCALE + col * 45 * SCALE; y = 130 * SCALE + row * 40 * SCALE;
             ox = 18 * SCALE; oy = 3 * SCALE;
           } else if (currentStyle === "wide") {
-            x = 190 * SCALE + col * 23 * SCALE;  y = 55 * SCALE + row * 18 * SCALE;
+            x = 190 * SCALE + col * 23 * SCALE; y = 55 * SCALE + row * 18 * SCALE;
             ox = 10 * SCALE; oy = 2 * SCALE;
           } else {
             // medium
-            x = 17 * SCALE + col * 21 * SCALE;  y = 55 * SCALE + row * 18 * SCALE;
+            x = 17 * SCALE + col * 21 * SCALE; y = 55 * SCALE + row * 18 * SCALE;
             ox = 10 * SCALE; oy = 2 * SCALE;
           }
 
