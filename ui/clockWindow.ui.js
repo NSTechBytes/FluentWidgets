@@ -8,7 +8,7 @@
 
 const JSON_DATA = ipcRenderer.invoke("getJSON");
 const SCALE = parseFloat(JSON_DATA.SCALE) || 1;
-const FONT_TYPE = JSON_DATA.FONT_TYPE;
+const FONT_FACE = JSON_DATA.FONT_FACE;
 const currentStyle = JSON_DATA.WINDOW_STYLES.CLOCK_WINDOW;
 
 // Pick the correct clock-face image based on the active theme
@@ -136,9 +136,9 @@ function wideStyle() {
 
   ui.addShape({ id: "background_Shape", type: "rectangle", width: W, height: H, strokeWidth: 0, fillColor: getBackgroundColor() });
 
-  ui.addText({ id: "time-text",    x: W / 2 - 15 * SCALE, y: 5 * SCALE,    text: "00:00", fontSize: 90 * SCALE, fontColor: getTextColor(),  fontFace: FONT_TYPE, textAlign: "center" });
-  ui.addText({ id: "seconds-text", x: W / 2 + 110 * SCALE, y: 30 * SCALE,  text: "00",    fontSize: 35 * SCALE, fontColor: getSubtleColor(), fontFace: FONT_TYPE, textAlign: "left" });
-  ui.addText({ id: "date-text",    x: W / 2,               y: 115 * SCALE, text: "Date Loading...", fontSize: 22 * SCALE, fontColor: getTextColor(), fontFace: FONT_TYPE, textAlign: "center" });
+  ui.addText({ id: "time-text",    x: W / 2 - 15 * SCALE, y: 5 * SCALE,    text: "00:00", fontSize: 90 * SCALE, fontColor: getTextColor(),  fontFace: FONT_FACE, textAlign: "center" });
+  ui.addText({ id: "seconds-text", x: W / 2 + 110 * SCALE, y: 30 * SCALE,  text: "00",    fontSize: 35 * SCALE, fontColor: getSubtleColor(), fontFace: FONT_FACE, textAlign: "left" });
+  ui.addText({ id: "date-text",    x: W / 2,               y: 115 * SCALE, text: "Date Loading...", fontSize: 22 * SCALE, fontColor: getTextColor(), fontFace: FONT_FACE, textAlign: "center" });
 
   ui.endUpdate();
 }

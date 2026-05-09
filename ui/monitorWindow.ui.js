@@ -18,6 +18,8 @@ const RING_CENTER_OFFSET = (RING_SIZE - RING_SIZE) / 2; // 0 — kept for clarit
 const ICON_SIZE = 20 * SCALE;
 const ICON_OFFSET = (RING_SIZE - ICON_SIZE) / 2;
 
+const FONT_FACE = JSON_DATA.FONT_FACE;
+const FONT_FACE_SEMIBOLD = JSON_DATA.FONT_FACE_SEMIBOLD;
 const ICONS_PATH = "assets/icons/";
 
 // Speed ceilings used to convert raw bytes to a 0–100 percentage
@@ -208,7 +210,7 @@ function wideStyle() {
     fontSize: 20 * SCALE,
     fontColor: getTextColor(),
     textAlign: "center",
-    fontFace: "Segoe UI",
+    fontFace: FONT_FACE,
   };
 
   ui.beginUpdate();
@@ -277,7 +279,7 @@ function largeStyle() {
       text: sec.label,
       fontSize: 16 * SCALE,
       fontColor: getTextColor(),
-      fontFace: "Segoe UI Semibold",
+      fontFace: FONT_FACE_SEMIBOLD,
       textAlign: "left",
     });
 
@@ -288,7 +290,7 @@ function largeStyle() {
       text: "0 %",
       fontSize: 16 * SCALE,
       fontColor: getTextColor(),
-      fontFace: "Segoe UI",
+      fontFace: FONT_FACE,
       textAlign: "right",
     });
 

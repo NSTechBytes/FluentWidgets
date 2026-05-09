@@ -1,7 +1,8 @@
 {
     "version": "1.0.0",
     "SCALE": 1,
-    "FONT_TYPE": "Segoe UI",
+    "FONT_FACE": "Segoe UI",
+    "FONT_FACE_SEMIBOLD": "Segoe UI Semibold",
     "USE_24_HOUR_FORMAT": false,
     "LOCATION": {
         "CITY_NAME": "London",
@@ -28,6 +29,7 @@
     "APPEARANCE": {
         "THEME": "dark",
         "ACCENT_COLOR": "#0078D4",
+        "OVERLAY_COLOR": "rgba(0, 0, 0, 0.2)",
         "LEVEL_COLORS": {
             "LOW": "rgb(45, 210, 85)",
             "MEDIUM": "rgb(255, 193, 7)",

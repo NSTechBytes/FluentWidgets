@@ -8,7 +8,7 @@
 
 const JSON_DATA = ipcRenderer.invoke("getJSON");
 const SCALE = parseFloat(JSON_DATA.SCALE) || 1;
-const FONT_TYPE = JSON_DATA.FONT_TYPE;
+const FONT_FACE = JSON_DATA.FONT_FACE;
 const currentStyle = JSON_DATA.WINDOW_STYLES.CALENDAR_WINDOW;
 
 // =============================================================================
@@ -46,7 +46,7 @@ function largeStyle() {
   ui.beginUpdate();
 
   ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, fillColor: getBackgroundColor() });
-  ui.addText({ id: "month-text", x: 35 * SCALE, y: 35 * SCALE, text: "MONTH", fontSize: 24 * SCALE, fontColor: getAccentColor(), fontFace: FONT_TYPE, textAlign: "left" });
+  ui.addText({ id: "month-text", x: 35 * SCALE, y: 35 * SCALE, text: "MONTH", fontSize: 24 * SCALE, fontColor: getAccentColor(), fontFace: FONT_FACE, textAlign: "left" });
 
   // This highlight ellipse is hidden off-screen until we place it over today's cell
   ui.addShape({ id: "current-day-highlight", type: "ellipse", x: -100, y: -100, width: 36 * SCALE, height: 36 * SCALE, fillColor: getAccentColor(), strokeWidth: 0, opacity: 0 });
@@ -61,7 +61,7 @@ function largeStyle() {
       text: weekdays[i],
       fontSize: 22 * SCALE,
       fontColor: i >= 5 ? getSubtleColor() : getTextColor(),
-      fontFace: FONT_TYPE,
+      fontFace: FONT_FACE,
       textAlign: "center",
     });
   }
@@ -77,7 +77,7 @@ function largeStyle() {
         text: "",
         fontSize: 20 * SCALE,
         fontColor: getTextColor(),
-        fontFace: FONT_TYPE,
+        fontFace: FONT_FACE,
         textAlign: "center",
       });
     }
@@ -94,22 +94,22 @@ function wideStyle() {
   ui.addShape({ id: "background_Shape", type: "rectangle", width: W, height: H, fillColor: getBackgroundColor() });
 
   // Left column — large date display
-  ui.addText({ id: "day-name-text", x: 20 * SCALE, y: 15 * SCALE, text: "DAY", fontSize: 14 * SCALE, fontColor: getAccentColor(), fontFace: FONT_TYPE, textAlign: "left" });
-  ui.addText({ id: "current-date-text", x: 20 * SCALE, y: 40 * SCALE, text: "0", fontSize: 60 * SCALE, fontColor: getTextColor(), fontFace: FONT_TYPE, textAlign: "left" });
+  ui.addText({ id: "day-name-text", x: 20 * SCALE, y: 15 * SCALE, text: "DAY", fontSize: 14 * SCALE, fontColor: getAccentColor(), fontFace: FONT_FACE, textAlign: "left" });
+  ui.addText({ id: "current-date-text", x: 20 * SCALE, y: 40 * SCALE, text: "0", fontSize: 60 * SCALE, fontColor: getTextColor(), fontFace: FONT_FACE, textAlign: "left" });
 
   // Right column — mini grid
-  ui.addText({ id: "month-text", x: 186 * SCALE, y: 15 * SCALE, text: "MONTH", fontSize: 14 * SCALE, fontColor: getAccentColor(), fontFace: FONT_TYPE, textAlign: "left" });
+  ui.addText({ id: "month-text", x: 186 * SCALE, y: 15 * SCALE, text: "MONTH", fontSize: 14 * SCALE, fontColor: getAccentColor(), fontFace: FONT_FACE, textAlign: "left" });
   ui.addShape({ id: "current-day-highlight", type: "ellipse", x: -100, y: -100, width: 20 * SCALE, height: 20 * SCALE, fillColor: getAccentColor(), strokeWidth: 0, opacity: 0 });
 
   const weekdays = ["M", "T", "W", "T", "F", "S", "S"];
   for (let i = 0; i < 7; i++) {
-    ui.addText({ id: "weekday_" + i, x: 190 * SCALE + i * 23 * SCALE, y: 35 * SCALE, text: weekdays[i], fontSize: 11 * SCALE, fontColor: i >= 5 ? getSubtleColor() : getTextColor(), fontFace: FONT_TYPE, textAlign: "center" });
+    ui.addText({ id: "weekday_" + i, x: 190 * SCALE + i * 23 * SCALE, y: 35 * SCALE, text: weekdays[i], fontSize: 11 * SCALE, fontColor: i >= 5 ? getSubtleColor() : getTextColor(), fontFace: FONT_FACE, textAlign: "center" });
   }
 
   for (let row = 0; row < 6; row++) {
     for (let col = 0; col < 7; col++) {
       const idx = row * 7 + col;
-      ui.addText({ id: "day_" + idx, x: 190 * SCALE + col * 23 * SCALE, y: 55 * SCALE + row * 18 * SCALE, text: "", fontSize: 11 * SCALE, fontColor: getTextColor(), fontFace: FONT_TYPE, textAlign: "center" });
+      ui.addText({ id: "day_" + idx, x: 190 * SCALE + col * 23 * SCALE, y: 55 * SCALE + row * 18 * SCALE, text: "", fontSize: 11 * SCALE, fontColor: getTextColor(), fontFace: FONT_FACE, textAlign: "center" });
     }
   }
 
@@ -122,8 +122,8 @@ function smallStyle() {
   ui.beginUpdate();
 
   ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, fillColor: getBackgroundColor() });
-  ui.addText({ id: "day-name-text", x: SIZE / 2, y: 12 * SCALE, text: "DAY", fontSize: 10 * SCALE, fontColor: getAccentColor(), fontFace: FONT_TYPE, fontWeight: "bold", textAlign: "center" });
-  ui.addText({ id: "current-date-text", x: SIZE / 2, y: 20 * SCALE, text: "0", fontSize: 34 * SCALE, fontColor: getTextColor(), fontFace: FONT_TYPE, textAlign: "center" });
+  ui.addText({ id: "day-name-text", x: SIZE / 2, y: 12 * SCALE, text: "DAY", fontSize: 10 * SCALE, fontColor: getAccentColor(), fontFace: FONT_FACE, fontWeight: "bold", textAlign: "center" });
+  ui.addText({ id: "current-date-text", x: SIZE / 2, y: 20 * SCALE, text: "0", fontSize: 34 * SCALE, fontColor: getTextColor(), fontFace: FONT_FACE, textAlign: "center" });
 
   ui.endUpdate();
 }
@@ -134,18 +134,18 @@ function mediumStyle() {
   ui.beginUpdate();
 
   ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, fillColor: getBackgroundColor() });
-  ui.addText({ id: "month-text", x: 13 * SCALE, y: 15 * SCALE, text: "MONTH", fontSize: 14 * SCALE, fontColor: getAccentColor(), fontFace: FONT_TYPE, textAlign: "left" });
+  ui.addText({ id: "month-text", x: 13 * SCALE, y: 15 * SCALE, text: "MONTH", fontSize: 14 * SCALE, fontColor: getAccentColor(), fontFace: FONT_FACE, textAlign: "left" });
   ui.addShape({ id: "current-day-highlight", type: "ellipse", x: -100, y: -100, width: 20 * SCALE, height: 20 * SCALE, fillColor: getAccentColor(), strokeWidth: 0, opacity: 0 });
 
   const weekdays = ["M", "T", "W", "T", "F", "S", "S"];
   for (let i = 0; i < 7; i++) {
-    ui.addText({ id: "weekday_" + i, x: 17 * SCALE + i * 21 * SCALE, y: 35 * SCALE, text: weekdays[i], fontSize: 11 * SCALE, fontColor: i >= 5 ? getSubtleColor() : getTextColor(), fontFace: FONT_TYPE, textAlign: "center" });
+    ui.addText({ id: "weekday_" + i, x: 17 * SCALE + i * 21 * SCALE, y: 35 * SCALE, text: weekdays[i], fontSize: 11 * SCALE, fontColor: i >= 5 ? getSubtleColor() : getTextColor(), fontFace: FONT_FACE, textAlign: "center" });
   }
 
   for (let row = 0; row < 6; row++) {
     for (let col = 0; col < 7; col++) {
       const idx = row * 7 + col;
-      ui.addText({ id: "day_" + idx, x: 17 * SCALE + col * 21 * SCALE, y: 55 * SCALE + row * 18 * SCALE, text: "", fontSize: 11 * SCALE, fontColor: getTextColor(), fontFace: FONT_TYPE, textAlign: "center" });
+      ui.addText({ id: "day_" + idx, x: 17 * SCALE + col * 21 * SCALE, y: 55 * SCALE + row * 18 * SCALE, text: "", fontSize: 11 * SCALE, fontColor: getTextColor(), fontFace: FONT_FACE, textAlign: "center" });
     }
   }
 

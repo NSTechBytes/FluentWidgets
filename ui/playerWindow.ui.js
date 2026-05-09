@@ -16,11 +16,14 @@ let nowPlayingData = null;
 // -----------------------------------------------------------------------------
 // Asset paths
 // -----------------------------------------------------------------------------
+const FONT_FACE = JSON_DATA.FONT_FACE;
+const OVERLAY_COLOR = JSON_DATA.APPEARANCE.OVERLAY_COLOR;
+const OVERLAY_SUBTLE_COLOR = JSON_DATA.APPEARANCE.OVERLAY_SUBTLE_COLOR;
 const DEFAULT_THUMBNAIL = "assets/player/music.png";
-const PLAY_ICON   = "assets/player/pause.png";   // shown when music IS playing
-const PAUSE_ICON  = "assets/player/play.png";    // shown when music is paused
-const PREV_ICON   = "assets/player/back.png";
-const NEXT_ICON   = "assets/player/next.png";
+const PLAY_ICON = "assets/player/pause.png";   // shown when music IS playing
+const PAUSE_ICON = "assets/player/play.png";    // shown when music is paused
+const PREV_ICON = "assets/player/back.png";
+const NEXT_ICON = "assets/player/next.png";
 
 // =============================================================================
 // Theme Helpers
@@ -32,9 +35,9 @@ function getThemeColors() {
     : JSON_DATA.APPEARANCE.LIGHT;
 }
 
-function getBackgroundColor()  { return getThemeColors().BACKGROUND; }
-function getFontColor()        { return getThemeColors().FONT; }
-function getFontSubtleColor()  { return getThemeColors().FONT_SUBTLE; }
+function getBackgroundColor() { return getThemeColors().BACKGROUND; }
+function getFontColor() { return getThemeColors().FONT; }
+function getFontSubtleColor() { return getThemeColors().FONT_SUBTLE; }
 
 // =============================================================================
 // Widget Size Helper
@@ -54,9 +57,9 @@ function getWidgetSize(styleKey) {
 // Media Control (Renderer → Main Process)
 // =============================================================================
 
-function playPauseMusic()  { ipcRenderer.send("playPause"); }
-function nextMusic()       { ipcRenderer.send("next"); }
-function previousMusic()   { ipcRenderer.send("previous"); }
+function playPauseMusic() { ipcRenderer.send("playPause"); }
+function nextMusic() { ipcRenderer.send("next"); }
+function previousMusic() { ipcRenderer.send("previous"); }
 
 // =============================================================================
 // Hover Overlay Management (small / medium only)
@@ -76,7 +79,7 @@ function hideOverlay() {
 /** Update the play/pause icon in overlays to reflect current state */
 function updateOverlay() {
   const icon = nowPlayingData && nowPlayingData.state === 1 ? PLAY_ICON : PAUSE_ICON;
-  if (ui.isElementExist("overlay_image"))    ui.setElementProperty("overlay_image",    "path", icon);
+  if (ui.isElementExist("overlay_image")) ui.setElementProperty("overlay_image", "path", icon);
   if (ui.isElementExist("play_pause_image")) ui.setElementProperty("play_pause_image", "path", icon);
 }
 
@@ -92,7 +95,7 @@ function showOverlayForSmallStyle() {
       id: "overlay_shape",
       type: "rectangle",
       x: 0, y: 0, width: SIZE, height: SIZE,
-      fillColor: "rgba(0,0,0,0.8)",
+      fillColor: OVERLAY_COLOR,
       onLeftMouseUp: () => { playPauseMusic(); updateOverlay(); },
     });
     ui.addImage({
@@ -107,7 +110,7 @@ function showOverlayForSmallStyle() {
       id: "overlay_shape",
       type: "rectangle",
       x: 0, y: 0, width: SIZE, height: SIZE,
-      fillColor: "rgba(0,0,0,0.8)",
+      fillColor: OVERLAY_COLOR,
     });
   }
 }
@@ -119,7 +122,7 @@ function showOverlayOfNoMediaForSmallStyle() {
     id: "overlay_shape_no_media",
     type: "rectangle",
     x: 0, y: 0, width: SIZE, height: SIZE,
-    fillColor: "rgba(0,0,0,0.8)",
+    fillColor: OVERLAY_COLOR,
   });
 }
 
@@ -130,7 +133,7 @@ function showOverlayForMediumStyle() {
   const CONTAINER_SIZE = SIZE / 1.8;
 
   if (ui.isElementExist("overlay_shape") || ui.isElementExist("overlay_image") ||
-      ui.isElementExist("previous_image") || ui.isElementExist("next_image")) return;
+    ui.isElementExist("previous_image") || ui.isElementExist("next_image")) return;
 
   ui.beginUpdate();
 
@@ -139,7 +142,7 @@ function showOverlayForMediumStyle() {
     type: "rectangle",
     x: 10 * SCALE, y: 10 * SCALE,
     width: CONTAINER_SIZE, height: CONTAINER_SIZE,
-    fillColor: "rgba(0,0,0,0.8)", radius: 8, strokeWidth: 0,
+    fillColor: OVERLAY_COLOR, radius: 8, strokeWidth: 0,
     onLeftMouseUp: () => { playPauseMusic(); updateOverlay(); },
   });
 
@@ -153,7 +156,7 @@ function showOverlayForMediumStyle() {
   });
 
   const shapeLeft = ui.getElementProperty("overlay_shape", "x");
-  const shapeW    = ui.getElementProperty("overlay_shape", "width");
+  const shapeW = ui.getElementProperty("overlay_shape", "width");
 
   ui.addImage({
     id: "previous_image",
@@ -183,7 +186,7 @@ function showOverlayOfNoMediaForMediumStyle() {
     x: 10 * SCALE, y: 10 * SCALE,
     width: SIZE / 1.8, height: SIZE / 1.8,
     radius: 8, strokeWidth: 0,
-    fillColor: "rgba(0,0,0,0.5)",
+    fillColor: OVERLAY_COLOR,
   });
 }
 
@@ -198,7 +201,7 @@ function showOverlayOfNoMediaForWideStyle() {
     x: 10 * SCALE, y: 15 * SCALE,
     width: W / 2.8, height: H / 1.25,
     radius: 8, strokeWidth: 0,
-    fillColor: "rgba(0,0,0,0.5)",
+    fillColor: OVERLAY_COLOR,
   });
 }
 
@@ -212,7 +215,7 @@ function showOverlayOfNoMediaForLargeStyle() {
     type: "rectangle",
     x: 0, y: 0, width: SIZE, height: SIZE,
     strokeWidth: 0,
-    fillColor: "rgba(0,0,0,0.5)",
+    fillColor: OVERLAY_COLOR,
   });
 }
 
@@ -230,7 +233,7 @@ function showOverlayForLargeStyle() {
     width: SIZE - 15 * SCALE,
     fontSize: 18,
     fontColor: getFontColor(),
-    fontFamily: "Segoe UI",
+    fontFamily: FONT_FACE,
     fontWeight: "bold",
     textAlign: "center",
     textClip: "ellipsis",
@@ -244,7 +247,7 @@ function showOverlayForLargeStyle() {
     width: SIZE - 15 * SCALE,
     fontSize: 16,
     fontColor: getFontSubtleColor(),
-    fontFamily: "Segoe UI",
+    fontFamily: FONT_FACE,
     fontWeight: "lighter",
     textAlign: "center",
     textClip: "ellipsis",
@@ -254,9 +257,9 @@ function showOverlayForLargeStyle() {
   const ctrlsY = ui.getElementProperty("artistName", "y") + 40 * SCALE;
   const cx = SIZE / 2;
 
-  ui.addImage({ id: "previous_image",   x: cx - CTRL_SIZE * 1.5 - 15 * SCALE, y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: PREV_ICON,  onLeftMouseUp: () => previousMusic() });
-  ui.addImage({ id: "play_pause_image", x: cx - CTRL_SIZE / 2,                y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: (nowPlayingData && nowPlayingData.state === 1) ? PLAY_ICON : PAUSE_ICON, onLeftMouseUp: () => playPauseMusic() });
-  ui.addImage({ id: "next_image",       x: cx + CTRL_SIZE / 2 + 15 * SCALE,   y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: NEXT_ICON,  onLeftMouseUp: () => nextMusic() });
+  ui.addImage({ id: "previous_image", x: cx - CTRL_SIZE * 1.5 - 15 * SCALE, y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: PREV_ICON, onLeftMouseUp: () => previousMusic() });
+  ui.addImage({ id: "play_pause_image", x: cx - CTRL_SIZE / 2, y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: (nowPlayingData && nowPlayingData.state === 1) ? PLAY_ICON : PAUSE_ICON, onLeftMouseUp: () => playPauseMusic() });
+  ui.addImage({ id: "next_image", x: cx + CTRL_SIZE / 2 + 15 * SCALE, y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: NEXT_ICON, onLeftMouseUp: () => nextMusic() });
 }
 
 // =============================================================================
@@ -297,8 +300,8 @@ function mediumStyle() {
   ui.addShape({ id: "container", x: 10 * SCALE, y: 10 * SCALE, type: "rectangle", width: CONTAINER_SIZE, height: CONTAINER_SIZE, strokeWidth: 0, radius: 8 });
   ui.addShape({ id: "container_mask", type: "rectangle", width: CONTAINER_SIZE, height: CONTAINER_SIZE, strokeWidth: 0, fillColor: "rgba(200,200,200,0.1)", container: "container" });
   ui.addImage({ id: "thumbnail", x: 0, y: 0, width: CONTAINER_SIZE, height: CONTAINER_SIZE, preserveAspectRatio: "crop", path: DEFAULT_THUMBNAIL, container: "container" });
-  ui.addText({ id: "songTitle",  text: "Song Title",  x: 10 * SCALE, y: CONTAINER_SIZE + 20 * SCALE, width: SIZE - 20 * SCALE, fontSize: 16, fontColor: getFontColor(),      fontFamily: "Segoe UI", fontWeight: "bold",   textAlign: "left", textClip: "ellipsis" });
-  ui.addText({ id: "artistName", text: "Artist Name", x: 10 * SCALE, y: CONTAINER_SIZE + 45 * SCALE, width: SIZE - 20 * SCALE, fontSize: 14, fontColor: getFontSubtleColor(), fontFamily: "Segoe UI", fontWeight: "lighter", textAlign: "left", textClip: "ellipsis" });
+  ui.addText({ id: "songTitle", text: "Song Title", x: 10 * SCALE, y: CONTAINER_SIZE + 20 * SCALE, width: SIZE - 20 * SCALE, fontSize: 16, fontColor: getFontColor(), fontFamily: FONT_FACE, fontWeight: "bold", textAlign: "left", textClip: "ellipsis" });
+  ui.addText({ id: "artistName", text: "Artist Name", x: 10 * SCALE, y: CONTAINER_SIZE + 45 * SCALE, width: SIZE - 20 * SCALE, fontSize: 14, fontColor: getFontSubtleColor(), fontFamily: FONT_FACE, fontWeight: "lighter", textAlign: "left", textClip: "ellipsis" });
   ui.endUpdate();
 }
 
@@ -309,13 +312,13 @@ function wideStyle() {
 
   ui.beginUpdate();
   ui.addShape({ id: "background_Shape", type: "rectangle", width: W, height: H, strokeWidth: 0, fillColor: getBackgroundColor() });
-  ui.addShape({ id: "container",      x: 10 * SCALE, y: 15 * SCALE, type: "rectangle", width: CONTAINER_W, height: CONTAINER_H, strokeWidth: 0, radius: 8 });
+  ui.addShape({ id: "container", x: 10 * SCALE, y: 15 * SCALE, type: "rectangle", width: CONTAINER_W, height: CONTAINER_H, strokeWidth: 0, radius: 8 });
   ui.addShape({ id: "container_mask", type: "rectangle", width: CONTAINER_W, height: CONTAINER_H, strokeWidth: 0, fillColor: "rgba(200,200,200,0.1)", container: "container" });
   ui.addImage({ id: "thumbnail", x: 0, y: 0, width: CONTAINER_W, height: CONTAINER_H, preserveAspectRatio: "crop", path: DEFAULT_THUMBNAIL, container: "container" });
 
   const textLeft = 10 * SCALE + CONTAINER_W + 20 * SCALE;
-  ui.addText({ id: "songTitle",  text: "No Media Playing", x: textLeft, y: 35 * SCALE, width: W - textLeft - 10 * SCALE, fontSize: 18, fontColor: getFontColor(),      fontFamily: "Segoe UI", fontWeight: "bold",   textAlign: "left", textClip: "ellipsis" });
-  ui.addText({ id: "artistName", text: "-",                x: ui.getElementProperty("songTitle", "x") + ui.getElementProperty("songTitle", "width") / 2, y: 75 * SCALE, width: W - textLeft - 10 * SCALE, fontSize: 16, fontColor: getFontSubtleColor(), fontFamily: "Segoe UI", fontWeight: "lighter", textAlign: "center", textClip: "ellipsis" });
+  ui.addText({ id: "songTitle", text: "No Media Playing", x: textLeft, y: 35 * SCALE, width: W - textLeft - 10 * SCALE, fontSize: 18, fontColor: getFontColor(), fontFamily: FONT_FACE, fontWeight: "bold", textAlign: "left", textClip: "ellipsis" });
+  ui.addText({ id: "artistName", text: "-", x: ui.getElementProperty("songTitle", "x") + ui.getElementProperty("songTitle", "width") / 2, y: 75 * SCALE, width: W - textLeft - 10 * SCALE, fontSize: 16, fontColor: getFontSubtleColor(), fontFamily: FONT_FACE, fontWeight: "lighter", textAlign: "center", textClip: "ellipsis" });
 
   const CTRL_SIZE = 25 * SCALE;
   const rightAreaStart = 10 * SCALE + CONTAINER_W;
@@ -323,9 +326,9 @@ function wideStyle() {
   const ctrlsX = rightAreaStart + rightAreaW / 2;
   const ctrlsY = ui.getElementProperty("artistName", "y") + 35 * SCALE;
 
-  ui.addImage({ id: "previous_image",   x: ctrlsX - CTRL_SIZE * 1.5 - 15 * SCALE, y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: PREV_ICON,  onLeftMouseUp: () => previousMusic() });
-  ui.addImage({ id: "play_pause_image", x: ctrlsX - CTRL_SIZE / 2,                y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: (nowPlayingData && nowPlayingData.state === 1) ? PLAY_ICON : PAUSE_ICON, onLeftMouseUp: () => playPauseMusic() });
-  ui.addImage({ id: "next_image",       x: ctrlsX + CTRL_SIZE / 2 + 15 * SCALE,   y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: NEXT_ICON,  onLeftMouseUp: () => nextMusic() });
+  ui.addImage({ id: "previous_image", x: ctrlsX - CTRL_SIZE * 1.5 - 15 * SCALE, y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: PREV_ICON, onLeftMouseUp: () => previousMusic() });
+  ui.addImage({ id: "play_pause_image", x: ctrlsX - CTRL_SIZE / 2, y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: (nowPlayingData && nowPlayingData.state === 1) ? PLAY_ICON : PAUSE_ICON, onLeftMouseUp: () => playPauseMusic() });
+  ui.addImage({ id: "next_image", x: ctrlsX + CTRL_SIZE / 2 + 15 * SCALE, y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: NEXT_ICON, onLeftMouseUp: () => nextMusic() });
 
   ui.endUpdate();
 }
@@ -360,16 +363,16 @@ function largeStyle() {
 // Initial Render
 // =============================================================================
 
-if (playerStyle === "small")  smallStyle();
+if (playerStyle === "small") smallStyle();
 else if (playerStyle === "medium") mediumStyle();
-else if (playerStyle === "wide")   wideStyle();
+else if (playerStyle === "wide") wideStyle();
 else largeStyle();
 
 // Show "no media" placeholder overlays based on the configured style
-if (playerStyle === "small")  showOverlayOfNoMediaForSmallStyle();
+if (playerStyle === "small") showOverlayOfNoMediaForSmallStyle();
 if (playerStyle === "medium") showOverlayOfNoMediaForMediumStyle();
-if (playerStyle === "wide")   showOverlayOfNoMediaForWideStyle();
-if (playerStyle === "large")  showOverlayOfNoMediaForLargeStyle();
+if (playerStyle === "wide") showOverlayOfNoMediaForWideStyle();
+if (playerStyle === "large") showOverlayOfNoMediaForLargeStyle();
 
 // =============================================================================
 // IPC — Update Now Playing Data
@@ -385,10 +388,10 @@ ipcRenderer.on("nowPlayingUpdate", (event, data) => {
 
   // Update text labels
   if (data.available) {
-    if (ui.isElementExist("songTitle"))  ui.setElementProperty("songTitle",  "text", data.title);
+    if (ui.isElementExist("songTitle")) ui.setElementProperty("songTitle", "text", data.title);
     if (ui.isElementExist("artistName")) ui.setElementProperty("artistName", "text", data.artist);
   } else {
-    if (ui.isElementExist("songTitle"))  ui.setElementProperty("songTitle",  "text", "No Media Playing");
+    if (ui.isElementExist("songTitle")) ui.setElementProperty("songTitle", "text", "No Media Playing");
     if (ui.isElementExist("artistName")) ui.setElementProperty("artistName", "text", "-");
   }
 
@@ -397,10 +400,10 @@ ipcRenderer.on("nowPlayingUpdate", (event, data) => {
 
   // Show/hide "no media" overlay per style
   const showFns = {
-    small:  showOverlayOfNoMediaForSmallStyle,
+    small: showOverlayOfNoMediaForSmallStyle,
     medium: showOverlayOfNoMediaForMediumStyle,
-    wide:   showOverlayOfNoMediaForWideStyle,
-    large:  showOverlayOfNoMediaForLargeStyle,
+    wide: showOverlayOfNoMediaForWideStyle,
+    large: showOverlayOfNoMediaForLargeStyle,
   };
 
   if (hasMedia) {
