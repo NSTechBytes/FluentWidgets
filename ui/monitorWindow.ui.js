@@ -64,11 +64,22 @@ function getLevelColor(percent) {
 }
 
 // =============================================================================
+// Widget Size Helper
+// =============================================================================
+
+/** Get the { w, h } dimensions (already scaled) for the current widget style */
+function getWidgetSize() {
+  const key = currentStyle.toUpperCase();
+  const s = JSON_DATA.WIDGET_SIZES[key] || JSON_DATA.WIDGET_SIZES.LARGE;
+  return { w: s.WIDTH * SCALE, h: s.HEIGHT * SCALE };
+}
+
+// =============================================================================
 // Style Builders
 // =============================================================================
 
 function smallStyle() {
-  const SIZE = 75 * SCALE;
+  const { w: SIZE } = getWidgetSize();
   const cx = (SIZE - RING_SIZE) / 2;
 
   ui.beginUpdate();
@@ -110,7 +121,7 @@ function smallStyle() {
 }
 
 function mediumStyle() {
-  const SIZE = 160 * SCALE;
+  const { w: SIZE } = getWidgetSize();
   const GAP = 15 * SCALE;
   const rowWidth = RING_SIZE * 2 + GAP;
   const colHeight = RING_SIZE * 2 + GAP;
@@ -164,8 +175,7 @@ function mediumStyle() {
 }
 
 function wideStyle() {
-  const W = 350 * SCALE;
-  const H = 160 * SCALE;
+  const { w: W, h: H } = getWidgetSize();
   const GAP = 22 * SCALE;
   const totalWidth = RING_SIZE * 4 + GAP * 3;
   const startX = (W - totalWidth) / 2;
@@ -225,8 +235,7 @@ function wideStyle() {
 }
 
 function largeStyle() {
-  const W = 350 * SCALE;
-  const H = 360 * SCALE;
+  const { w: W, h: H } = getWidgetSize();
   const PAD = 20 * SCALE;
   const SECTION_H = H / 4;
 

@@ -26,11 +26,21 @@ function getTextColor()        { return getThemeColors().FONT; }
 function getSubtleColor()      { return getThemeColors().SUBTLE; }
 
 // =============================================================================
+// Widget Size Helper
+// =============================================================================
+
+function getWidgetSize() {
+  const key = currentStyle.toUpperCase();
+  const s = JSON_DATA.WIDGET_SIZES[key] || JSON_DATA.WIDGET_SIZES.LARGE;
+  return { w: s.WIDTH * SCALE, h: s.HEIGHT * SCALE };
+}
+
+// =============================================================================
 // Style Builders
 // =============================================================================
 
 function largeStyle() {
-  const SIZE = 360 * SCALE;
+  const { w: SIZE } = getWidgetSize();
 
   ui.beginUpdate();
 
@@ -66,8 +76,7 @@ function largeStyle() {
 }
 
 function wideStyle() {
-  const W = 360 * SCALE;
-  const H = 160 * SCALE;
+  const { w: W, h: H } = getWidgetSize();
 
   ui.beginUpdate();
 
@@ -86,7 +95,7 @@ function wideStyle() {
 }
 
 function mediumStyle() {
-  const SIZE = 160 * SCALE;
+  const { w: SIZE } = getWidgetSize();
 
   ui.beginUpdate();
 
@@ -98,7 +107,7 @@ function mediumStyle() {
 }
 
 function smallStyle() {
-  const SIZE = 75 * SCALE;
+  const { w: SIZE } = getWidgetSize();
 
   ui.beginUpdate();
 

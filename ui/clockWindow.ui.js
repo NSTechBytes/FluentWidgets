@@ -46,6 +46,17 @@ function getTextColor()        { return getThemeColors().FONT; }
 function getAccentColor()      { return JSON_DATA.APPEARANCE.ACCENT_COLOR; }
 
 // =============================================================================
+// Widget Size Helper
+// =============================================================================
+
+/** Get the { w, h } dimensions (already scaled) for the current widget style */
+function getWidgetSize() {
+  const key = currentStyle.toUpperCase();
+  const s = JSON_DATA.WIDGET_SIZES[key] || JSON_DATA.WIDGET_SIZES.LARGE;
+  return { w: s.WIDTH * SCALE, h: s.HEIGHT * SCALE };
+}
+
+// =============================================================================
 // Style Builders
 // =============================================================================
 
@@ -61,7 +72,7 @@ function setClockGeometry(size, hLen, mLen, sLen) {
 }
 
 function smallStyle() {
-  const SIZE = 75 * SCALE;
+  const { w: SIZE } = getWidgetSize();
   const CENTER = SIZE / 2;
   const PAD = 5 * SCALE;
   const FACE = SIZE - PAD * 2;
@@ -97,7 +108,7 @@ function smallStyle() {
 }
 
 function mediumStyle() {
-  const SIZE = 160 * SCALE;
+  const { w: SIZE } = getWidgetSize();
   const CENTER = SIZE / 2;
   const PAD = 10 * SCALE;
   const FACE = SIZE - PAD * 2;
@@ -119,8 +130,7 @@ function mediumStyle() {
 }
 
 function wideStyle() {
-  const W = 350 * SCALE;
-  const H = 160 * SCALE;
+  const { w: W, h: H } = getWidgetSize();
 
   ui.beginUpdate();
 
@@ -134,7 +144,7 @@ function wideStyle() {
 }
 
 function largeStyle() {
-  const SIZE = 360 * SCALE;
+  const { w: SIZE } = getWidgetSize();
   const CENTER = SIZE / 2;
   const PAD = 10 * SCALE;
 

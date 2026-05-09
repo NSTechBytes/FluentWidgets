@@ -8,6 +8,12 @@
         "LATITUDE": 51.5072,
         "LONGITUDE": -0.1276
     },
+    "WIDGET_SIZES": {
+        "SMALL": { "WIDTH": 75, "HEIGHT": 75 },
+        "MEDIUM": { "WIDTH": 160, "HEIGHT": 160 },
+        "WIDE": { "WIDTH": 350, "HEIGHT": 160 },
+        "LARGE": { "WIDTH": 360, "HEIGHT": 360 }
+    },
     "BB_STYLE": {
         "BLUR_TYPE": "blur",
         "ROUND_TYPE": "round"

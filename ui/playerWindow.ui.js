@@ -37,6 +37,20 @@ function getFontColor()        { return getThemeColors().FONT; }
 function getFontSubtleColor()  { return getThemeColors().FONT_SUBTLE; }
 
 // =============================================================================
+// Widget Size Helper
+// =============================================================================
+
+/** The configured widget style name (controls overlay appearance) */
+const playerStyle = JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW;
+
+/** Get the { w, h } dimensions (already scaled) for a given style key */
+function getWidgetSize(styleKey) {
+  const key = (styleKey || playerStyle).toUpperCase();
+  const s = JSON_DATA.WIDGET_SIZES[key] || JSON_DATA.WIDGET_SIZES.LARGE;
+  return { w: s.WIDTH * SCALE, h: s.HEIGHT * SCALE };
+}
+
+// =============================================================================
 // Media Control (Renderer → Main Process)
 // =============================================================================
 
@@ -71,7 +85,7 @@ function updateOverlay() {
 function showOverlayForSmallStyle() {
   if (ui.isElementExist("overlay_shape") || ui.isElementExist("overlay_image")) return;
 
-  const SIZE = 75 * SCALE;
+  const { w: SIZE } = getWidgetSize("small");
 
   if (nowPlayingData && nowPlayingData.available) {
     ui.addShape({
@@ -100,10 +114,11 @@ function showOverlayForSmallStyle() {
 
 function showOverlayOfNoMediaForSmallStyle() {
   if (ui.isElementExist("overlay_shape_no_media")) return;
+  const { w: SIZE } = getWidgetSize("small");
   ui.addShape({
     id: "overlay_shape_no_media",
     type: "rectangle",
-    x: 0, y: 0, width: 75 * SCALE, height: 75 * SCALE,
+    x: 0, y: 0, width: SIZE, height: SIZE,
     fillColor: "rgba(0,0,0,0.8)",
   });
 }
@@ -111,7 +126,7 @@ function showOverlayOfNoMediaForSmallStyle() {
 // --- Medium style overlays -----------------------------------------------
 
 function showOverlayForMediumStyle() {
-  const SIZE = 160 * SCALE;
+  const { w: SIZE } = getWidgetSize("medium");
   const CONTAINER_SIZE = SIZE / 1.8;
 
   if (ui.isElementExist("overlay_shape") || ui.isElementExist("overlay_image") ||
@@ -161,7 +176,7 @@ function showOverlayForMediumStyle() {
 
 function showOverlayOfNoMediaForMediumStyle() {
   if (ui.isElementExist("overlay_shape_no_media")) return;
-  const SIZE = 160 * SCALE;
+  const { w: SIZE } = getWidgetSize("medium");
   ui.addShape({
     id: "overlay_shape_no_media",
     type: "rectangle",
@@ -176,8 +191,7 @@ function showOverlayOfNoMediaForMediumStyle() {
 
 function showOverlayOfNoMediaForWideStyle() {
   if (ui.isElementExist("overlay_shape_no_media")) return;
-  const W = 350 * SCALE;
-  const H = 160 * SCALE;
+  const { w: W, h: H } = getWidgetSize("wide");
   ui.addShape({
     id: "overlay_shape_no_media",
     type: "rectangle",
@@ -192,10 +206,11 @@ function showOverlayOfNoMediaForWideStyle() {
 
 function showOverlayOfNoMediaForLargeStyle() {
   if (ui.isElementExist("overlay_shape_no_media")) return;
+  const { w: SIZE } = getWidgetSize("large");
   ui.addShape({
     id: "overlay_shape_no_media",
     type: "rectangle",
-    x: 0, y: 0, width: 360 * SCALE, height: 360 * SCALE,
+    x: 0, y: 0, width: SIZE, height: SIZE,
     strokeWidth: 0,
     fillColor: "rgba(0,0,0,0.5)",
   });
@@ -204,7 +219,7 @@ function showOverlayOfNoMediaForLargeStyle() {
 // --- Large style hover overlay (media info + controls) -------------------
 
 function showOverlayForLargeStyle() {
-  const SIZE = 360 * SCALE;
+  const { w: SIZE } = getWidgetSize("large");
   const HOVER_H = SIZE - 120 * SCALE;
 
   ui.addText({
@@ -249,7 +264,7 @@ function showOverlayForLargeStyle() {
 // =============================================================================
 
 function smallStyle() {
-  const SIZE = 75 * SCALE;
+  const { w: SIZE } = getWidgetSize("small");
 
   ui.beginUpdate();
   ui.addShape({
@@ -266,7 +281,7 @@ function smallStyle() {
 }
 
 function mediumStyle() {
-  const SIZE = 160 * SCALE;
+  const { w: SIZE } = getWidgetSize("medium");
   const CONTAINER_SIZE = SIZE / 1.8;
 
   ui.beginUpdate();
@@ -288,8 +303,7 @@ function mediumStyle() {
 }
 
 function wideStyle() {
-  const W = 350 * SCALE;
-  const H = 160 * SCALE;
+  const { w: W, h: H } = getWidgetSize("wide");
   const CONTAINER_W = W / 2.8;
   const CONTAINER_H = H / 1.25;
 
@@ -317,7 +331,7 @@ function wideStyle() {
 }
 
 function largeStyle() {
-  const SIZE = 360 * SCALE;
+  const { w: SIZE } = getWidgetSize("large");
   const HOVER_H = SIZE - 120 * SCALE;
 
   ui.beginUpdate();
@@ -349,7 +363,6 @@ function largeStyle() {
 largeStyle();
 
 // Show "no media" placeholder overlays based on the configured style
-const playerStyle = JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW;
 if (playerStyle === "small")  showOverlayOfNoMediaForSmallStyle();
 if (playerStyle === "medium") showOverlayOfNoMediaForMediumStyle();
 if (playerStyle === "wide")   showOverlayOfNoMediaForWideStyle();
