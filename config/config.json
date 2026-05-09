@@ -1,6 +1,6 @@
 {
     "version": "1.0.0",
-    "SCALE": "1",
+    "SCALE": 1,
     "FONT_TYPE": "Segoe UI",
     "USE_24_HOUR_FORMAT": false,
     "LOCATION": {
@@ -21,22 +21,25 @@
     },
     "APPEARANCE": {
         "THEME": "dark",
-        "LOW_LEVEL_COLOR": "rgb(45, 210, 85)",
-        "MEDIUM_LEVEL_COLOR": "yellow",
-        "HIGH_LEVEL_COLOR": "red",
         "ACCENT_COLOR": "#0078D4",
-        "THEME_DARK_CONFIG": {
-            "BACKGROUND_COLOR": "rgba(18, 18, 18, 0.2)",
-            "FONT_COLOR": "white",
-            "SUBTLE_FONT_COLOR": "rgba(255, 255, 255, 0.2)",
-            "ICON_COLOR": "white"
+        "LEVEL_COLORS": {
+            "LOW": "rgb(45, 210, 85)",
+            "MEDIUM": "rgb(255, 193, 7)",
+            "HIGH": "rgb(244, 67, 54)"
         },
-        "THEME_LIGHT_CONFIG": {
-            "BACKGROUND_COLOR": "rgba(255, 255, 255, 0.2)",
-            "FONT_COLOR": "black",
-            "SUBTLE_FONT_COLOR": "rgba(0, 0, 0, 0.2)",
-            "SUBTLE_COLOR": "rgba(0, 0, 0, 0.2)",
-            "ICON_COLOR": "black"
+        "DARK": {
+            "BACKGROUND": "rgba(18, 18, 18, 0.2)",
+            "FONT": "white",
+            "FONT_SUBTLE": "rgba(255, 255, 255, 0.2)",
+            "SUBTLE": "rgba(255, 255, 255, 0.2)",
+            "ICON": "white"
+        },
+        "LIGHT": {
+            "BACKGROUND": "rgba(255, 255, 255, 0.2)",
+            "FONT": "black",
+            "FONT_SUBTLE": "rgba(0, 0, 0, 0.2)",
+            "SUBTLE": "rgba(0, 0, 0, 0.2)",
+            "ICON": "black"
         }
     }
 }

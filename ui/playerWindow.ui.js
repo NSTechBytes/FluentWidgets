@@ -1,269 +1,218 @@
-var JSON_DATA = ipcRenderer.invoke("getJSON");
-var SCALE = JSON_DATA.SCALE;
-var NOWPLAYING_DATA = null;
+// =============================================================================
+// FluentWidgets — Now Playing (Media Player) Widget (Renderer)
+// =============================================================================
+// Displays the currently-playing media (thumbnail, title, artist) and
+// provides play/pause/next/previous controls on hover (small / medium) or
+// persistently (wide / large). The main process polls the NowPlaying addon
+// every second and sends the latest track data via IPC.
+// =============================================================================
 
-var DEFAULT_THUMBNAIL = "assets/player/music.png";
-var PLAY_ICON = "assets/player/pause.png";
-var PAUSE_ICON = "assets/player/play.png";
-var PREVIOUS_ICON = "assets/player/back.png";
-var NEXT_ICON = "assets/player/next.png";
+const JSON_DATA = ipcRenderer.invoke("getJSON");
+const SCALE = parseFloat(JSON_DATA.SCALE) || 1;
 
-//============================================================================
-// Color getter functions
-//============================================================================
+/** The most recent now-playing payload from the main process */
+let nowPlayingData = null;
 
-function getBackgroundColor() {
-  if (JSON_DATA.APPEARANCE.THEME == "dark") {
-    return JSON_DATA.APPEARANCE.THEME_DARK_CONFIG.BACKGROUND_COLOR;
-  } else {
-    return JSON_DATA.APPEARANCE.THEME_LIGHT_CONFIG.BACKGROUND_COLOR;
-  }
+// -----------------------------------------------------------------------------
+// Asset paths
+// -----------------------------------------------------------------------------
+const DEFAULT_THUMBNAIL = "assets/player/music.png";
+const PLAY_ICON   = "assets/player/pause.png";   // shown when music IS playing
+const PAUSE_ICON  = "assets/player/play.png";    // shown when music is paused
+const PREV_ICON   = "assets/player/back.png";
+const NEXT_ICON   = "assets/player/next.png";
+
+// =============================================================================
+// Theme Helpers
+// =============================================================================
+
+function getThemeColors() {
+  return JSON_DATA.APPEARANCE.THEME === "dark"
+    ? JSON_DATA.APPEARANCE.DARK
+    : JSON_DATA.APPEARANCE.LIGHT;
 }
 
-function getFontColor() {
-  if (JSON_DATA.APPEARANCE.THEME == "dark") {
-    console.log(JSON_DATA.APPEARANCE.THEME_DARK_CONFIG.FONT_COLOR);
-    return JSON_DATA.APPEARANCE.THEME_DARK_CONFIG.FONT_COLOR;
-  } else {
-    console.log(JSON_DATA.APPEARANCE.THEME_LIGHT_CONFIG.FONT_COLOR);
-    return JSON_DATA.APPEARANCE.THEME_LIGHT_CONFIG.FONT_COLOR;
-  }
-}
+function getBackgroundColor()  { return getThemeColors().BACKGROUND; }
+function getFontColor()        { return getThemeColors().FONT; }
+function getFontSubtleColor()  { return getThemeColors().FONT_SUBTLE; }
 
-function getFontSubtleColor() {
-  if (JSON_DATA.APPEARANCE.THEME == "dark") {
-    return JSON_DATA.APPEARANCE.THEME_DARK_CONFIG.SUBTLE_FONT_COLOR;
-  } else {
-    return JSON_DATA.APPEARANCE.THEME_LIGHT_CONFIG.SUBTLE_FONT_COLOR;
-  }
-}
-//============================================================================
-// Media control functions
-//============================================================================
+// =============================================================================
+// Media Control (Renderer → Main Process)
+// =============================================================================
 
-function playPauseMusic() {
-  ipcRenderer.send("playPause");
-}
+function playPauseMusic()  { ipcRenderer.send("playPause"); }
+function nextMusic()       { ipcRenderer.send("next"); }
+function previousMusic()   { ipcRenderer.send("previous"); }
 
-function nextMusic() {
-  ipcRenderer.send("next");
-}
+// =============================================================================
+// Hover Overlay Management (small / medium only)
+// =============================================================================
 
-function previousMusic() {
-  ipcRenderer.send("previous");
-}
-
-//============================================================================
-// Overlay functions
-//============================================================================
-
+/** Remove all overlay UI elements */
 function hideOverlay() {
-  var isLarge = JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW == "large";
-  if (ui.isElementExist("overlay_shape")) ui.removeElementById("overlay_shape");
-  if (ui.isElementExist("overlay_image")) ui.removeElementById("overlay_image");
-  if (ui.isElementExist("previous_image")) ui.removeElementById("previous_image");
-  if (ui.isElementExist("next_image")) ui.removeElementById("next_image");
-  if (isLarge) {
-    if (ui.isElementExist("play_pause_image")) ui.removeElementById("play_pause_image");
-    ui.removeElementById("songTitle");
-    ui.removeElementById("artistName");
-  }
+  const isLarge = JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW === "large";
+  const ids = ["overlay_shape", "overlay_image", "previous_image", "next_image"];
+  if (isLarge) ids.push("play_pause_image", "songTitle", "artistName");
+
+  ids.forEach((id) => {
+    if (ui.isElementExist(id)) ui.removeElementById(id);
+  });
 }
 
+/** Update the play/pause icon in overlays to reflect current state */
 function updateOverlay() {
-  var path = (NOWPLAYING_DATA && NOWPLAYING_DATA.state == 1) ? PLAY_ICON : PAUSE_ICON;
-  if (ui.isElementExist("overlay_image")) {
-    ui.setElementProperty("overlay_image", "path", path);
-  }
-  if (ui.isElementExist("play_pause_image")) {
-    ui.setElementProperty("play_pause_image", "path", path);
+  const icon = nowPlayingData && nowPlayingData.state === 1 ? PLAY_ICON : PAUSE_ICON;
+  if (ui.isElementExist("overlay_image"))    ui.setElementProperty("overlay_image",    "path", icon);
+  if (ui.isElementExist("play_pause_image")) ui.setElementProperty("play_pause_image", "path", icon);
+}
+
+// --- Small style overlays ------------------------------------------------
+
+function showOverlayForSmallStyle() {
+  if (ui.isElementExist("overlay_shape") || ui.isElementExist("overlay_image")) return;
+
+  const SIZE = 75 * SCALE;
+
+  if (nowPlayingData && nowPlayingData.available) {
+    ui.addShape({
+      id: "overlay_shape",
+      type: "rectangle",
+      x: 0, y: 0, width: SIZE, height: SIZE,
+      fillColor: "rgba(0,0,0,0.8)",
+      onLeftMouseUp: () => { playPauseMusic(); updateOverlay(); },
+    });
+    ui.addImage({
+      id: "overlay_image",
+      x: SIZE / 4, y: SIZE / 4,
+      width: SIZE / 2, height: SIZE / 2,
+      preserveAspectRatio: "crop",
+      path: nowPlayingData.state === 1 ? PLAY_ICON : PAUSE_ICON,
+    });
+  } else {
+    ui.addShape({
+      id: "overlay_shape",
+      type: "rectangle",
+      x: 0, y: 0, width: SIZE, height: SIZE,
+      fillColor: "rgba(0,0,0,0.8)",
+    });
   }
 }
 
 function showOverlayOfNoMediaForSmallStyle() {
   if (ui.isElementExist("overlay_shape_no_media")) return;
-
-  var SIZE = 75 * SCALE;
   ui.addShape({
     id: "overlay_shape_no_media",
     type: "rectangle",
-    x: 0,
-    y: 0,
-    width: SIZE,
-    height: SIZE,
+    x: 0, y: 0, width: 75 * SCALE, height: 75 * SCALE,
     fillColor: "rgba(0,0,0,0.8)",
   });
 }
 
-function showOverlayForSmallStyle() {
-  if (ui.isElementExist("overlay_shape") || ui.isElementExist("overlay_image"))
-    return;
-
-  var SIZE = 75 * SCALE;
-  if (NOWPLAYING_DATA && NOWPLAYING_DATA.available) {
-    ui.addShape({
-      id: "overlay_shape",
-      type: "rectangle",
-      x: 0,
-      y: 0,
-      width: SIZE,
-      height: SIZE,
-      fillColor: "rgba(0,0,0,0.8)",
-      onLeftMouseUp: function () {
-        playPauseMusic();
-        if (NOWPLAYING_DATA) {
-          updateOverlay();
-        }
-      },
-    });
-    ui.addImage({
-      id: "overlay_image",
-      x: SIZE / 2 - SIZE / 2 / 2,
-      y: SIZE / 2 - SIZE / 2 / 2,
-      width: SIZE / 2,
-      height: SIZE / 2,
-      preserveAspectRatio: "crop",
-      path: NOWPLAYING_DATA.state == 1 ? PLAY_ICON : PAUSE_ICON,
-    });
-  } else {
-    ui.addShape({
-      id: "overlay_shape",
-      type: "rectangle",
-      x: 0,
-      y: 0,
-      width: SIZE,
-      height: SIZE,
-      fillColor: "rgba(0,0,0,0.8)",
-    });
-  }
-}
-
-function showOverlayOfNoMediaForMediumStyle() {
-  if (ui.isElementExist("overlay_shape_no_media")) return;
-
-  var SIZE = 160 * SCALE;
-  var CONTAINER_SIZE = SIZE / 1.8;
-
-  ui.addShape({
-    id: "overlay_shape_no_media",
-    type: "rectangle",
-    x: 10 * SCALE,
-    y: 10 * SCALE,
-    width: CONTAINER_SIZE,
-    height: CONTAINER_SIZE,
-    radius: 8,
-    strokeWidth: 0,
-    fillColor: "rgba(0,0,0,0.5)",
-  });
-}
-
-function showOverlayOfNoMediaForWideStyle() {
-  if (ui.isElementExist("overlay_shape_no_media")) return;
-
-  var BACKGROUND_WIDTH = 350 * SCALE;
-  var BACKGROUND_HEIGHT = 160 * SCALE;
-  var CONTAINER_SIZE = BACKGROUND_WIDTH / 2.8;
-  var CONTAINER_HEIGHT = BACKGROUND_HEIGHT / 1.25;
-
-  ui.addShape({
-    id: "overlay_shape_no_media",
-    type: "rectangle",
-    x: 10 * SCALE,
-    y: 15 * SCALE,
-    width: CONTAINER_SIZE,
-    height: CONTAINER_HEIGHT,
-    radius: 8,
-    strokeWidth: 0,
-    fillColor: "rgba(0,0,0,0.5)",
-  });
-}
+// --- Medium style overlays -----------------------------------------------
 
 function showOverlayForMediumStyle() {
-  var SIZE = 160 * SCALE;
-  var CONTAINER_SIZE = SIZE / 1.8;
+  const SIZE = 160 * SCALE;
+  const CONTAINER_SIZE = SIZE / 1.8;
 
-  if (ui.isElementExist("overlay_shape") || ui.isElementExist("overlay_image") || ui.isElementExist("previous_image") || ui.isElementExist("next_image"))
-    return;
+  if (ui.isElementExist("overlay_shape") || ui.isElementExist("overlay_image") ||
+      ui.isElementExist("previous_image") || ui.isElementExist("next_image")) return;
 
   ui.beginUpdate();
 
   ui.addShape({
     id: "overlay_shape",
     type: "rectangle",
-    x: 10 * SCALE,
-    y: 10 * SCALE,
-    width: CONTAINER_SIZE,
-    height: CONTAINER_SIZE,
-    fillColor: "rgba(0,0,0,0.8)",
-    radius: 8,
-    strokeWidth: 0,
-    onLeftMouseUp: function () {
-      playPauseMusic();
-      if (NOWPLAYING_DATA) {
-        updateOverlay();
-      }
-    },
+    x: 10 * SCALE, y: 10 * SCALE,
+    width: CONTAINER_SIZE, height: CONTAINER_SIZE,
+    fillColor: "rgba(0,0,0,0.8)", radius: 8, strokeWidth: 0,
+    onLeftMouseUp: () => { playPauseMusic(); updateOverlay(); },
   });
 
   ui.addImage({
     id: "overlay_image",
-    x: (10 * SCALE) + (CONTAINER_SIZE / 2) - (CONTAINER_SIZE / 2 / 2),
-    y: (10 * SCALE) + (CONTAINER_SIZE / 2) - (CONTAINER_SIZE / 2 / 2),
-    width: CONTAINER_SIZE / 2,
-    height: CONTAINER_SIZE / 2,
+    x: 10 * SCALE + CONTAINER_SIZE / 4,
+    y: 10 * SCALE + CONTAINER_SIZE / 4,
+    width: CONTAINER_SIZE / 2, height: CONTAINER_SIZE / 2,
     preserveAspectRatio: "crop",
-    path: NOWPLAYING_DATA.state == 1 ? PLAY_ICON : PAUSE_ICON,
+    path: nowPlayingData && nowPlayingData.state === 1 ? PLAY_ICON : PAUSE_ICON,
   });
+
+  const shapeLeft = ui.getElementProperty("overlay_shape", "x");
+  const shapeW    = ui.getElementProperty("overlay_shape", "width");
 
   ui.addImage({
     id: "previous_image",
-    x: ui.getElementProperty("overlay_shape", "x") + ui.getElementProperty("overlay_shape", "width") + (20 * SCALE),
-    y: ui.getElementProperty("overlay_shape", "y") + (5 * SCALE),
-    width: CONTAINER_SIZE / 3,
-    height: CONTAINER_SIZE / 3,
-    path: PREVIOUS_ICON,
+    x: shapeLeft + shapeW + 20 * SCALE,
+    y: ui.getElementProperty("overlay_shape", "y") + 5 * SCALE,
+    width: CONTAINER_SIZE / 3, height: CONTAINER_SIZE / 3,
+    path: PREV_ICON,
   });
 
   ui.addImage({
     id: "next_image",
     x: ui.getElementProperty("previous_image", "x"),
-    y: ui.getElementProperty("previous_image", "y") + (45 * SCALE),
-    width: CONTAINER_SIZE / 3,
-    height: CONTAINER_SIZE / 3,
+    y: ui.getElementProperty("previous_image", "y") + 45 * SCALE,
+    width: CONTAINER_SIZE / 3, height: CONTAINER_SIZE / 3,
     path: NEXT_ICON,
   });
 
   ui.endUpdate();
 }
 
-function showOverlayOfNoMediaForLargeStyle() {
+function showOverlayOfNoMediaForMediumStyle() {
   if (ui.isElementExist("overlay_shape_no_media")) return;
-
-  var SIZE = 360 * SCALE;
-
+  const SIZE = 160 * SCALE;
   ui.addShape({
     id: "overlay_shape_no_media",
     type: "rectangle",
-    x: 0,
-    y: 0,
-    width: SIZE,
-    height: SIZE,
+    x: 10 * SCALE, y: 10 * SCALE,
+    width: SIZE / 1.8, height: SIZE / 1.8,
+    radius: 8, strokeWidth: 0,
+    fillColor: "rgba(0,0,0,0.5)",
+  });
+}
+
+// --- Wide style overlays (no-media placeholder) --------------------------
+
+function showOverlayOfNoMediaForWideStyle() {
+  if (ui.isElementExist("overlay_shape_no_media")) return;
+  const W = 350 * SCALE;
+  const H = 160 * SCALE;
+  ui.addShape({
+    id: "overlay_shape_no_media",
+    type: "rectangle",
+    x: 10 * SCALE, y: 15 * SCALE,
+    width: W / 2.8, height: H / 1.25,
+    radius: 8, strokeWidth: 0,
+    fillColor: "rgba(0,0,0,0.5)",
+  });
+}
+
+// --- Large style overlay (no-media placeholder) --------------------------
+
+function showOverlayOfNoMediaForLargeStyle() {
+  if (ui.isElementExist("overlay_shape_no_media")) return;
+  ui.addShape({
+    id: "overlay_shape_no_media",
+    type: "rectangle",
+    x: 0, y: 0, width: 360 * SCALE, height: 360 * SCALE,
     strokeWidth: 0,
     fillColor: "rgba(0,0,0,0.5)",
   });
 }
 
-function showOverlayForLargeStyle() {
+// --- Large style hover overlay (media info + controls) -------------------
 
-  var SIZE = 360 * SCALE;
-  var HOVER_CONTAINER_SIZE = SIZE - 120 * SCALE;
+function showOverlayForLargeStyle() {
+  const SIZE = 360 * SCALE;
+  const HOVER_H = SIZE - 120 * SCALE;
 
   ui.addText({
     id: "songTitle",
-    text: NOWPLAYING_DATA.title,
+    text: nowPlayingData.title,
     x: SIZE / 2,
-    y: SIZE - HOVER_CONTAINER_SIZE / 2.3,
-    width: SIZE - (15 * SCALE),
+    y: SIZE - HOVER_H / 2.3,
+    width: SIZE - 15 * SCALE,
     fontSize: 18,
     fontColor: getFontColor(),
     fontFamily: "Segoe UI",
@@ -274,448 +223,179 @@ function showOverlayForLargeStyle() {
 
   ui.addText({
     id: "artistName",
-    text: NOWPLAYING_DATA.artist,
+    text: nowPlayingData.artist,
     x: SIZE / 2,
-    y: ui.getElementProperty("songTitle", "y") + (30 * SCALE),
-    width: SIZE - (15 * SCALE),
+    y: ui.getElementProperty("songTitle", "y") + 30 * SCALE,
+    width: SIZE - 15 * SCALE,
     fontSize: 16,
     fontColor: getFontSubtleColor(),
     fontFamily: "Segoe UI",
     fontWeight: "lighter",
     textAlign: "center",
-    textClip: "ellipsis"
+    textClip: "ellipsis",
   });
 
-  var CONTROL_SIZE = 25 * SCALE;
-  var CONTROLS_Y = ui.getElementProperty("artistName", "y") + (40 * SCALE);
-  var CENTER_X = SIZE / 2;
+  const CTRL_SIZE = 25 * SCALE;
+  const ctrlsY = ui.getElementProperty("artistName", "y") + 40 * SCALE;
+  const cx = SIZE / 2;
 
-  ui.addImage({
-    id: "previous_image",
-    x: CENTER_X - (CONTROL_SIZE * 1.5) - (15 * SCALE),
-    y: CONTROLS_Y,
-    width: CONTROL_SIZE,
-    height: CONTROL_SIZE,
-    path: PREVIOUS_ICON,
-    onLeftMouseUp: function () {
-      previousMusic();
-    }
-  });
-
-  ui.addImage({
-    id: "play_pause_image",
-    x: CENTER_X - (CONTROL_SIZE / 2),
-    y: CONTROLS_Y,
-    width: CONTROL_SIZE,
-    height: CONTROL_SIZE,
-    path: (NOWPLAYING_DATA && NOWPLAYING_DATA.state == 1) ? PLAY_ICON : PAUSE_ICON,
-    onLeftMouseUp: function () {
-      playPauseMusic();
-    }
-  });
-
-  ui.addImage({
-    id: "next_image",
-    x: CENTER_X + (CONTROL_SIZE / 2) + (15 * SCALE),
-    y: CONTROLS_Y,
-    width: CONTROL_SIZE,
-    height: CONTROL_SIZE,
-    path: NEXT_ICON,
-    onLeftMouseUp: function () {
-      nextMusic();
-    }
-  });
+  ui.addImage({ id: "previous_image",   x: cx - CTRL_SIZE * 1.5 - 15 * SCALE, y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: PREV_ICON,  onLeftMouseUp: () => previousMusic() });
+  ui.addImage({ id: "play_pause_image", x: cx - CTRL_SIZE / 2,                y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: (nowPlayingData && nowPlayingData.state === 1) ? PLAY_ICON : PAUSE_ICON, onLeftMouseUp: () => playPauseMusic() });
+  ui.addImage({ id: "next_image",       x: cx + CTRL_SIZE / 2 + 15 * SCALE,   y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: NEXT_ICON,  onLeftMouseUp: () => nextMusic() });
 }
-//============================================================================
-// Styles
-//============================================================================
+
+// =============================================================================
+// Style Builders
+// =============================================================================
 
 function smallStyle() {
-  var SIZE = 75 * SCALE;
+  const SIZE = 75 * SCALE;
+
   ui.beginUpdate();
   ui.addShape({
     id: "background_Shape",
     type: "rectangle",
-    width: SIZE,
-    height: SIZE,
+    width: SIZE, height: SIZE,
     strokeWidth: 0,
     fillColor: getBackgroundColor(),
-    onMouseOver: function () {
-      if (NOWPLAYING_DATA && NOWPLAYING_DATA.available) {
-        showOverlayForSmallStyle();
-      }
-    },
-    onMouseLeave: function () {
-      hideOverlay();
-    },
+    onMouseOver: () => { if (nowPlayingData && nowPlayingData.available) showOverlayForSmallStyle(); },
+    onMouseLeave: hideOverlay,
   });
-
-  ui.addImage({
-    id: "thumbnail",
-    x: 0,
-    y: 0,
-    width: SIZE,
-    height: SIZE,
-    preserveAspectRatio: "crop",
-    path: DEFAULT_THUMBNAIL,
-  });
+  ui.addImage({ id: "thumbnail", x: 0, y: 0, width: SIZE, height: SIZE, preserveAspectRatio: "crop", path: DEFAULT_THUMBNAIL });
   ui.endUpdate();
 }
 
 function mediumStyle() {
-  var SIZE = 160 * SCALE;
-  var CONTAINER_SIZE = SIZE / 1.8;
+  const SIZE = 160 * SCALE;
+  const CONTAINER_SIZE = SIZE / 1.8;
 
   ui.beginUpdate();
-
   ui.addShape({
     id: "background_Shape",
     type: "rectangle",
-    width: SIZE,
-    height: SIZE,
+    width: SIZE, height: SIZE,
     strokeWidth: 0,
     fillColor: getBackgroundColor(),
-    onMouseOver: function () {
-      if (NOWPLAYING_DATA && NOWPLAYING_DATA.available) {
-        showOverlayForMediumStyle();
-      }
-    },
-    onMouseLeave: function () {
-      hideOverlay();
-    },
+    onMouseOver: () => { if (nowPlayingData && nowPlayingData.available) showOverlayForMediumStyle(); },
+    onMouseLeave: hideOverlay,
   });
-
-  ui.addShape({
-    id: "container",
-    x: 10 * SCALE,
-    y: 10 * SCALE,
-    type: "rectangle",
-    width: CONTAINER_SIZE,
-    height: CONTAINER_SIZE,
-    strokeWidth: 0,
-    radius: 8
-  });
-
-  ui.addShape({
-    id: "container_mask",
-    type: "rectangle",
-    width: CONTAINER_SIZE,
-    height: CONTAINER_SIZE,
-    strokeWidth: 0,
-    fillColor: "rgba(200,200,200,0.1)",
-    container: "container"
-  });
-
-  ui.addImage({
-    id: "thumbnail",
-    x: 0,
-    y: 0,
-    width: CONTAINER_SIZE,
-    height: CONTAINER_SIZE,
-    preserveAspectRatio: "crop",
-    path: DEFAULT_THUMBNAIL,
-    container: "container"
-  });
-
-  ui.addText({
-    id: "songTitle",
-    text: "Song Title",
-    x: 10 * SCALE,
-    y: CONTAINER_SIZE + 20 * SCALE,
-    width: SIZE - (20 * SCALE),
-    fontSize: 16,
-    fontColor: getFontColor(),
-    fontFamily: "Segoe UI",
-    fontWeight: "bold",
-    textAlign: "left",
-    textClip: "ellipsis",
-  });
-
-  ui.addText({
-    id: "artistName",
-    text: "Artist Name",
-    x: 10 * SCALE,
-    y: CONTAINER_SIZE + 45 * SCALE,
-    width: SIZE - (20 * SCALE),
-    fontSize: 14,
-    fontColor: getFontSubtleColor(),
-    fontFamily: "Segoe UI",
-    fontWeight: "lighter",
-    textAlign: "left",
-    textClip: "ellipsis"
-  });
-
+  ui.addShape({ id: "container", x: 10 * SCALE, y: 10 * SCALE, type: "rectangle", width: CONTAINER_SIZE, height: CONTAINER_SIZE, strokeWidth: 0, radius: 8 });
+  ui.addShape({ id: "container_mask", type: "rectangle", width: CONTAINER_SIZE, height: CONTAINER_SIZE, strokeWidth: 0, fillColor: "rgba(200,200,200,0.1)", container: "container" });
+  ui.addImage({ id: "thumbnail", x: 0, y: 0, width: CONTAINER_SIZE, height: CONTAINER_SIZE, preserveAspectRatio: "crop", path: DEFAULT_THUMBNAIL, container: "container" });
+  ui.addText({ id: "songTitle",  text: "Song Title",  x: 10 * SCALE, y: CONTAINER_SIZE + 20 * SCALE, width: SIZE - 20 * SCALE, fontSize: 16, fontColor: getFontColor(),      fontFamily: "Segoe UI", fontWeight: "bold",   textAlign: "left", textClip: "ellipsis" });
+  ui.addText({ id: "artistName", text: "Artist Name", x: 10 * SCALE, y: CONTAINER_SIZE + 45 * SCALE, width: SIZE - 20 * SCALE, fontSize: 14, fontColor: getFontSubtleColor(), fontFamily: "Segoe UI", fontWeight: "lighter", textAlign: "left", textClip: "ellipsis" });
   ui.endUpdate();
 }
 
 function wideStyle() {
-  var BACKGROUND_WIDTH = 350 * SCALE;
-  var BACKGROUND_HEIGHT = 160 * SCALE;
-
-  var CONTAINER_WIDTH = BACKGROUND_WIDTH / 2.8;
-  var CONTAINER_HEIGHT = BACKGROUND_HEIGHT / 1.25;
+  const W = 350 * SCALE;
+  const H = 160 * SCALE;
+  const CONTAINER_W = W / 2.8;
+  const CONTAINER_H = H / 1.25;
 
   ui.beginUpdate();
-  ui.addShape({
-    id: "background_Shape",
-    type: "rectangle",
-    width: BACKGROUND_WIDTH,
-    height: BACKGROUND_HEIGHT,
-    strokeWidth: 0,
-    fillColor: getBackgroundColor(),
-  });
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: W, height: H, strokeWidth: 0, fillColor: getBackgroundColor() });
+  ui.addShape({ id: "container",      x: 10 * SCALE, y: 15 * SCALE, type: "rectangle", width: CONTAINER_W, height: CONTAINER_H, strokeWidth: 0, radius: 8 });
+  ui.addShape({ id: "container_mask", type: "rectangle", width: CONTAINER_W, height: CONTAINER_H, strokeWidth: 0, fillColor: "rgba(200,200,200,0.1)", container: "container" });
+  ui.addImage({ id: "thumbnail", x: 0, y: 0, width: CONTAINER_W, height: CONTAINER_H, preserveAspectRatio: "crop", path: DEFAULT_THUMBNAIL, container: "container" });
 
-  ui.addShape({
-    id: "container",
-    x: 10 * SCALE,
-    y: 15 * SCALE,
-    type: "rectangle",
-    width: CONTAINER_WIDTH,
-    height: CONTAINER_HEIGHT,
-    strokeWidth: 0,
-    radius: 8
-  });
+  const textLeft = 10 * SCALE + CONTAINER_W + 20 * SCALE;
+  ui.addText({ id: "songTitle",  text: "No Media Playing", x: textLeft, y: 35 * SCALE, width: W - textLeft - 10 * SCALE, fontSize: 18, fontColor: getFontColor(),      fontFamily: "Segoe UI", fontWeight: "bold",   textAlign: "left", textClip: "ellipsis" });
+  ui.addText({ id: "artistName", text: "-",                x: ui.getElementProperty("songTitle", "x") + ui.getElementProperty("songTitle", "width") / 2, y: 75 * SCALE, width: W - textLeft - 10 * SCALE, fontSize: 16, fontColor: getFontSubtleColor(), fontFamily: "Segoe UI", fontWeight: "lighter", textAlign: "center", textClip: "ellipsis" });
 
-  ui.addShape({
-    id: "container_mask",
-    type: "rectangle",
-    width: CONTAINER_WIDTH,
-    height: CONTAINER_HEIGHT,
-    strokeWidth: 0,
-    fillColor: "rgba(200,200,200,0.1)",
-    container: "container"
-  });
+  const CTRL_SIZE = 25 * SCALE;
+  const rightAreaStart = 10 * SCALE + CONTAINER_W;
+  const rightAreaW = W - rightAreaStart - 10 * SCALE;
+  const ctrlsX = rightAreaStart + rightAreaW / 2;
+  const ctrlsY = ui.getElementProperty("artistName", "y") + 35 * SCALE;
 
-  ui.addImage({
-    id: "thumbnail",
-    x: 0,
-    y: 0,
-    width: CONTAINER_WIDTH,
-    height: CONTAINER_HEIGHT,
-    preserveAspectRatio: "crop",
-    path: DEFAULT_THUMBNAIL,
-    container: "container"
-  });
-
-  ui.addText({
-    id: "songTitle",
-    text: "No Media Playing",
-    x: 10 * SCALE + CONTAINER_WIDTH + 20 * SCALE,
-    y: 35 * SCALE,
-    width: BACKGROUND_WIDTH - (10 * SCALE + CONTAINER_WIDTH + 30 * SCALE),
-    fontSize: 18,
-    fontColor: getFontColor(),
-    fontFamily: "Segoe UI",
-    fontWeight: "bold",
-    textAlign: "left",
-    textClip: "ellipsis",
-  });
-
-  ui.addText({
-    id: "artistName",
-    text: "-",
-    x: (ui.getElementProperty("songTitle", "x") + ui.getElementProperty("songTitle", "width") / 2),
-    y: 75 * SCALE,
-    width: BACKGROUND_WIDTH - (10 * SCALE + CONTAINER_WIDTH + 30 * SCALE),
-    fontSize: 16,
-    fontColor: getFontSubtleColor(),
-    fontFamily: "Segoe UI",
-    fontWeight: "lighter",
-    textAlign: "center",
-    textClip: "ellipsis"
-  });
-
-  var CONTROL_SIZE = 25 * SCALE;
-  var CONTROLS_Y = ui.getElementProperty("artistName", "y") + (35 * SCALE);
-  var RIGHT_AREA_START = 10 * SCALE + CONTAINER_WIDTH;
-  var RIGHT_AREA_WIDTH = BACKGROUND_WIDTH - RIGHT_AREA_START - 10 * SCALE;
-  var CENTER_X = RIGHT_AREA_START + RIGHT_AREA_WIDTH / 2;
-
-  ui.addImage({
-    id: "previous_image",
-    x: CENTER_X - (CONTROL_SIZE * 1.5) - (15 * SCALE),
-    y: CONTROLS_Y,
-    width: CONTROL_SIZE,
-    height: CONTROL_SIZE,
-    path: PREVIOUS_ICON,
-    onLeftMouseUp: function () {
-      previousMusic();
-    }
-  });
-
-  ui.addImage({
-    id: "play_pause_image",
-    x: CENTER_X - (CONTROL_SIZE / 2),
-    y: CONTROLS_Y,
-    width: CONTROL_SIZE,
-    height: CONTROL_SIZE,
-    path: (NOWPLAYING_DATA && NOWPLAYING_DATA.state == 1) ? PLAY_ICON : PAUSE_ICON,
-    onLeftMouseUp: function () {
-      playPauseMusic();
-    }
-  });
-
-  ui.addImage({
-    id: "next_image",
-    x: CENTER_X + (CONTROL_SIZE / 2) + (15 * SCALE),
-    y: CONTROLS_Y,
-    width: CONTROL_SIZE,
-    height: CONTROL_SIZE,
-    path: NEXT_ICON,
-    onLeftMouseUp: function () {
-      nextMusic();
-    }
-  });
+  ui.addImage({ id: "previous_image",   x: ctrlsX - CTRL_SIZE * 1.5 - 15 * SCALE, y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: PREV_ICON,  onLeftMouseUp: () => previousMusic() });
+  ui.addImage({ id: "play_pause_image", x: ctrlsX - CTRL_SIZE / 2,                y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: (nowPlayingData && nowPlayingData.state === 1) ? PLAY_ICON : PAUSE_ICON, onLeftMouseUp: () => playPauseMusic() });
+  ui.addImage({ id: "next_image",       x: ctrlsX + CTRL_SIZE / 2 + 15 * SCALE,   y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: NEXT_ICON,  onLeftMouseUp: () => nextMusic() });
 
   ui.endUpdate();
 }
 
 function largeStyle() {
-  var SIZE = 360 * SCALE;
-  var HOVER_CONTAINER_SIZE = SIZE - 120 * SCALE;
+  const SIZE = 360 * SCALE;
+  const HOVER_H = SIZE - 120 * SCALE;
 
   ui.beginUpdate();
-
   ui.addShape({
     id: "background_Shape",
     type: "rectangle",
-    width: SIZE,
-    height: SIZE,
+    width: SIZE, height: SIZE,
     fillColor: getBackgroundColor(),
-    onMouseOver: function () {
-      if (NOWPLAYING_DATA && NOWPLAYING_DATA.available) {
-        ui.setElementProperty("container", "height", HOVER_CONTAINER_SIZE);
+    onMouseOver: () => {
+      if (nowPlayingData && nowPlayingData.available) {
+        ui.setElementProperty("container", "height", HOVER_H);
         showOverlayForLargeStyle();
       }
-
     },
-    onMouseLeave: function () {
+    onMouseLeave: () => {
       ui.setElementProperty("container", "height", SIZE);
       hideOverlay();
     },
   });
-
-  ui.addShape({
-    id: "container",
-    x: 0,
-    y: 0,
-    type: "rectangle",
-    width: SIZE,
-    height: SIZE,
-    strokeWidth: 0,
-  });
-
-  ui.addImage({
-    id: "thumbnail",
-    x: 0,
-    y: 0,
-    width: SIZE,
-    height: SIZE,
-    preserveAspectRatio: "crop",
-    path: DEFAULT_THUMBNAIL,
-    container: "container"
-  });
-
+  ui.addShape({ id: "container", x: 0, y: 0, type: "rectangle", width: SIZE, height: SIZE, strokeWidth: 0 });
+  ui.addImage({ id: "thumbnail", x: 0, y: 0, width: SIZE, height: SIZE, preserveAspectRatio: "crop", path: DEFAULT_THUMBNAIL, container: "container" });
   ui.endUpdate();
 }
 
+// =============================================================================
+// Initial Render (always large — player only has one visual layout)
+// =============================================================================
+
 largeStyle();
 
-if (JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW == "small") {
-  showOverlayOfNoMediaForSmallStyle();
-}
-if (JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW == "medium") {
-  showOverlayOfNoMediaForMediumStyle();
-}
+// Show "no media" placeholder overlays based on the configured style
+const playerStyle = JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW;
+if (playerStyle === "small")  showOverlayOfNoMediaForSmallStyle();
+if (playerStyle === "medium") showOverlayOfNoMediaForMediumStyle();
+if (playerStyle === "wide")   showOverlayOfNoMediaForWideStyle();
+if (playerStyle === "large")  showOverlayOfNoMediaForLargeStyle();
 
-if (JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW == "wide") {
-  showOverlayOfNoMediaForWideStyle();
-}
-if (JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW == "large") {
-  showOverlayOfNoMediaForLargeStyle();
-}
-
-//============================================================================
-// Events
-//============================================================================
+// =============================================================================
+// IPC — Update Now Playing Data
+// =============================================================================
 
 ipcRenderer.on("nowPlayingUpdate", (event, data) => {
-  // console.log(JSON.stringify(data, null, 2));
-  NOWPLAYING_DATA = data;
+  nowPlayingData = data;
 
+  // Update thumbnail
   if (ui.isElementExist("thumbnail")) {
-    if (data.available) {
-      ui.setElementProperty("thumbnail", "path", data.thumbnail);
-    } else {
-      ui.setElementProperty("thumbnail", "path", DEFAULT_THUMBNAIL);
-    }
+    ui.setElementProperty("thumbnail", "path", data.available ? data.thumbnail : DEFAULT_THUMBNAIL);
   }
 
+  // Update text labels
   if (data.available) {
-    if (ui.isElementExist("songTitle"))
-      ui.setElementProperty("songTitle", "text", data.title);
-    if (ui.isElementExist("artistName"))
-      ui.setElementProperty("artistName", "text", data.artist);
-  }
-  else {
-    if (ui.isElementExist("songTitle"))
-      ui.setElementProperty("songTitle", "text", "No Media Playing");
-    if (ui.isElementExist("artistName"))
-      ui.setElementProperty("artistName", "text", "-");
+    if (ui.isElementExist("songTitle"))  ui.setElementProperty("songTitle",  "text", data.title);
+    if (ui.isElementExist("artistName")) ui.setElementProperty("artistName", "text", data.artist);
+  } else {
+    if (ui.isElementExist("songTitle"))  ui.setElementProperty("songTitle",  "text", "No Media Playing");
+    if (ui.isElementExist("artistName")) ui.setElementProperty("artistName", "text", "-");
   }
 
-  var hasMedia = NOWPLAYING_DATA && NOWPLAYING_DATA.available;
-  var isSmall = JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW == "small";
-  var isMedium = JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW == "medium";
-  var isWide = JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW == "wide";
-  var isLarge = JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW == "large";
+  const hasMedia = data.available;
+  const style = JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW;
 
-  if (isSmall) {
-    if (hasMedia) {
-      if (ui.isElementExist("overlay_shape_no_media")) {
-        ui.removeElementById("overlay_shape_no_media");
-      }
-    } else {
-      if (!ui.isElementExist("overlay_shape_no_media")) {
-        showOverlayOfNoMediaForSmallStyle();
-      }
+  // Show/hide "no media" overlay per style
+  const showFns = {
+    small:  showOverlayOfNoMediaForSmallStyle,
+    medium: showOverlayOfNoMediaForMediumStyle,
+    wide:   showOverlayOfNoMediaForWideStyle,
+    large:  showOverlayOfNoMediaForLargeStyle,
+  };
+
+  if (hasMedia) {
+    if (ui.isElementExist("overlay_shape_no_media")) {
+      ui.removeElementById("overlay_shape_no_media");
+    }
+  } else if (showFns[style]) {
+    if (!ui.isElementExist("overlay_shape_no_media")) {
+      showFns[style]();
     }
   }
 
-  if (isMedium) {
-    if (hasMedia) {
-      if (ui.isElementExist("overlay_shape_no_media")) {
-        ui.removeElementById("overlay_shape_no_media");
-      }
-    } else {
-      if (!ui.isElementExist("overlay_shape_no_media")) {
-        showOverlayOfNoMediaForMediumStyle();
-      }
-    }
-  }
-
-  if (isWide) {
-    if (hasMedia) {
-      if (ui.isElementExist("overlay_shape_no_media")) {
-        ui.removeElementById("overlay_shape_no_media");
-      }
-    } else {
-      if (!ui.isElementExist("overlay_shape_no_media")) {
-        showOverlayOfNoMediaForWideStyle();
-      }
-    }
-  }
-
-  if (isLarge) {
-    if (hasMedia) {
-      if (ui.isElementExist("overlay_shape_no_media")) {
-        ui.removeElementById("overlay_shape_no_media");
-      }
-    } else {
-      if (!ui.isElementExist("overlay_shape_no_media")) {
-        showOverlayOfNoMediaForLargeStyle();
-      }
-    }
-  }
   updateOverlay();
 });

@@ -1,271 +1,249 @@
+// =============================================================================
+// FluentWidgets - Main Process Entry Point
+// =============================================================================
+// This file runs in NovaDesk's main process. It manages widget lifecycles,
+// pulls data from system APIs, and sends updates to each widget window
+// over IPC channels. Each widget has its own UI script (in ui/) running
+// as a separate renderer process.
+// =============================================================================
+
 import { widgetWindow, addon, app } from "novadesk";
 import * as fs from "fs";
 import { json, cpu, memory, network, disk, time, webFetch } from "system";
 
-var JSON_DATA = {};
-var JSON_FILE_PATH = path.join(
+// -----------------------------------------------------------------------------
+// Configuration
+// -----------------------------------------------------------------------------
+
+/** The full user configuration object loaded from disk */
+let config = {};
+
+/** Absolute path where the user's config.json is stored */
+const CONFIG_PATH = path.join(
   app.getAppDataPath(),
   "FluentWidgets",
   "config.json",
 );
 
-var MONITOR_WINDOW = null;
-var MONITOR_WINDOW_TIMER = null;
+/** Path to the default config shipped with the widget package */
+const DEFAULT_CONFIG_PATH = path.join(__dirname, "config/config.json");
 
-var CLOCK_WINDOW = null;
-var CLOCK_TIMER = null;
+// -----------------------------------------------------------------------------
+// Widget Window References & Timers
+// -----------------------------------------------------------------------------
+// Each widget gets its own window instance and a timer that dictates
+// how often we push fresh data to it.
 
-var CALENDAR_WINDOW = null;
-var CALENDAR_TIMER = null;
+let monitorWindow = null;
+let monitorTimer = null;
 
-var WEATHER_WINDOW = null;
-var WEATHER_TIMER = null;
+let clockWindow = null;
+let clockTimer = null;
 
-var PLAYER_WINDOW = null;
-var PLAYER_TIMER = null;
+let calendarWindow = null;
+let calendarTimer = null;
 
-const bb_Addon = addon.load(path.join(__addonsPath, "BlurBehind"));
-const np_Addon = addon.load(path.join(__addonsPath, "NowPlaying"));
+let weatherWindow = null;
+let weatherTimer = null;
 
-function parseJSON() {
-  if (!fs.exists(JSON_FILE_PATH)) {
-    fs.mkdir(path.join(app.getAppDataPath(), "FluentWidgets"));
-    fs.copyFile(path.join(__dirname, "config/config.json"), JSON_FILE_PATH);
-    JSON_DATA = json.read(JSON_FILE_PATH);
+let playerWindow = null;
+let playerTimer = null;
+
+// -----------------------------------------------------------------------------
+// Native Addons
+// -----------------------------------------------------------------------------
+
+/** Adds Windows 10/11 acrylic or mica backdrop blur to widget windows */
+const blurBehind = addon.load(path.join(__addonsPath, "BlurBehind"));
+
+/** Reads currently-playing media info from Windows (title, artist, thumbnail) */
+const nowPlaying = addon.load(path.join(__addonsPath, "NowPlaying"));
+
+// =============================================================================
+// Configuration Loading
+// =============================================================================
+
+/**
+ * Load (or create) the user configuration file.
+ * - On first run: copy the default config into the app data folder.
+ * - On subsequent runs: merge defaults so new keys are always present.
+ */
+function loadConfig() {
+  const configDir = path.join(app.getAppDataPath(), "FluentWidgets");
+
+  if (!fs.exists(CONFIG_PATH)) {
+    fs.mkdir(configDir);
+    fs.copyFile(DEFAULT_CONFIG_PATH, CONFIG_PATH);
+    config = json.read(CONFIG_PATH);
   } else {
-    fs.copyFile(
-      path.join(__dirname, "config/config.json"),
-      JSON_FILE_PATH,
-      true,
-    );
-    JSON_DATA = json.read(JSON_FILE_PATH);
+    fs.copyFile(DEFAULT_CONFIG_PATH, CONFIG_PATH, true);
+    config = json.read(CONFIG_PATH);
   }
 
-  if (!JSON_DATA.RUNTIME) JSON_DATA.RUNTIME = {};
-  if (typeof JSON_DATA.RUNTIME.CLOCK_RENDER_ID !== "number") {
-    JSON_DATA.RUNTIME.CLOCK_RENDER_ID = 0;
+  // Ensure runtime tracking values exist (survives config resets)
+  if (!config.RUNTIME) config.RUNTIME = {};
+  if (typeof config.RUNTIME.CLOCK_RENDER_ID !== "number") {
+    config.RUNTIME.CLOCK_RENDER_ID = 0;
   }
 }
 
-parseJSON();
+loadConfig();
 
-ipcMain.handle("getJSON", () => {
-  return JSON_DATA;
-});
+// -----------------------------------------------------------------------------
+// Expose config to all renderer processes
+// -----------------------------------------------------------------------------
+ipcMain.handle("getJSON", () => config);
 
-function applyBB(hwnd) {
-  bb_Addon.apply(
-    hwnd,
-    JSON_DATA.BB_STYLE.BLUR_TYPE,
-    JSON_DATA.BB_STYLE.ROUND_TYPE,
+// =============================================================================
+// Shared Helpers
+// =============================================================================
+
+/**
+ * Apply the BlurBehind effect to a widget window.
+ * @param {object} win - A widgetWindow instance
+ */
+function applyBlurBehind(win) {
+  blurBehind.apply(
+    String(win.getHandle()),
+    config.BB_STYLE.BLUR_TYPE,
+    config.BB_STYLE.ROUND_TYPE,
   );
 }
 
-// ==========================================
-// Monitor Window Functions
-// ==========================================
+/**
+ * Build a right-click context menu for switching widget styles.
+ *
+ * Every widget follows the same pattern: "Manage" header, separator,
+ * then one item per style (small / medium / wide / large).
+ *
+ * @param {string}   currentStyle - The currently-active style name
+ * @param {Function} onSelect     - Called with the new style name when user clicks
+ * @returns {Array} Menu items ready for widgetWindow.setContextMenu()
+ */
+function buildStyleMenu(currentStyle, onSelect) {
+  const styles = ["small", "medium", "wide", "large"];
+  return [
+    { text: "Manage", action: () => console.log("Manage clicked") },
+    { type: "separator" },
+    ...styles.map((style) => ({
+      text: style.charAt(0).toUpperCase() + style.slice(1),
+      checked: currentStyle === style,
+      action: () => onSelect(style),
+    })),
+  ];
+}
 
-function monitorWindowStats() {
-  const CPU_USAGE = cpu.usage();
-  const MEMORY_USAGE = memory.usagePercent();
-  const DISK_USAGE = disk.writeSpeed();
-  const NETWORK_USAGE = network.rxSpeed();
+/**
+ * Create a widget window, apply blur, and return it.
+ * @param {string} id         - Unique window identifier
+ * @param {string} scriptPath - Path (relative to package root) to the UI script
+ * @returns {object} The widgetWindow instance
+ */
+function createWidgetWindow(id, scriptPath) {
+  const win = new widgetWindow({ id, script: scriptPath, show: false });
+  applyBlurBehind(win);
+  return win;
+}
 
+// =============================================================================
+// Monitor Widget — CPU / RAM / Disk / Network gauges
+// =============================================================================
+
+function publishMonitorStats() {
   ipcMain.send("monitor-window-stats", {
-    cpu: CPU_USAGE,
-    memory: MEMORY_USAGE,
-    disk: DISK_USAGE,
-    network: NETWORK_USAGE,
+    cpu: cpu.usage(),
+    memory: memory.usagePercent(),
+    disk: disk.writeSpeed(),
+    network: network.rxSpeed(),
   });
 }
 
 function updateMonitorStyle(style) {
-  JSON_DATA.WINDOW_STYLES.MONITOR_WINDOW = style;
-  json.write(JSON_FILE_PATH, JSON_DATA);
-  setMonitorContextMenu();
-  MONITOR_WINDOW.refresh();
+  config.WINDOW_STYLES.MONITOR_WINDOW = style;
+  json.write(CONFIG_PATH, config);
+  monitorWindow.setContextMenu(buildStyleMenu(style, updateMonitorStyle));
+  monitorWindow.refresh();
 }
 
-function setMonitorContextMenu() {
-  const currentStyle = JSON_DATA.WINDOW_STYLES.MONITOR_WINDOW;
-  MONITOR_WINDOW.setContextMenu([
-    {
-      text: "Manage",
-      action: () => console.log("Manage clicked - Logging to console"),
-    },
-    { type: "separator" },
-    {
-      text: "Small",
-      checked: currentStyle === "small",
-      action: () => updateMonitorStyle("small"),
-    },
-    {
-      text: "Medium",
-      checked: currentStyle === "medium",
-      action: () => updateMonitorStyle("medium"),
-    },
-    {
-      text: "Wide",
-      checked: currentStyle === "wide",
-      action: () => updateMonitorStyle("wide"),
-    },
-    {
-      text: "Large",
-      checked: currentStyle === "large",
-      action: () => updateMonitorStyle("large"),
-    },
-  ]);
+function loadMonitorWidget() {
+  monitorWindow = createWidgetWindow("MONITOR_WINDOW", "ui/monitorWindow.ui.js");
+  monitorWindow.setContextMenu(
+    buildStyleMenu(config.WINDOW_STYLES.MONITOR_WINDOW, updateMonitorStyle),
+  );
+  publishMonitorStats();
+  monitorTimer = setInterval(publishMonitorStats, 1000);
+  monitorWindow.show();
 }
 
-function loadMonitorWindow() {
-  MONITOR_WINDOW = new widgetWindow({
-    id: "MONITOR_WINDOW",
-    script: "ui/monitorWindow.ui.js",
-    show: false,
+// =============================================================================
+// Clock Widget — Analog / Digital clock
+// =============================================================================
+
+function publishClockData() {
+  const use24 = config.USE_24_HOUR_FORMAT;
+  const timeFormat = use24 ? "%H:%M" : "%I:%M";
+
+  ipcMain.send("clockUpdate", {
+    style: config.WINDOW_STYLES.CLOCK_WINDOW,
+    renderId: config.RUNTIME.CLOCK_RENDER_ID,
+    hour24: parseInt(time.time("%H"), 10),
+    minute: parseInt(time.time("%M"), 10),
+    second: parseInt(time.time("%S"), 10),
+    timeText: time.time(timeFormat),
+    secondsText: time.time("%S"),
+    dateText: time.time("%A, %B %d"),
   });
-  applyBB(String(MONITOR_WINDOW.getHandle()));
-  setMonitorContextMenu();
-  monitorWindowStats();
-  MONITOR_WINDOW_TIMER = setInterval(monitorWindowStats, 1000);
-  MONITOR_WINDOW.show();
-}
 
-// ==========================================
-// Clock Window Functions
-// ==========================================
+  // Separate channels let the UI update text independently of the hands
+  ipcMain.send("timeUpdate", time.time(timeFormat));
+  ipcMain.send("secondsUpdate", time.time("%S"));
+  ipcMain.send("dateUpdate", time.time("%A, %B %d"));
+}
 
 function updateClockStyle(style) {
-  JSON_DATA.WINDOW_STYLES.CLOCK_WINDOW = style;
-  JSON_DATA.RUNTIME.CLOCK_RENDER_ID += 1;
-  json.write(JSON_FILE_PATH, JSON_DATA);
+  config.WINDOW_STYLES.CLOCK_WINDOW = style;
+  config.RUNTIME.CLOCK_RENDER_ID += 1;
+  json.write(CONFIG_PATH, config);
 
-  // Avoid visual flicker while changing widget style.
-  if (CLOCK_TIMER) {
-    clearInterval(CLOCK_TIMER);
-    CLOCK_TIMER = null;
+  // Stop the old timer so we don't push data to a stale renderer
+  if (clockTimer) {
+    clearInterval(clockTimer);
+    clockTimer = null;
   }
 
-  CLOCK_WINDOW.refresh();
-  setClockContextMenu();
+  clockWindow.refresh();
+  clockWindow.setContextMenu(buildStyleMenu(style, updateClockStyle));
 
-  // Delay first publish slightly so refreshed UI script is fully ready.
+  // Wait a brief moment so the newly-rendered UI script is ready
   setTimeout(() => {
     publishClockData();
-    CLOCK_TIMER = setInterval(publishClockData, 1000);
+    clockTimer = setInterval(publishClockData, 1000);
   }, 120);
 }
 
-function setClockContextMenu() {
-  const currentStyle = JSON_DATA.WINDOW_STYLES.CLOCK_WINDOW;
-  CLOCK_WINDOW.setContextMenu([
-    {
-      text: "Small",
-      checked: currentStyle === "small",
-      action: () => updateClockStyle("small"),
-    },
-    {
-      text: "Medium",
-      checked: currentStyle === "medium",
-      action: () => updateClockStyle("medium"),
-    },
-    {
-      text: "Wide",
-      checked: currentStyle === "wide",
-      action: () => updateClockStyle("wide"),
-    },
-    {
-      text: "Large",
-      checked: currentStyle === "large",
-      action: () => updateClockStyle("large"),
-    },
-  ]);
-}
-
 function loadClockWidget() {
-  CLOCK_WINDOW = new widgetWindow({
-    id: "CLOCK_WINDOW",
-    script: "ui/clockWindow.ui.js",
-    show: false,
-  });
-  applyBB(String(CLOCK_WINDOW.getHandle()));
-  setClockContextMenu();
+  clockWindow = createWidgetWindow("CLOCK_WINDOW", "ui/clockWindow.ui.js");
+  clockWindow.setContextMenu(
+    buildStyleMenu(config.WINDOW_STYLES.CLOCK_WINDOW, updateClockStyle),
+  );
   publishClockData();
-  CLOCK_TIMER = setInterval(publishClockData, 1000);
-  CLOCK_WINDOW.show();
+  clockTimer = setInterval(publishClockData, 1000);
+  clockWindow.show();
 }
 
-function publishClockData() {
-  const timeFormat = JSON_DATA.USE_24_HOUR_FORMAT ? "%H:%M" : "%I:%M";
-  const timeStr = time.time(timeFormat);
-  const secondsStr = time.time("%S");
-  const hour24 = parseInt(time.time("%H"), 10);
-  const minute = parseInt(time.time("%M"), 10);
-  const second = parseInt(secondsStr, 10);
-  const dateStr = time.time("%A, %B %d");
+// =============================================================================
+// Calendar Widget — Day / month grid
+// =============================================================================
 
-  ipcMain.send("clockUpdate", {
-    style: JSON_DATA.WINDOW_STYLES.CLOCK_WINDOW,
-    renderId: JSON_DATA.RUNTIME.CLOCK_RENDER_ID,
-    hour24: hour24,
-    minute: minute,
-    second: second,
-    timeText: timeStr,
-    secondsText: secondsStr,
-    dateText: dateStr,
-  });
+const MONTH_NAMES = [
+  "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
+  "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER",
+];
 
-  ipcMain.send("timeUpdate", timeStr);
-  ipcMain.send("secondsUpdate", secondsStr);
-  ipcMain.send("dateUpdate", dateStr);
-}
-
-// ==========================================
-// Calendar Window Functions
-// ==========================================
-
-function updateCalendarStyle(style) {
-  JSON_DATA.WINDOW_STYLES.CALENDAR_WINDOW = style;
-  json.write(JSON_FILE_PATH, JSON_DATA);
-
-  if (CALENDAR_TIMER) {
-    clearInterval(CALENDAR_TIMER);
-    CALENDAR_TIMER = null;
-  }
-
-  CALENDAR_WINDOW.refresh();
-  setCalendarContextMenu();
-
-  setTimeout(() => {
-    publishCalendarData();
-    CALENDAR_TIMER = setInterval(publishCalendarData, 60000);
-  }, 16);
-}
-
-function setCalendarContextMenu() {
-  const currentStyle = JSON_DATA.WINDOW_STYLES.CALENDAR_WINDOW;
-  CALENDAR_WINDOW.setContextMenu([
-    {
-      text: "Small",
-      checked: currentStyle === "small",
-      action: () => updateCalendarStyle("small"),
-    },
-    {
-      text: "Medium",
-      checked: currentStyle === "medium",
-      action: () => updateCalendarStyle("medium"),
-    },
-    {
-      text: "Wide",
-      checked: currentStyle === "wide",
-      action: () => updateCalendarStyle("wide"),
-    },
-    {
-      text: "Large",
-      checked: currentStyle === "large",
-      action: () => updateCalendarStyle("large"),
-    },
-  ]);
-}
+const DAY_NAMES = [
+  "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY",
+  "THURSDAY", "FRIDAY", "SATURDAY",
+];
 
 function publishCalendarData() {
   const now = new Date();
@@ -273,220 +251,172 @@ function publishCalendarData() {
   const month = now.getMonth();
   const date = now.getDate();
 
-  const monthNames = [
-    "JANUARY",
-    "FEBRUARY",
-    "MARCH",
-    "APRIL",
-    "MAY",
-    "JUNE",
-    "JULY",
-    "AUGUST",
-    "SEPTEMBER",
-    "OCTOBER",
-    "NOVEMBER",
-    "DECEMBER",
-  ];
-  const monthName = monthNames[month];
-
-  const dayNames = [
-    "SUNDAY",
-    "MONDAY",
-    "TUESDAY",
-    "WEDNESDAY",
-    "THURSDAY",
-    "FRIDAY",
-    "SATURDAY",
-  ];
-  const dayName = dayNames[now.getDay()];
-
+  // Convert Sunday-based .getDay() to Monday-based (Mon=0 … Sun=6)
   const firstDay = new Date(year, month, 1);
-  let startDay = firstDay.getDay();
-  startDay = startDay === 0 ? 6 : startDay - 1; // Mon=0, Sun=6
-
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
 
   ipcMain.send("calendarUpdate", {
-    monthName: monthName,
-    dayName: dayName,
-    startDay: startDay,
-    daysInMonth: daysInMonth,
+    monthName: MONTH_NAMES[month],
+    dayName: DAY_NAMES[now.getDay()],
+    startDay,
+    daysInMonth: new Date(year, month + 1, 0).getDate(),
     currentDate: date,
   });
 }
 
-function loadCalendarWidget() {
-  CALENDAR_WINDOW = new widgetWindow({
-    id: "CALENDAR_WINDOW",
-    script: "ui/calendarWindow.ui.js",
-    show: false,
-  });
-  applyBB(String(CALENDAR_WINDOW.getHandle()));
-  setCalendarContextMenu();
-  publishCalendarData();
-  CALENDAR_TIMER = setInterval(publishCalendarData, 60000); // Refresh every minute
-  CALENDAR_WINDOW.show();
-}
+function updateCalendarStyle(style) {
+  config.WINDOW_STYLES.CALENDAR_WINDOW = style;
+  json.write(CONFIG_PATH, config);
 
-// ==========================================
-// Weather Window Functions
-// ==========================================
-
-function updateWeatherStyle(style) {
-  JSON_DATA.WINDOW_STYLES.WEATHER_WINDOW = style;
-  json.write(JSON_FILE_PATH, JSON_DATA);
-
-  if (WEATHER_TIMER) {
-    clearInterval(WEATHER_TIMER);
-    WEATHER_TIMER = null;
+  if (calendarTimer) {
+    clearInterval(calendarTimer);
+    calendarTimer = null;
   }
 
-  WEATHER_WINDOW.refresh();
-  setWeatherContextMenu();
+  calendarWindow.refresh();
+  calendarWindow.setContextMenu(buildStyleMenu(style, updateCalendarStyle));
 
   setTimeout(() => {
-    publishWeatherData();
-    WEATHER_TIMER = setInterval(publishWeatherData, 600000); // refresh every 10 min
-  }, 120);
+    publishCalendarData();
+    calendarTimer = setInterval(publishCalendarData, 60000);
+  }, 16);
 }
 
-function setWeatherContextMenu() {
-  const currentStyle = JSON_DATA.WINDOW_STYLES.WEATHER_WINDOW;
-  WEATHER_WINDOW.setContextMenu([
-    {
-      text: "Small",
-      checked: currentStyle === "small",
-      action: () => updateWeatherStyle("small"),
-    },
-    {
-      text: "Medium",
-      checked: currentStyle === "medium",
-      action: () => updateWeatherStyle("medium"),
-    },
-    {
-      text: "Wide",
-      checked: currentStyle === "wide",
-      action: () => updateWeatherStyle("wide"),
-    },
-    {
-      text: "Large",
-      checked: currentStyle === "large",
-      action: () => updateWeatherStyle("large"),
-    },
-  ]);
+function loadCalendarWidget() {
+  calendarWindow = createWidgetWindow("CALENDAR_WINDOW", "ui/calendarWindow.ui.js");
+  calendarWindow.setContextMenu(
+    buildStyleMenu(config.WINDOW_STYLES.CALENDAR_WINDOW, updateCalendarStyle),
+  );
+  publishCalendarData();
+  calendarTimer = setInterval(publishCalendarData, 60000);
+  calendarWindow.show();
 }
 
+// =============================================================================
+// Weather Widget — Current conditions + 6-day forecast
+// =============================================================================
+
+const SHORT_DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/**
+ * Fetch weather from the free Open-Meteo API and push it to the widget.
+ * Runs on a 10-minute interval (600 000 ms).
+ */
 async function publishWeatherData() {
   try {
-    const lat = JSON_DATA.LOCATION ? JSON_DATA.LOCATION.LATITUDE : 51.5072;
-    const lon = JSON_DATA.LOCATION ? JSON_DATA.LOCATION.LONGITUDE : -0.1276;
-    const cityName = JSON_DATA.LOCATION
-      ? JSON_DATA.LOCATION.CITY_NAME
-      : "London";
+    const loc = config.LOCATION || {};
+    const lat = loc.LATITUDE ?? 51.5072;
+    const lon = loc.LONGITUDE ?? -0.1276;
+    const cityName = loc.CITY_NAME ?? "London";
 
-    const response = await webFetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m&hourly=temperature_2m&daily=temperature_2m_max,temperature_2m_min&timezone=auto`,
-    );
-    const data = typeof response === "string" ? JSON.parse(response) : response;
+    const url =
+      `https://api.open-meteo.com/v1/forecast` +
+      `?latitude=${lat}&longitude=${lon}` +
+      `&current=temperature_2m` +
+      `&hourly=temperature_2m` +
+      `&daily=temperature_2m_max,temperature_2m_min` +
+      `&timezone=auto`;
+
+    const raw = await webFetch(url);
+    const data = typeof raw === "string" ? JSON.parse(raw) : raw;
 
     const currentTemp = Math.round(data.current.temperature_2m);
 
-    // Find current hour index by stripping minutes from current.time
-    const currentTime = data.current.time; // e.g. "2026-05-02T11:15"
-    const currentHourTime = currentTime.substring(0, 13) + ":00"; // "2026-05-02T11:00"
-    let hourIndex = data.hourly.time.indexOf(currentHourTime);
-    if (hourIndex === -1) hourIndex = 0;
+    // Pinpoint where "now" sits in the hourly array so we get the next 6 slots
+    const currentHourPrefix = data.current.time.substring(0, 13);
+    const hourIndex = data.hourly.time.indexOf(currentHourPrefix + ":00");
+    const startIdx = hourIndex >= 0 ? hourIndex : 0;
 
     const hourlyForecast = [];
     for (let i = 0; i < 6; i++) {
-      let idx = hourIndex + i;
+      const idx = startIdx + i;
       if (idx < data.hourly.time.length) {
-        let timeStr = data.hourly.time[idx].split("T")[1].split(":")[0]; // "11:00" -> "11"
-        let temp = Math.round(data.hourly.temperature_2m[idx]);
-        hourlyForecast.push({ time: timeStr, temp: temp });
+        hourlyForecast.push({
+          time: data.hourly.time[idx].split("T")[1].split(":")[0],
+          temp: Math.round(data.hourly.temperature_2m[idx]),
+        });
       }
     }
 
     const dailyForecast = [];
-    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    for (let i = 0; i < 6; i++) {
-      if (i < data.daily.time.length) {
-        let dateObj = new Date(data.daily.time[i]);
-        let dayName = dayNames[dateObj.getDay()];
-        let min = Math.round(data.daily.temperature_2m_min[i]);
-        let max = Math.round(data.daily.temperature_2m_max[i]);
-        dailyForecast.push({ day: dayName, min: min, max: max });
-      }
+    for (let i = 0; i < 6 && i < data.daily.time.length; i++) {
+      dailyForecast.push({
+        day: SHORT_DAY_NAMES[new Date(data.daily.time[i]).getDay()],
+        min: Math.round(data.daily.temperature_2m_min[i]),
+        max: Math.round(data.daily.temperature_2m_max[i]),
+      });
     }
 
     ipcMain.send("weatherUpdate", {
-      cityName: cityName,
-      currentTemp: currentTemp,
-      hourlyForecast: hourlyForecast,
-      dailyForecast: dailyForecast,
-      todayHigh: dailyForecast[0] ? dailyForecast[0].max : 0,
-      todayLow: dailyForecast[0] ? dailyForecast[0].min : 0,
+      cityName,
+      currentTemp,
+      hourlyForecast,
+      dailyForecast,
+      todayHigh: dailyForecast[0]?.max ?? 0,
+      todayLow: dailyForecast[0]?.min ?? 0,
     });
-  } catch (e) {
-    console.error("Failed to fetch weather: " + e);
+  } catch (error) {
+    console.error("Failed to fetch weather data:", error);
   }
 }
 
+function updateWeatherStyle(style) {
+  config.WINDOW_STYLES.WEATHER_WINDOW = style;
+  json.write(CONFIG_PATH, config);
+
+  if (weatherTimer) {
+    clearInterval(weatherTimer);
+    weatherTimer = null;
+  }
+
+  weatherWindow.refresh();
+  weatherWindow.setContextMenu(buildStyleMenu(style, updateWeatherStyle));
+
+  setTimeout(() => {
+    publishWeatherData();
+    weatherTimer = setInterval(publishWeatherData, 600000);
+  }, 120);
+}
+
 function loadWeatherWidget() {
-  WEATHER_WINDOW = new widgetWindow({
-    id: "WEATHER_WINDOW",
-    script: "ui/weatherWindow.ui.js",
-    show: false,
-  });
-  applyBB(String(WEATHER_WINDOW.getHandle()));
-  setWeatherContextMenu();
+  weatherWindow = createWidgetWindow("WEATHER_WINDOW", "ui/weatherWindow.ui.js");
+  weatherWindow.setContextMenu(
+    buildStyleMenu(config.WINDOW_STYLES.WEATHER_WINDOW, updateWeatherStyle),
+  );
   publishWeatherData();
-  WEATHER_TIMER = setInterval(publishWeatherData, 600000); // 10 minutes
-  WEATHER_WINDOW.show();
+  weatherTimer = setInterval(publishWeatherData, 600000);
+  weatherWindow.show();
 }
 
-// ==========================================
-// Player Window Functions
-// ==========================================
-
-function loadPlayerWidget() {
-  PLAYER_WINDOW = new widgetWindow({
-    id: "PLAYER_WINDOW",
-    script: "ui/playerWindow.ui.js",
-    show: false,
-  });
-
-  applyBB(String(PLAYER_WINDOW.getHandle()));
-  PLAYER_TIMER = setInterval(publishNowPlayingData, 1000);
-  PLAYER_WINDOW.show();
-}
+// =============================================================================
+// Now Playing Widget — Media playback info & controls
+// =============================================================================
 
 function publishNowPlayingData() {
-  const stats = np_Addon.stats();
-  // console.log(JSON.stringify(stats, null, 2));
-  ipcMain.send("nowPlayingUpdate", stats);
+  ipcMain.send("nowPlayingUpdate", nowPlaying.stats());
 }
 
-function playPauseMusic() {
-  np_Addon.playPause();
+function loadPlayerWidget() {
+  playerWindow = createWidgetWindow("PLAYER_WINDOW", "ui/playerWindow.ui.js");
+  playerTimer = setInterval(publishNowPlayingData, 1000);
+  playerWindow.show();
 }
 
-function nextMusic() {
-  np_Addon.next();
-}
+// Renderer → main IPC for media controls
+ipcMain.on("playPause", () => nowPlaying.playPause());
+ipcMain.on("next", () => nowPlaying.next());
+ipcMain.on("previous", () => nowPlaying.previous());
 
-function previousMusic() {
-  np_Addon.previous();
-}
-
-ipcMain.on("playPause", playPauseMusic);
-ipcMain.on("next", nextMusic);
-ipcMain.on("previous", previousMusic);
-
+// Push once immediately so the UI isn't blank
 publishNowPlayingData();
 
-// loadMonitorWindow();
-// loadClockWidget();
-// loadCalendarWidget();
-// loadWeatherWidget();
+// =============================================================================
+// Launch Widgets
+// =============================================================================
+// Uncomment the lines below to enable each widget:
+//
+loadMonitorWidget();
+loadClockWidget();
+loadCalendarWidget();
+loadWeatherWidget();
 loadPlayerWidget();
