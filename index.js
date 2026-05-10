@@ -24,6 +24,7 @@ const CONFIG_PATH = path.join(
   "FluentWidgets",
   "config.json",
 );
+console.log("CONFIG_PATH", CONFIG_PATH);
 
 /** Path to the default config shipped with the widget package */
 const DEFAULT_CONFIG_PATH = path.join(__dirname, "config/config.json");
@@ -49,6 +50,9 @@ let weatherTimer = null;
 let playerWindow = null;
 let playerTimer = null;
 
+let notesWindow = null;
+let notesTimer = null;
+
 // -----------------------------------------------------------------------------
 // Native Addons
 // -----------------------------------------------------------------------------
@@ -58,6 +62,9 @@ const blurBehind = addon.load(path.join(__addonsPath, "BlurBehind"));
 
 /** Reads currently-playing media info from Windows (title, artist, thumbnail) */
 const nowPlaying = addon.load(path.join(__addonsPath, "NowPlaying"));
+
+/** Addon to get input from user */
+const inputBox = addon.load(path.join(__addonsPath, "InputBox"));
 
 // =============================================================================
 // Configuration Loading
@@ -432,12 +439,56 @@ ipcMain.on("previous", () => nowPlaying.previous());
 publishNowPlayingData();
 
 // =============================================================================
+//   Notes Widget
+// =============================================================================
+
+function loadNotesWidget() {
+  notesWindow = createWidgetWindow("NOTES_WINDOW", "ui/notesWindow.ui.js");
+  // notesWindow.setContextMenu(
+  //   buildStyleMenu(config.WINDOW_STYLES.NOTES_WINDOW, updateNotesStyle),
+  // );
+  // publishNotesData();
+  // notesTimer = setInterval(publishNotesData, 1000);
+  notesWindow.show();
+}
+
+function notesInput(data) {
+  console.log("notesInput", JSON.stringify(data));
+  const inputBox_ID = inputBox.show({
+    widgetHwnd: notesWindow.getHandle(),
+    x: data.x,
+    y: data.y - 10,
+    width: data.width,
+    height: data.height,
+    fontSize: data.fontSize - 5,
+    borderVisible: false,
+    unfocusDismiss: false,
+    multiline: true,
+    backgroundColor: data.backgroundColor,
+
+    defaultValue: data.defaultValue,
+    onEnter: () => {
+      console.log("Submitted:", inputBox.lastText());
+      const now = time.time("%m/%d/%Y %I:%M:%S %p", "en-US");
+      config.NOTES_TEXT = inputBox.lastText();
+      config.NOTES_SAVED_TIME = now;
+      json.write(CONFIG_PATH, config);
+      notesWindow.refresh();
+    }
+  });
+
+  console.log("InputBox id:", inputBox_ID);
+}
+
+ipcMain.on("notesInput", (event, data) => notesInput(data));
+// =============================================================================
 // Launch Widgets
 // =============================================================================
 // Uncomment the lines below to enable each widget:
-//
-loadMonitorWidget();
-loadClockWidget();
-loadCalendarWidget();
-loadWeatherWidget();
-loadPlayerWidget();
+
+// loadMonitorWidget();
+// loadClockWidget();
+// loadCalendarWidget();
+// loadWeatherWidget();
+// loadPlayerWidget();
+loadNotesWidget();

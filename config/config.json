@@ -24,12 +24,13 @@
         "CLOCK_WINDOW": "large",
         "CALENDAR_WINDOW": "wide",
         "WEATHER_WINDOW": "large",
-        "PLAYER_WINDOW": "large"
+        "PLAYER_WINDOW": "large",
+        "NOTES_WINDOW": "large"
     },
     "APPEARANCE": {
         "THEME": "dark",
         "ACCENT_COLOR": "#0078D4",
-        "OVERLAY_COLOR": "rgba(0, 0, 0, 0.2)",
+        "OVERLAY_COLOR": "rgba(0, 0, 0, 0.4)",
         "LEVEL_COLORS": {
             "LOW": "rgb(45, 210, 85)",
             "MEDIUM": "rgb(255, 193, 7)",
@@ -40,14 +41,18 @@
             "FONT": "white",
             "FONT_SUBTLE": "rgba(255, 255, 255, 0.2)",
             "SUBTLE": "rgba(255, 255, 255, 0.2)",
-            "ICON": "white"
+            "ICON": "white",
+            "INPUT_BOX_BG": "rgb(18, 18, 18)"
         },
         "LIGHT": {
             "BACKGROUND": "rgba(255, 255, 255, 0.2)",
             "FONT": "black",
             "FONT_SUBTLE": "rgba(0, 0, 0, 0.2)",
             "SUBTLE": "rgba(0, 0, 0, 0.2)",
-            "ICON": "black"
+            "ICON": "black",
+            "INPUT_BOX_BG": "rgb(255, 255, 255)"
         }
-    }
+    },
+    "NOTES_TEXT": "Type here...",
+    "NOTES_SAVED_TIME": "5/10/2026 8:54:22 PM"
 }
