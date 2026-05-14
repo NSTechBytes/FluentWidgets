@@ -39,7 +39,7 @@ function largeStyle() {
     const NOTES_DISPLAY_Y = TOP_SHAPE_ELEMENT_HEIGHT + 20 * SCALE;
     const NOTES_DISPLAY_HEIGHT = SIZE - NOTES_DISPLAY_Y - 50 * SCALE;
     const NOTES_DISPLAY_WIDTH = SIZE - LEFT_SIDE_SPACE - 20 * SCALE;
-    const FONT_SIZE = 15 * SCALE;
+    const FONT_SIZE = 14 * SCALE;
 
     ui.beginUpdate();
     ui.addShape({
@@ -59,12 +59,17 @@ function largeStyle() {
     });
     ui.addText({
         id: "top_Shape_Element_Title",
-        text: "Notes",
+        text: JSON_DATA.NOTES_TOP_TITLE,
         x: LEFT_SIDE_SPACE, y: TOP_SHAPE_ELEMENT_HEIGHT / 2,
-        fontSize: 20 * SCALE,
+        width: SIZE - LEFT_SIDE_SPACE, height: TOP_SHAPE_ELEMENT_HEIGHT,
+        fontSize: 16 * SCALE,
         fontColor: getFontColor(),
         fontFace: JSON_DATA.FONT_FACE,
+        fontWeight: 700,
         textAlign: "leftcenter",
+        onLeftMouseUp: () => {
+            ipcRenderer.send("notesTitleInput", { x: LEFT_SIDE_SPACE, y: TOP_SHAPE_ELEMENT_HEIGHT / 2, width: SIZE - LEFT_SIDE_SPACE, height: TOP_SHAPE_ELEMENT_HEIGHT / 2, fontSize: FONT_SIZE, backgroundColor: getAccentColor(), defaultValue: JSON_DATA.NOTES_TOP_TITLE });
+        }
     });
     ui.addText({
         id: "notes_display",
@@ -75,7 +80,10 @@ function largeStyle() {
         fontColor: getFontColor(),
         fontFace: JSON_DATA.FONT_FACE,
         textAlign: "lefttop",
-        onLeftMouseUp: () => { ipcRenderer.send("notesInput", { x: LEFT_SIDE_SPACE, y: TOP_SHAPE_ELEMENT_HEIGHT + 30 * SCALE, width: NOTES_DISPLAY_WIDTH, height: NOTES_DISPLAY_HEIGHT, fontSize: FONT_SIZE, backgroundColor: getInputBoxColor(), defaultValue: JSON_DATA.NOTES_TEXT }); }
+        onLeftMouseUp: () => {
+            ipcRenderer.send("notesInput", { x: LEFT_SIDE_SPACE, y: TOP_SHAPE_ELEMENT_HEIGHT + 30 * SCALE, width: NOTES_DISPLAY_WIDTH, height: NOTES_DISPLAY_HEIGHT, fontSize: FONT_SIZE, backgroundColor: getInputBoxColor(), defaultValue: JSON_DATA.NOTES_TEXT });
+            ui.setElementProperty("top_Shape_Element_Title", "text", "CTRL+ENTER to save and ESC to cancel");
+        }
     });
     ui.addShape({
         id: "bottom_Shape_Element",
@@ -97,4 +105,11 @@ function largeStyle() {
     ui.endUpdate();
 }
 
+function inputBoxDismissed() {
+    console.log("inputBoxDismissed");
+    ui.setElementProperty("top_Shape_Element_Title", "text", JSON_DATA.NOTES_TOP_TITLE);
+    ui.setElementProperty("notes_display", "text", JSON_DATA.NOTES_TEXT);
+}
+
+ipcRenderer.on("inputBoxDismissed", inputBoxDismissed);
 largeStyle();

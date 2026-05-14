@@ -447,8 +447,6 @@ function loadNotesWidget() {
   // notesWindow.setContextMenu(
   //   buildStyleMenu(config.WINDOW_STYLES.NOTES_WINDOW, updateNotesStyle),
   // );
-  // publishNotesData();
-  // notesTimer = setInterval(publishNotesData, 1000);
   notesWindow.show();
 }
 
@@ -465,21 +463,53 @@ function notesInput(data) {
     unfocusDismiss: false,
     multiline: true,
     backgroundColor: data.backgroundColor,
-
     defaultValue: data.defaultValue,
     onEnter: () => {
-      console.log("Submitted:", inputBox.lastText());
       const now = time.time("%m/%d/%Y %I:%M:%S %p", "en-US");
       config.NOTES_TEXT = inputBox.lastText();
       config.NOTES_SAVED_TIME = now;
       json.write(CONFIG_PATH, config);
       notesWindow.refresh();
+    },
+    onDismiss: () => {
+      ipcMain.send("inputBoxDismissed");
+    },
+    onEsc: () => {
+      ipcMain.send("inputBoxDismissed");
+    }
+  });
+}
+
+function notesTitleInput(data) {
+  const inputBox_ID = inputBox.show({
+    widgetHwnd: notesWindow.getHandle(),
+    x: data.x,
+    y: data.y - 10,
+    width: data.width - 10,
+    height: data.height,
+    fontSize: data.fontSize - 5,
+    borderVisible: false,
+    multiline: false,
+    backgroundColor: data.backgroundColor,
+    defaultValue: data.defaultValue,
+    onEnter: () => {
+      const now = time.time("%m/%d/%Y %I:%M:%S %p", "en-US");
+      config.NOTES_TITLE = inputBox.lastText();
+      config.NOTES_SAVED_TIME = now;
+      json.write(CONFIG_PATH, config);
+      notesWindow.refresh();
+    },
+    onDismiss: () => {
+      ipcMain.send("inputBoxDismissed");
+    },
+    onEsc: () => {
+      ipcMain.send("inputBoxDismissed");
     }
   });
 
-  console.log("InputBox id:", inputBox_ID);
 }
 
+ipcMain.on("notesTitleInput", (event, data) => notesTitleInput(data));
 ipcMain.on("notesInput", (event, data) => notesInput(data));
 // =============================================================================
 // Launch Widgets
