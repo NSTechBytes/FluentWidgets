@@ -442,11 +442,18 @@ publishNowPlayingData();
 //   Notes Widget
 // =============================================================================
 
+function updateNotesStyle(style) {
+  config.WINDOW_STYLES.NOTES_WINDOW = style;
+  json.write(CONFIG_PATH, config);
+  notesWindow.refresh();
+  notesWindow.setContextMenu(buildStyleMenu(style, updateNotesStyle));
+}
+
 function loadNotesWidget() {
   notesWindow = createWidgetWindow("NOTES_WINDOW", "ui/notesWindow.ui.js");
-  // notesWindow.setContextMenu(
-  //   buildStyleMenu(config.WINDOW_STYLES.NOTES_WINDOW, updateNotesStyle),
-  // );
+  notesWindow.setContextMenu(
+    buildStyleMenu(config.WINDOW_STYLES.NOTES_WINDOW, updateNotesStyle),
+  );
   notesWindow.show();
 }
 
@@ -455,7 +462,7 @@ function notesInput(data) {
   const inputBox_ID = inputBox.show({
     widgetHwnd: notesWindow.getHandle(),
     x: data.x,
-    y: data.y - 10,
+    y: data.y,
     width: data.width,
     height: data.height,
     fontSize: data.fontSize - 5,
@@ -484,8 +491,8 @@ function notesTitleInput(data) {
   const inputBox_ID = inputBox.show({
     widgetHwnd: notesWindow.getHandle(),
     x: data.x,
-    y: data.y - 10,
-    width: data.width - 10,
+    y: data.y,
+    width: data.width,
     height: data.height,
     fontSize: data.fontSize - 5,
     borderVisible: false,
