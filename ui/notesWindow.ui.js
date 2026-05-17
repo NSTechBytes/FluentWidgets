@@ -67,6 +67,7 @@ function largeStyle() {
         fontFace: JSON_DATA.FONT_FACE,
         fontWeight: 700,
         textAlign: "leftcenter",
+        textClip: "ellipsis",
         onLeftMouseUp: () => {
             ipcRenderer.send("notesTitleInput", {
                 x: LEFT_SIDE_SPACE, y: (TOP_SHAPE_ELEMENT_HEIGHT / 2) - 10, width:
@@ -84,7 +85,7 @@ function largeStyle() {
         fontFace: JSON_DATA.FONT_FACE,
         textAlign: "lefttop",
         onLeftMouseUp: () => {
-            ipcRenderer.send("notesInput", { x: LEFT_SIDE_SPACE, y: TOP_SHAPE_ELEMENT_HEIGHT + 30 * SCALE, width: NOTES_DISPLAY_WIDTH, height: NOTES_DISPLAY_HEIGHT, fontSize: FONT_SIZE, backgroundColor: getInputBoxColor(), defaultValue: JSON_DATA.NOTES_TEXT });
+            ipcRenderer.send("notesInput", { x: LEFT_SIDE_SPACE, y: (TOP_SHAPE_ELEMENT_HEIGHT + 30 * SCALE) - 10, width: NOTES_DISPLAY_WIDTH, height: NOTES_DISPLAY_HEIGHT, fontSize: FONT_SIZE, backgroundColor: getInputBoxColor(), defaultValue: JSON_DATA.NOTES_TEXT });
             if (ui.isElementExist("top_Shape_Element_Title")) {
                 ui.setElementProperty("top_Shape_Element_Title", "text", "CTRL+ENTER to save and ESC to cancel");
             }
@@ -146,6 +147,7 @@ function wideStyle() {
         fontFace: JSON_DATA.FONT_FACE,
         fontWeight: 700,
         textAlign: "leftcenter",
+        textClip: "ellipsis",
         onLeftMouseUp: () => {
             ipcRenderer.send("notesTitleInput", {
                 x: LEFT_SIDE_SPACE,
@@ -170,8 +172,8 @@ function wideStyle() {
         onLeftMouseUp: () => {
             ipcRenderer.send("notesInput", {
                 x: LEFT_SIDE_SPACE,
-                y: TOP_SHAPE_ELEMENT_HEIGHT + 20 * SCALE,
-                width: NOTES_DISPLAY_WIDTH,
+                y: TOP_SHAPE_ELEMENT_HEIGHT + 20 * SCALE - 10,
+                width: NOTES_DISPLAY_WIDTH - 10,
                 height: NOTES_DISPLAY_HEIGHT,
                 fontSize: FONT_SIZE,
                 backgroundColor: getInputBoxColor(),
@@ -238,6 +240,7 @@ function mediumStyle() {
         fontFace: JSON_DATA.FONT_FACE,
         fontWeight: 700,
         textAlign: "leftcenter",
+        textClip: "ellipsis",
         onLeftMouseUp: () => {
             ipcRenderer.send("notesTitleInput", {
                 x: LEFT_SIDE_SPACE,
@@ -262,7 +265,7 @@ function mediumStyle() {
         onLeftMouseUp: () => {
             ipcRenderer.send("notesInput", {
                 x: LEFT_SIDE_SPACE,
-                y: TOP_SHAPE_ELEMENT_HEIGHT + 20 * SCALE,
+                y: TOP_SHAPE_ELEMENT_HEIGHT + 20 * SCALE - 10,
                 width: NOTES_DISPLAY_WIDTH,
                 height: NOTES_DISPLAY_HEIGHT,
                 fontSize: FONT_SIZE,
@@ -323,7 +326,7 @@ function smallStyle() {
         onLeftMouseUp: () => {
             ipcRenderer.send("notesInput", {
                 x: PADDING,
-                y: PADDING + 10 * SCALE,
+                y: PADDING + 10 * SCALE - 7,
                 width: NOTES_DISPLAY_WIDTH,
                 height: NOTES_DISPLAY_HEIGHT,
                 fontSize: FONT_SIZE,
