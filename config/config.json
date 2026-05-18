@@ -10,10 +10,22 @@
         "LONGITUDE": -0.1276
     },
     "WIDGET_SIZES": {
-        "SMALL": { "WIDTH": 75, "HEIGHT": 75 },
-        "MEDIUM": { "WIDTH": 160, "HEIGHT": 160 },
-        "WIDE": { "WIDTH": 350, "HEIGHT": 160 },
-        "LARGE": { "WIDTH": 360, "HEIGHT": 360 }
+        "SMALL": {
+            "WIDTH": 75,
+            "HEIGHT": 75
+        },
+        "MEDIUM": {
+            "WIDTH": 160,
+            "HEIGHT": 160
+        },
+        "WIDE": {
+            "WIDTH": 350,
+            "HEIGHT": 160
+        },
+        "LARGE": {
+            "WIDTH": 360,
+            "HEIGHT": 360
+        }
     },
     "BB_STYLE": {
         "BLUR_TYPE": "blur",
@@ -36,6 +48,7 @@
             "MEDIUM": "rgb(255, 193, 7)",
             "HIGH": "rgb(244, 67, 54)"
         },
+        "BACKGROUND_SUBTLE": "rgba(200,200,200,0.1)",
         "DARK": {
             "BACKGROUND": "rgba(18, 18, 18, 0.2)",
             "FONT": "white",

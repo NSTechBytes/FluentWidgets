@@ -51,7 +51,8 @@ let playerWindow = null;
 let playerTimer = null;
 
 let notesWindow = null;
-let notesTimer = null;
+
+let settingsWindow = null;
 
 // -----------------------------------------------------------------------------
 // Native Addons
@@ -519,6 +520,14 @@ function notesTitleInput(data) {
 ipcMain.on("notesTitleInput", (event, data) => notesTitleInput(data));
 ipcMain.on("notesInput", (event, data) => notesInput(data));
 // =============================================================================
+// Settings Window
+// =============================================================================
+function loadSettingsWindow() {
+  settingsWindow = createWidgetWindow("SETTINGS_WINDOW", "ui/settingsWindow.ui.js");
+  settingsWindow.show();
+}
+
+// =============================================================================
 // Launch Widgets
 // =============================================================================
 // Uncomment the lines below to enable each widget:
@@ -528,4 +537,6 @@ ipcMain.on("notesInput", (event, data) => notesInput(data));
 // loadCalendarWidget();
 // loadWeatherWidget();
 // loadPlayerWidget();
-loadNotesWidget();
+// loadNotesWidget();
+
+loadSettingsWindow();
