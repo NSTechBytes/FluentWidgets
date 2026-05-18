@@ -519,6 +519,57 @@ function notesTitleInput(data) {
 
 ipcMain.on("notesTitleInput", (event, data) => notesTitleInput(data));
 ipcMain.on("notesInput", (event, data) => notesInput(data));
+
+// =============================================================================
+// Settings & Widget Loading Manager
+// =============================================================================
+
+function setWidgetLoaded(widgetKey, loaded) {
+  if (!config.LOADED_WIDGETS) config.LOADED_WIDGETS = {};
+  config.LOADED_WIDGETS[widgetKey] = loaded;
+  json.write(CONFIG_PATH, config);
+  
+  if (loaded) {
+    if (widgetKey === "MONITOR") {
+      if (!monitorWindow || monitorWindow.isDestroyed()) loadMonitorWidget();
+      else monitorWindow.show();
+    } else if (widgetKey === "CLOCK") {
+      if (!clockWindow || clockWindow.isDestroyed()) loadClockWidget();
+      else clockWindow.show();
+    } else if (widgetKey === "CALENDAR") {
+      if (!calendarWindow || calendarWindow.isDestroyed()) loadCalendarWidget();
+      else calendarWindow.show();
+    } else if (widgetKey === "WEATHER") {
+      if (!weatherWindow || weatherWindow.isDestroyed()) loadWeatherWidget();
+      else weatherWindow.show();
+    } else if (widgetKey === "MUSIC") {
+      if (!playerWindow || playerWindow.isDestroyed()) loadPlayerWidget();
+      else playerWindow.show();
+    } else if (widgetKey === "NOTES") {
+      if (!notesWindow || notesWindow.isDestroyed()) loadNotesWidget();
+      else notesWindow.show();
+    }
+  } else {
+    if (widgetKey === "MONITOR" && monitorWindow && !monitorWindow.isDestroyed()) {
+      monitorWindow.hide();
+    } else if (widgetKey === "CLOCK" && clockWindow && !clockWindow.isDestroyed()) {
+      clockWindow.hide();
+    } else if (widgetKey === "CALENDAR" && calendarWindow && !calendarWindow.isDestroyed()) {
+      calendarWindow.hide();
+    } else if (widgetKey === "WEATHER" && weatherWindow && !weatherWindow.isDestroyed()) {
+      weatherWindow.hide();
+    } else if (widgetKey === "MUSIC" && playerWindow && !playerWindow.isDestroyed()) {
+      playerWindow.hide();
+    } else if (widgetKey === "NOTES" && notesWindow && !notesWindow.isDestroyed()) {
+      notesWindow.hide();
+    }
+  }
+}
+
+ipcMain.on("toggleWidget", (event, { widgetKey, loaded }) => {
+  setWidgetLoaded(widgetKey, loaded);
+});
+
 // =============================================================================
 // Settings Window
 // =============================================================================
@@ -530,13 +581,18 @@ function loadSettingsWindow() {
 // =============================================================================
 // Launch Widgets
 // =============================================================================
-// Uncomment the lines below to enable each widget:
 
-// loadMonitorWidget();
-// loadClockWidget();
-// loadCalendarWidget();
-// loadWeatherWidget();
-// loadPlayerWidget();
-// loadNotesWidget();
+// Dynamic loader based on configured LOADED_WIDGETS status
+if (config.LOADED_WIDGETS) {
+  if (config.LOADED_WIDGETS.MONITOR) loadMonitorWidget();
+  if (config.LOADED_WIDGETS.CLOCK) loadClockWidget();
+  if (config.LOADED_WIDGETS.CALENDAR) loadCalendarWidget();
+  if (config.LOADED_WIDGETS.WEATHER) loadWeatherWidget();
+  if (config.LOADED_WIDGETS.MUSIC) loadPlayerWidget();
+  if (config.LOADED_WIDGETS.NOTES) loadNotesWidget();
+} else {
+  // Fallback default
+  loadNotesWidget();
+}
 
 loadSettingsWindow();

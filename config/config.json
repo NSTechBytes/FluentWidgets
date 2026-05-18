@@ -4,6 +4,14 @@
     "FONT_FACE": "Segoe UI",
     "FONT_FACE_SEMIBOLD": "Segoe UI Semibold",
     "USE_24_HOUR_FORMAT": false,
+    "LOADED_WIDGETS": {
+        "CLOCK": false,
+        "CALENDAR": false,
+        "MONITOR": false,
+        "WEATHER": false,
+        "NOTES": true,
+        "MUSIC": false
+    },
     "LOCATION": {
         "CITY_NAME": "London",
         "LATITUDE": 51.5072,
