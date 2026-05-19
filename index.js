@@ -128,10 +128,19 @@ function applyBlurBehind(win) {
  * @param {Function} onSelect     - Called with the new style name when user clicks
  * @returns {Array} Menu items ready for widgetWindow.setContextMenu()
  */
-function buildStyleMenu(currentStyle, onSelect) {
+function buildStyleMenu(win, currentStyle, onSelect) {
   const styles = ["small", "medium", "wide", "large"];
   return [
     { text: "Settings", action: () => loadSettingsWindow() },
+    {
+      text: "Position",
+      items: [
+        { text: "Increase X (+10)", action: () => { const b = win.getBounds(); win.setBounds({ x: b.x + 10 }); } },
+        { text: "Decrease X (-10)", action: () => { const b = win.getBounds(); win.setBounds({ x: b.x - 10 }); } },
+        { text: "Increase Y (+10)", action: () => { const b = win.getBounds(); win.setBounds({ y: b.y + 10 }); } },
+        { text: "Decrease Y (-10)", action: () => { const b = win.getBounds(); win.setBounds({ y: b.y - 10 }); } }
+      ]
+    },
     { type: "separator" },
     ...styles.map((style) => ({
       text: style.charAt(0).toUpperCase() + style.slice(1),
@@ -169,14 +178,14 @@ function publishMonitorStats() {
 function updateMonitorStyle(style) {
   config.WINDOW_STYLES.MONITOR_WINDOW = style;
   json.write(CONFIG_PATH, config);
-  monitorWindow.setContextMenu(buildStyleMenu(style, updateMonitorStyle));
+  monitorWindow.setContextMenu(buildStyleMenu(monitorWindow, style, updateMonitorStyle));
   monitorWindow.refresh();
 }
 
 function loadMonitorWidget() {
   monitorWindow = createWidgetWindow("MONITOR_WINDOW", "ui/monitorWindow.ui.js");
   monitorWindow.setContextMenu(
-    buildStyleMenu(config.WINDOW_STYLES.MONITOR_WINDOW, updateMonitorStyle),
+    buildStyleMenu(monitorWindow, config.WINDOW_STYLES.MONITOR_WINDOW, updateMonitorStyle),
   );
   publishMonitorStats();
   monitorTimer = setInterval(publishMonitorStats, 1000);
@@ -220,7 +229,7 @@ function updateClockStyle(style) {
   }
 
   clockWindow.refresh();
-  clockWindow.setContextMenu(buildStyleMenu(style, updateClockStyle));
+  clockWindow.setContextMenu(buildStyleMenu(clockWindow, style, updateClockStyle));
 
   // Wait a brief moment so the newly-rendered UI script is ready
   setTimeout(() => {
@@ -232,7 +241,7 @@ function updateClockStyle(style) {
 function loadClockWidget() {
   clockWindow = createWidgetWindow("CLOCK_WINDOW", "ui/clockWindow.ui.js");
   clockWindow.setContextMenu(
-    buildStyleMenu(config.WINDOW_STYLES.CLOCK_WINDOW, updateClockStyle),
+    buildStyleMenu(clockWindow, config.WINDOW_STYLES.CLOCK_WINDOW, updateClockStyle),
   );
   publishClockData();
   clockTimer = setInterval(publishClockData, 1000);
@@ -282,7 +291,7 @@ function updateCalendarStyle(style) {
   }
 
   calendarWindow.refresh();
-  calendarWindow.setContextMenu(buildStyleMenu(style, updateCalendarStyle));
+  calendarWindow.setContextMenu(buildStyleMenu(calendarWindow, style, updateCalendarStyle));
 
   setTimeout(() => {
     publishCalendarData();
@@ -293,7 +302,7 @@ function updateCalendarStyle(style) {
 function loadCalendarWidget() {
   calendarWindow = createWidgetWindow("CALENDAR_WINDOW", "ui/calendarWindow.ui.js");
   calendarWindow.setContextMenu(
-    buildStyleMenu(config.WINDOW_STYLES.CALENDAR_WINDOW, updateCalendarStyle),
+    buildStyleMenu(calendarWindow, config.WINDOW_STYLES.CALENDAR_WINDOW, updateCalendarStyle),
   );
   publishCalendarData();
   calendarTimer = setInterval(publishCalendarData, 60000);
@@ -378,7 +387,7 @@ function updateWeatherStyle(style) {
   }
 
   weatherWindow.refresh();
-  weatherWindow.setContextMenu(buildStyleMenu(style, updateWeatherStyle));
+  weatherWindow.setContextMenu(buildStyleMenu(weatherWindow, style, updateWeatherStyle));
 
   setTimeout(() => {
     publishWeatherData();
@@ -389,7 +398,7 @@ function updateWeatherStyle(style) {
 function loadWeatherWidget() {
   weatherWindow = createWidgetWindow("WEATHER_WINDOW", "ui/weatherWindow.ui.js");
   weatherWindow.setContextMenu(
-    buildStyleMenu(config.WINDOW_STYLES.WEATHER_WINDOW, updateWeatherStyle),
+    buildStyleMenu(weatherWindow, config.WINDOW_STYLES.WEATHER_WINDOW, updateWeatherStyle),
   );
   publishWeatherData();
   weatherTimer = setInterval(publishWeatherData, 600000);
@@ -414,7 +423,7 @@ function updatePlayerStyle(style) {
   }
 
   playerWindow.refresh();
-  playerWindow.setContextMenu(buildStyleMenu(style, updatePlayerStyle));
+  playerWindow.setContextMenu(buildStyleMenu(playerWindow, style, updatePlayerStyle));
 
   setTimeout(() => {
     publishNowPlayingData();
@@ -425,7 +434,7 @@ function updatePlayerStyle(style) {
 function loadPlayerWidget() {
   playerWindow = createWidgetWindow("PLAYER_WINDOW", "ui/playerWindow.ui.js");
   playerWindow.setContextMenu(
-    buildStyleMenu(config.WINDOW_STYLES.PLAYER_WINDOW, updatePlayerStyle),
+    buildStyleMenu(playerWindow, config.WINDOW_STYLES.PLAYER_WINDOW, updatePlayerStyle),
   );
   playerTimer = setInterval(publishNowPlayingData, 1000);
   playerWindow.show();
@@ -476,13 +485,13 @@ function updateVolumeStyle(style) {
     volumeWindow.refresh();
   }
 
-  volumeWindow.setContextMenu(buildStyleMenu(style, updateVolumeStyle));
+  volumeWindow.setContextMenu(buildStyleMenu(volumeWindow, style, updateVolumeStyle));
 }
 
 function loadVolumeWidget() {
   volumeWindow = createWidgetWindow("VOLUME_WINDOW", "ui/volumeWindow.ui.js");
   volumeWindow.setContextMenu(
-    buildStyleMenu(config.WINDOW_STYLES.VOLUME_WINDOW || "large", updateVolumeStyle),
+    buildStyleMenu(volumeWindow, config.WINDOW_STYLES.VOLUME_WINDOW || "large", updateVolumeStyle),
   );
   publishVolumeData();
   volumeTimer = setInterval(publishVolumeData, 1000);
@@ -526,13 +535,13 @@ function updateNotesStyle(style) {
   config.WINDOW_STYLES.NOTES_WINDOW = style;
   json.write(CONFIG_PATH, config);
   notesWindow.refresh();
-  notesWindow.setContextMenu(buildStyleMenu(style, updateNotesStyle));
+  notesWindow.setContextMenu(buildStyleMenu(notesWindow, style, updateNotesStyle));
 }
 
 function loadNotesWidget() {
   notesWindow = createWidgetWindow("NOTES_WINDOW", "ui/notesWindow.ui.js");
   notesWindow.setContextMenu(
-    buildStyleMenu(config.WINDOW_STYLES.NOTES_WINDOW, updateNotesStyle),
+    buildStyleMenu(notesWindow, config.WINDOW_STYLES.NOTES_WINDOW, updateNotesStyle),
   );
   notesWindow.show();
 }
