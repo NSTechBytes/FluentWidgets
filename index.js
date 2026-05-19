@@ -131,7 +131,7 @@ function applyBlurBehind(win) {
 function buildStyleMenu(currentStyle, onSelect) {
   const styles = ["small", "medium", "wide", "large"];
   return [
-    { text: "Manage", action: () => console.log("Manage clicked") },
+    { text: "Settings", action: () => loadSettingsWindow() },
     { type: "separator" },
     ...styles.map((style) => ({
       text: style.charAt(0).toUpperCase() + style.slice(1),
@@ -459,23 +459,23 @@ function publishVolumeData() {
 function updateVolumeStyle(style) {
   config.WINDOW_STYLES.VOLUME_WINDOW = style;
   json.write(CONFIG_PATH, config);
-  
+
   if (volumeWindow && typeof volumeWindow.setSize === "function") {
     const scale = parseFloat(config.SCALE) || 1.0;
     const key = style.toUpperCase();
     const size = config.WIDGET_SIZES[key] || config.WIDGET_SIZES.LARGE;
     const w = Math.round(size.WIDTH * scale);
     const h = Math.round(size.HEIGHT * scale);
-    
+
     // Resize window dynamically and smoothly
     volumeWindow.setSize(w, h);
-    
+
     // Notify renderer to hot-swap style elements cleanly without reloading
     ipcMain.send("changeVolumeStyle", style);
   } else {
     volumeWindow.refresh();
   }
-  
+
   volumeWindow.setContextMenu(buildStyleMenu(style, updateVolumeStyle));
 }
 
@@ -729,8 +729,14 @@ ipcMain.on("toggleWidget", (event, { widgetKey, loaded }) => {
 // Settings Window
 // =============================================================================
 function loadSettingsWindow() {
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    settingsWindow.show();
+    return;
+  }
   settingsWindow = createWidgetWindow("SETTINGS_WINDOW", "ui/settingsWindow.ui.js");
   settingsWindow.show();
+  config.SETTINGS_WINDOW_OPEN = true;
+  json.write(CONFIG_PATH, config);
 }
 
 // =============================================================================
@@ -751,8 +757,23 @@ if (config.LOADED_WIDGETS) {
   loadNotesWidget();
 }
 
-loadSettingsWindow();
+if (config.SETTINGS_WINDOW_OPEN !== false) {
+  loadSettingsWindow();
+}
 
 ipcMain.on("openGithub", () => {
-  execute("https://github.com/nasirshahbaz/FluentWidgets");
+  execute("https://github.com/nstechbytes/FluentWidgets");
+});
+
+ipcMain.on("setSettingsActiveTab", (event, tab) => {
+  config.SETTINGS_ACTIVE_TAB = tab;
+  json.write(CONFIG_PATH, config);
+});
+
+ipcMain.on("closeSettings", () => {
+  config.SETTINGS_WINDOW_OPEN = false;
+  json.write(CONFIG_PATH, config);
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    settingsWindow.close();
+  }
 });

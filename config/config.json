@@ -76,6 +76,8 @@
             "INPUT_BOX_BG": "rgb(255, 255, 255)"
         }
     },
+    "SETTINGS_WINDOW_OPEN": true,
+    "SETTINGS_ACTIVE_TAB": "widgets",
     "NOTES_TEXT": "Type here...",
     "NOTES_SAVED_TIME": "5/10/2026 8:54:22 PM",
     "NOTES_TOP_TITLE": "Notes"

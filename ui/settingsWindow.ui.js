@@ -26,12 +26,13 @@ function getAccentColor() { return JSON_DATA.APPEARANCE.ACCENT_COLOR; }
 // Tab Switching State & Logic
 // =============================================================================
 
-let currentTab = "widgets";
+let currentTab = JSON_DATA.SETTINGS_ACTIVE_TAB || "widgets";
 
 function switchTab(tabName) {
     if (currentTab === tabName) return;
     clearTabContent();
     currentTab = tabName;
+    ipcRenderer.send("setSettingsActiveTab", tabName);
     updateSidebarSelection();
     renderTabContent();
 }
@@ -603,7 +604,9 @@ ui.addShape({
     strokeWidth: 0,
     radius: 25 * SCALE,
     fillColor: getBackgroundSubtle(),
+    onLeftMouseUp: () => ipcRenderer.send("closeSettings")
 })
 
 // Initialize first tab view on load
+updateSidebarSelection();
 renderTabContent();
