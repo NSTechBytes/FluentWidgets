@@ -27,11 +27,13 @@ function getAccentColor() { return JSON_DATA.APPEARANCE.ACCENT_COLOR; }
 // =============================================================================
 
 let currentTab = JSON_DATA.SETTINGS_ACTIVE_TAB || "widgets";
+let isCornerDropdownOpen = false;
 
 function switchTab(tabName) {
     if (currentTab === tabName) return;
     clearTabContent();
     currentTab = tabName;
+    isCornerDropdownOpen = false;
     ipcRenderer.send("setSettingsActiveTab", tabName);
     updateSidebarSelection();
     renderTabContent();
@@ -78,7 +80,7 @@ function toggleDarkMode() {
     ipcRenderer.send("setDarkMode", newTheme === "dark");
 }
 
-function editGeneralSetting(settingType, elementId, defaultValue) {
+function editGeneralSetting(settingType, elementId, defaultValue, inputType) {
     const x = ui.getElementProperty(elementId, "x");
     const y = ui.getElementProperty(elementId, "y");
     const width = ui.getElementProperty(elementId, "width");
@@ -96,7 +98,8 @@ function editGeneralSetting(settingType, elementId, defaultValue) {
         height: height,
         fontSize: 13 * SCALE,
         backgroundColor: getThemeColors().INPUT_BOX_BG || "rgb(18, 18, 18)",
-        defaultValue: String(defaultValue)
+        defaultValue: String(defaultValue),
+        inputType: inputType || "Number"
     });
 }
 
@@ -118,7 +121,10 @@ function clearTabContent() {
         "darkModeText", "darkModeToggleImage",
         "scaleText", "scaleInputBg", "scaleInputText",
         "latitudeText", "latitudeInputBg", "latitudeInputText",
-        "longitudeText", "longitudeInputBg", "longitudeInputText"
+        "longitudeText", "longitudeInputBg", "longitudeInputText",
+        "cityText", "cityInputBg", "cityInputText",
+        "cornerText", "cornerInputBg", "cornerInputText",
+        "cornerDropdownBg", "cornerOptionNone", "cornerOptionRoundSmall", "cornerOptionRound"
     ];
     generalElementIds.forEach(id => {
         if (ui.isElementExist(id)) ui.removeElementById(id);
@@ -325,7 +331,7 @@ function renderTabContent() {
             strokeWidth: 1 * SCALE,
             strokeColor: getFontSubtleColor(),
             fillColor: getBackgroundSubtle(),
-            onLeftMouseUp: () => editGeneralSetting("longitude", "longitudeInputBg", JSON_DATA.LOCATION.LONGITUDE)
+            onLeftMouseUp: () => editGeneralSetting("longitude", "longitudeInputBg", JSON_DATA.LOCATION.LONGITUDE, "Number")
         });
 
         ui.addText({
@@ -337,8 +343,131 @@ function renderTabContent() {
             fontSize: 14 * SCALE,
             fontFace: FONT_FACE,
             fontColor: getFontColor(),
-            onLeftMouseUp: () => editGeneralSetting("longitude", "longitudeInputBg", JSON_DATA.LOCATION.LONGITUDE)
+            onLeftMouseUp: () => editGeneralSetting("longitude", "longitudeInputBg", JSON_DATA.LOCATION.LONGITUDE, "Number")
         });
+
+        // --- City Name ---
+        ui.addText({
+            id: "cityText",
+            text: "Weather City Name",
+            x: SIDEBAR_WIDTH + 30 * SCALE,
+            y: 370 * SCALE + 20 * SCALE,
+            textAlign: "leftcenter",
+            fontSize: 16 * SCALE,
+            fontWeight: 600,
+            fontFace: FONT_FACE,
+            fontColor: getFontColor()
+        });
+
+        ui.addShape({
+            id: "cityInputBg",
+            type: "rectangle",
+            x: BG_WIDTH - 30 * SCALE - 120 * SCALE,
+            y: 370 * SCALE + 4 * SCALE,
+            width: 120 * SCALE,
+            height: 32 * SCALE,
+            radius: 4 * SCALE,
+            strokeWidth: 1 * SCALE,
+            strokeColor: getFontSubtleColor(),
+            fillColor: getBackgroundSubtle(),
+            onLeftMouseUp: () => editGeneralSetting("city", "cityInputBg", JSON_DATA.LOCATION.CITY_NAME, "Text")
+        });
+
+        ui.addText({
+            id: "cityInputText",
+            text: String(JSON_DATA.LOCATION.CITY_NAME),
+            x: BG_WIDTH - 30 * SCALE - 110 * SCALE,
+            y: 370 * SCALE + 20 * SCALE,
+            textAlign: "leftcenter",
+            fontSize: 14 * SCALE,
+            fontFace: FONT_FACE,
+            fontColor: getFontColor(),
+            onLeftMouseUp: () => editGeneralSetting("city", "cityInputBg", JSON_DATA.LOCATION.CITY_NAME, "Text")
+        });
+
+        // --- Corner Style ---
+        ui.addText({
+            id: "cornerText",
+            text: "Corner Style",
+            x: SIDEBAR_WIDTH + 30 * SCALE,
+            y: 435 * SCALE + 20 * SCALE,
+            textAlign: "leftcenter",
+            fontSize: 16 * SCALE,
+            fontWeight: 600,
+            fontFace: FONT_FACE,
+            fontColor: getFontColor()
+        });
+
+        ui.addShape({
+            id: "cornerInputBg",
+            type: "rectangle",
+            x: BG_WIDTH - 30 * SCALE - 120 * SCALE,
+            y: 435 * SCALE + 4 * SCALE,
+            width: 120 * SCALE,
+            height: 32 * SCALE,
+            radius: 4 * SCALE,
+            strokeWidth: 1 * SCALE,
+            strokeColor: getFontSubtleColor(),
+            fillColor: getBackgroundSubtle(),
+            onLeftMouseUp: () => {
+                isCornerDropdownOpen = !isCornerDropdownOpen;
+                clearTabContent();
+                renderTabContent();
+            }
+        });
+
+        ui.addText({
+            id: "cornerInputText",
+            text: String(JSON_DATA.BB_STYLE.ROUND_TYPE),
+            x: BG_WIDTH - 30 * SCALE - 110 * SCALE,
+            y: 435 * SCALE + 20 * SCALE,
+            textAlign: "leftcenter",
+            fontSize: 14 * SCALE,
+            fontFace: FONT_FACE,
+            fontColor: getFontColor(),
+            onLeftMouseUp: () => {
+                isCornerDropdownOpen = !isCornerDropdownOpen;
+                clearTabContent();
+                renderTabContent();
+            }
+        });
+
+        if (isCornerDropdownOpen) {
+            ui.addShape({
+                id: "cornerDropdownBg",
+                type: "rectangle",
+                x: BG_WIDTH - 30 * SCALE - 120 * SCALE,
+                y: 435 * SCALE + 40 * SCALE,
+                width: 120 * SCALE,
+                height: 90 * SCALE,
+                radius: 4 * SCALE,
+                strokeWidth: 1 * SCALE,
+                strokeColor: getFontSubtleColor(),
+                fillColor: "rgba(30, 30, 30, 0.9)"
+            });
+
+            const options = ["none", "roundsmall", "round"];
+            options.forEach((opt, idx) => {
+                const optId = "cornerOption" + (idx === 0 ? "None" : (idx === 1 ? "RoundSmall" : "Round"));
+                ui.addText({
+                    id: optId,
+                    text: opt,
+                    x: BG_WIDTH - 30 * SCALE - 110 * SCALE,
+                    y: 435 * SCALE + 40 * SCALE + (15 * SCALE) + (idx * 30 * SCALE),
+                    textAlign: "leftcenter",
+                    fontSize: 14 * SCALE,
+                    fontFace: FONT_FACE,
+                    fontColor: getFontColor(),
+                    onLeftMouseUp: () => {
+                        JSON_DATA.BB_STYLE.ROUND_TYPE = opt;
+                        ipcRenderer.send("setCornerStyle", opt);
+                        isCornerDropdownOpen = false;
+                        clearTabContent();
+                        renderTabContent();
+                    }
+                });
+            });
+        }
 
     } else if (currentTab === "about") {
         const contentWidth = BG_WIDTH - SIDEBAR_WIDTH;

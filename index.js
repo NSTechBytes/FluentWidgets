@@ -609,7 +609,7 @@ function settingsInput(data) {
     fontSize: data.fontSize,
     borderVisible: false,
     multiline: false,
-    inputType: "Number",
+    inputType: data.inputType || "Number",
     backgroundColor: data.backgroundColor,
     defaultValue: data.defaultValue,
     onEnter: () => {
@@ -629,6 +629,8 @@ function settingsInput(data) {
         if (!isNaN(val)) {
           config.LOCATION.LONGITUDE = val;
         }
+      } else if (data.type === "city") {
+        if (text) config.LOCATION.CITY_NAME = text;
       }
 
       json.write(CONFIG_PATH, config);
@@ -790,5 +792,17 @@ ipcMain.on("closeSettings", () => {
   json.write(CONFIG_PATH, config);
   if (settingsWindow && !settingsWindow.isDestroyed()) {
     settingsWindow.close();
+  }
+});
+
+ipcMain.on("setCornerStyle", (event, style) => {
+  const validCorners = ["none", "roundsmall", "round"];
+  if (validCorners.includes(style.toLowerCase())) {
+    config.BB_STYLE.ROUND_TYPE = style.toLowerCase();
+    json.write(CONFIG_PATH, config);
+    const wins = [monitorWindow, clockWindow, calendarWindow, weatherWindow, playerWindow, notesWindow, volumeWindow, settingsWindow];
+    wins.forEach(w => {
+      if (w && !w.isDestroyed()) applyBlurBehind(w);
+    });
   }
 });
