@@ -460,16 +460,23 @@ function updateVolumeStyle(style) {
   config.WINDOW_STYLES.VOLUME_WINDOW = style;
   json.write(CONFIG_PATH, config);
   
-  if (volumeTimer) {
-    clearInterval(volumeTimer);
-    volumeTimer = null;
+  if (volumeWindow && typeof volumeWindow.setSize === "function") {
+    const scale = parseFloat(config.SCALE) || 1.0;
+    const key = style.toUpperCase();
+    const size = config.WIDGET_SIZES[key] || config.WIDGET_SIZES.LARGE;
+    const w = Math.round(size.WIDTH * scale);
+    const h = Math.round(size.HEIGHT * scale);
+    
+    // Resize window dynamically and smoothly
+    volumeWindow.setSize(w, h);
+    
+    // Notify renderer to hot-swap style elements cleanly without reloading
+    ipcMain.send("changeVolumeStyle", style);
+  } else {
+    volumeWindow.refresh();
   }
   
-  volumeWindow.refresh();
   volumeWindow.setContextMenu(buildStyleMenu(style, updateVolumeStyle));
-  
-  setTimeout(publishVolumeData, 120);
-  volumeTimer = setInterval(publishVolumeData, 1000);
 }
 
 function loadVolumeWidget() {

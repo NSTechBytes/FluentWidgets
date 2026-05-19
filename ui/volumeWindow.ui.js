@@ -8,7 +8,7 @@
 const JSON_DATA = ipcRenderer.invoke("getJSON");
 const SCALE = parseFloat(JSON_DATA.SCALE) || 1;
 const FONT_FACE = JSON_DATA.FONT_FACE;
-const currentStyle = JSON_DATA.WINDOW_STYLES.VOLUME_WINDOW || "large";
+let currentStyle = JSON_DATA.WINDOW_STYLES.VOLUME_WINDOW || "large";
 
 let volumeVal = 50;
 let isMuted = false;
@@ -90,6 +90,24 @@ function smallStyle() {
     onScrollUp: () => handleScroll("up"),
     onScrollDown: () => handleScroll("down"),
     onLeftMouseUp: toggleMute
+  });
+
+  // Circular progress ring showing volume value
+  ui.addRoundLine({
+    id: "volume_ring",
+    x: 5 * SCALE,
+    y: 5 * SCALE,
+    width: 65 * SCALE,
+    height: 65 * SCALE,
+    radius: 28 * SCALE,
+    thickness: 4 * SCALE,
+    value: isMuted ? 0 : volumeVal / 100,
+    lineColor: getAccentColor(),
+    lineColorBg: getSubtleColor(),
+    capType: "round",
+    startAngle: 0,
+    totalAngle: 360,
+    clockwise: true
   });
 
   ui.addImage({
@@ -421,6 +439,25 @@ function largeStyle() {
   ui.endUpdate();
 }
 
+function clearUI() {
+  const ids = [
+    "background_Shape",
+    "volume_icon",
+    "volume_text",
+    "volume_status",
+    "volume_subtitle",
+    "slider_track",
+    "slider_fill",
+    "slider_hit",
+    "volume_ring"
+  ];
+  ids.forEach(id => {
+    if (ui.isElementExist(id)) {
+      ui.removeElementById(id);
+    }
+  });
+}
+
 // =============================================================================
 // Initial Render
 // =============================================================================
@@ -432,6 +469,17 @@ function render() {
 }
 
 render();
+
+// =============================================================================
+// IPC — Hot Style Swapping
+// =============================================================================
+ipcRenderer.on("changeVolumeStyle", (event, style) => {
+  ui.beginUpdate();
+  currentStyle = style;
+  clearUI();
+  render();
+  ui.endUpdate();
+});
 
 // =============================================================================
 // IPC — Update volume properties in real time
@@ -466,6 +514,12 @@ ipcRenderer.on("volumeUpdate", (event, data) => {
 
     const fillWidth = isMuted ? 0 : (volumeVal / 100) * maxW;
     ui.setElementProperty("slider_fill", "width", fillWidth);
+  }
+
+  // 4. Update circular volume ring
+  if (ui.isElementExist("volume_ring")) {
+    const val = isMuted ? 0 : volumeVal / 100;
+    ui.setElementProperty("volume_ring", "value", val);
   }
 
   ui.endUpdate();
