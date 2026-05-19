@@ -7,7 +7,7 @@
 // as a separate renderer process.
 // =============================================================================
 
-import { widgetWindow, addon, app } from "novadesk";
+import { widgetWindow, addon, app, tray } from "novadesk";
 import * as fs from "fs";
 import { json, cpu, memory, network, disk, time, webFetch, audio, execute } from "system";
 
@@ -760,6 +760,21 @@ if (config.LOADED_WIDGETS) {
 if (config.SETTINGS_WINDOW_OPEN !== false) {
   loadSettingsWindow();
 }
+
+// =============================================================================
+// System Tray Icon
+// =============================================================================
+const appTray = new tray("assets/icon.ico");
+appTray.setToolTip("FluentWidgets");
+appTray.setContextMenu([
+  { text: "Settings", action: () => loadSettingsWindow() },
+  { type: "separator" },
+  { text: "Exit App", action: () => app.exit() }
+]);
+
+appTray.on("click", () => {
+  loadSettingsWindow();
+});
 
 ipcMain.on("openGithub", () => {
   execute("https://github.com/nstechbytes/FluentWidgets");
