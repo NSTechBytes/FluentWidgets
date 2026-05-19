@@ -44,7 +44,7 @@ function largeStyle() {
 
   ui.beginUpdate();
 
-  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, fillColor: getBackgroundColor() });
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, strokeWidth: 0, fillColor: getBackgroundColor() });
 
   ui.addText({ id: "city-name-text", x: 20 * SCALE, y: 20 * SCALE, text: "City", fontSize: 16 * SCALE, fontColor: getTextColor(), fontFace: FONT_FACE, fontWeight: "bold", textAlign: "left" });
   ui.addText({ id: "current-temp-text", x: 20 * SCALE, y: 50 * SCALE, text: "0°", fontSize: 60 * SCALE, fontColor: getTextColor(), fontFace: FONT_FACE, textAlign: "left" });
@@ -80,7 +80,7 @@ function wideStyle() {
 
   ui.beginUpdate();
 
-  ui.addShape({ id: "background_Shape", type: "rectangle", width: W, height: H, fillColor: getBackgroundColor() });
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: W, height: H, strokeWidth: 0, fillColor: getBackgroundColor() });
 
   ui.addText({ id: "city-name-text", x: 20 * SCALE, y: 15 * SCALE, text: "City", fontSize: 14 * SCALE, fontColor: getTextColor(), fontFace: FONT_FACE, fontWeight: "bold", textAlign: "left" });
   ui.addText({ id: "current-temp-text", x: 20 * SCALE, y: 40 * SCALE, text: "0°", fontSize: 48 * SCALE, fontColor: getTextColor(), fontFace: FONT_FACE, textAlign: "left" });
@@ -99,7 +99,7 @@ function mediumStyle() {
 
   ui.beginUpdate();
 
-  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, fillColor: getBackgroundColor() });
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, strokeWidth: 0, fillColor: getBackgroundColor() });
   ui.addText({ id: "city-name-text", x: 15 * SCALE, y: 15 * SCALE, text: "City", fontSize: 14 * SCALE, fontColor: getTextColor(), fontFace: FONT_FACE, fontWeight: "bold", textAlign: "left" });
   ui.addText({ id: "current-temp-text", x: 15 * SCALE, y: 45 * SCALE, text: "0°", fontSize: 50 * SCALE, fontColor: getTextColor(), fontFace: FONT_FACE, textAlign: "left" });
 
@@ -111,7 +111,7 @@ function smallStyle() {
 
   ui.beginUpdate();
 
-  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, fillColor: getBackgroundColor() });
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, strokeWidth: 0, fillColor: getBackgroundColor() });
   ui.addText({ id: "current-temp-text", x: SIZE / 2, y: 20 * SCALE, text: "0°", fontSize: 34 * SCALE, fontColor: getTextColor(), fontFace: FONT_FACE, textAlign: "center" });
 
   ui.endUpdate();

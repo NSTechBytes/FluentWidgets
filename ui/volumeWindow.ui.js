@@ -86,6 +86,7 @@ function smallStyle() {
     width: SIZE,
     height: SIZE,
     fillColor: getBackgroundColor(),
+    strokeWidth: 0,
     mouseEventCursor: false,
     onScrollUp: () => handleScroll("up"),
     onScrollDown: () => handleScroll("down"),
@@ -134,6 +135,7 @@ function mediumStyle() {
     height: SIZE,
     fillColor: getBackgroundColor(),
     mouseEventCursor: false,
+    strokeWidth: 0,
     onScrollUp: () => handleScroll("up"),
     onScrollDown: () => handleScroll("down")
   });
@@ -232,6 +234,7 @@ function wideStyle() {
     height: H,
     fillColor: getBackgroundColor(),
     mouseEventCursor: false,
+    strokeWidth: 0,
     onScrollUp: () => handleScroll("up"),
     onScrollDown: () => handleScroll("down")
   });

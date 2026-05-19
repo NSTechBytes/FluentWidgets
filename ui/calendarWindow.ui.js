@@ -45,7 +45,7 @@ function largeStyle() {
 
   ui.beginUpdate();
 
-  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, fillColor: getBackgroundColor() });
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, strokeWidth: 0, fillColor: getBackgroundColor() });
   ui.addText({ id: "month-text", x: 35 * SCALE, y: 35 * SCALE, text: "MONTH", fontSize: 24 * SCALE, fontColor: getAccentColor(), fontFace: FONT_FACE, textAlign: "left" });
 
   // This highlight ellipse is hidden off-screen until we place it over today's cell
@@ -91,7 +91,7 @@ function wideStyle() {
 
   ui.beginUpdate();
 
-  ui.addShape({ id: "background_Shape", type: "rectangle", width: W, height: H, fillColor: getBackgroundColor() });
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: W, height: H, strokeWidth: 0, fillColor: getBackgroundColor() });
 
   // Left column — large date display
   ui.addText({ id: "day-name-text", x: 20 * SCALE, y: 15 * SCALE, text: "DAY", fontSize: 14 * SCALE, fontColor: getAccentColor(), fontFace: FONT_FACE, textAlign: "left" });
@@ -121,7 +121,7 @@ function smallStyle() {
 
   ui.beginUpdate();
 
-  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, fillColor: getBackgroundColor() });
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, strokeWidth: 0, fillColor: getBackgroundColor() });
   ui.addText({ id: "day-name-text", x: SIZE / 2, y: 12 * SCALE, text: "DAY", fontSize: 10 * SCALE, fontColor: getAccentColor(), fontFace: FONT_FACE, fontWeight: "bold", textAlign: "center" });
   ui.addText({ id: "current-date-text", x: SIZE / 2, y: 20 * SCALE, text: "0", fontSize: 34 * SCALE, fontColor: getTextColor(), fontFace: FONT_FACE, textAlign: "center" });
 
@@ -133,7 +133,7 @@ function mediumStyle() {
 
   ui.beginUpdate();
 
-  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, fillColor: getBackgroundColor() });
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, strokeWidth: 0, fillColor: getBackgroundColor() });
   ui.addText({ id: "month-text", x: 13 * SCALE, y: 15 * SCALE, text: "MONTH", fontSize: 14 * SCALE, fontColor: getAccentColor(), fontFace: FONT_FACE, textAlign: "left" });
   ui.addShape({ id: "current-day-highlight", type: "ellipse", x: -100, y: -100, width: 20 * SCALE, height: 20 * SCALE, fillColor: getAccentColor(), strokeWidth: 0, opacity: 0 });
 

@@ -41,9 +41,9 @@ function getThemeColors() {
 }
 
 function getBackgroundColor() { return getThemeColors().BACKGROUND; }
-function getSubtleColor()      { return getThemeColors().SUBTLE; }
-function getTextColor()        { return getThemeColors().FONT; }
-function getAccentColor()      { return JSON_DATA.APPEARANCE.ACCENT_COLOR; }
+function getSubtleColor() { return getThemeColors().SUBTLE; }
+function getTextColor() { return getThemeColors().FONT; }
+function getAccentColor() { return JSON_DATA.APPEARANCE.ACCENT_COLOR; }
 
 // =============================================================================
 // Widget Size Helper
@@ -86,6 +86,7 @@ function smallStyle() {
     type: "rectangle",
     width: SIZE,
     height: SIZE,
+    strokeWidth: 0,
     fillColor: getBackgroundColor(),
   });
 
@@ -97,7 +98,7 @@ function smallStyle() {
   });
 
   // Clock hands (line shapes pivoting from center)
-  ui.addShape({ id: "hour-hand",   type: "line", startX: CENTER, startY: CENTER, endX: CENTER, endY: CENTER - 14 * SCALE, strokeColor: getTextColor(), strokeWidth: 3 * SCALE });
+  ui.addShape({ id: "hour-hand", type: "line", startX: CENTER, startY: CENTER, endX: CENTER, endY: CENTER - 14 * SCALE, strokeColor: getTextColor(), strokeWidth: 3 * SCALE });
   ui.addShape({ id: "minute-hand", type: "line", startX: CENTER, startY: CENTER, endX: CENTER, endY: CENTER - 22 * SCALE, strokeColor: getTextColor(), strokeWidth: 2 * SCALE });
   ui.addShape({ id: "second-hand", type: "line", startX: CENTER, startY: CENTER, endX: CENTER, endY: CENTER - 24 * SCALE, strokeColor: getAccentColor(), strokeWidth: 1 * SCALE });
 
@@ -117,10 +118,10 @@ function mediumStyle() {
 
   ui.beginUpdate();
 
-  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, fillColor: getBackgroundColor() });
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, strokeWidth: 0, fillColor: getBackgroundColor() });
   ui.addImage({ id: "clock-face", x: PAD, y: PAD, width: FACE, height: FACE, path: largeFace });
 
-  ui.addShape({ id: "hour-hand",   type: "line", startX: CENTER, startY: CENTER, endX: CENTER, endY: CENTER - 28 * SCALE, strokeColor: getTextColor(), strokeWidth: 4 * SCALE });
+  ui.addShape({ id: "hour-hand", type: "line", startX: CENTER, startY: CENTER, endX: CENTER, endY: CENTER - 28 * SCALE, strokeColor: getTextColor(), strokeWidth: 4 * SCALE });
   ui.addShape({ id: "minute-hand", type: "line", startX: CENTER, startY: CENTER, endX: CENTER, endY: CENTER - 46 * SCALE, strokeColor: getTextColor(), strokeWidth: 3 * SCALE });
   ui.addShape({ id: "second-hand", type: "line", startX: CENTER, startY: CENTER, endX: CENTER, endY: CENTER - 52 * SCALE, strokeColor: getAccentColor(), strokeWidth: 2 * SCALE });
 
@@ -134,11 +135,11 @@ function wideStyle() {
 
   ui.beginUpdate();
 
-  ui.addShape({ id: "background_Shape", type: "rectangle", width: W, height: H, strokeWidth: 0, fillColor: getBackgroundColor() });
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: W, height: H, strokeWidth: 0, strokeWidth: 0, fillColor: getBackgroundColor() });
 
-  ui.addText({ id: "time-text",    x: W / 2 - 15 * SCALE, y: 5 * SCALE,    text: "00:00", fontSize: 90 * SCALE, fontColor: getTextColor(),  fontFace: FONT_FACE, textAlign: "center" });
-  ui.addText({ id: "seconds-text", x: W / 2 + 110 * SCALE, y: 30 * SCALE,  text: "00",    fontSize: 35 * SCALE, fontColor: getSubtleColor(), fontFace: FONT_FACE, textAlign: "left" });
-  ui.addText({ id: "date-text",    x: W / 2,               y: 115 * SCALE, text: "Date Loading...", fontSize: 22 * SCALE, fontColor: getTextColor(), fontFace: FONT_FACE, textAlign: "center" });
+  ui.addText({ id: "time-text", x: W / 2 - 15 * SCALE, y: 5 * SCALE, text: "00:00", fontSize: 90 * SCALE, fontColor: getTextColor(), fontFace: FONT_FACE, textAlign: "center" });
+  ui.addText({ id: "seconds-text", x: W / 2 + 110 * SCALE, y: 30 * SCALE, text: "00", fontSize: 35 * SCALE, fontColor: getSubtleColor(), fontFace: FONT_FACE, textAlign: "left" });
+  ui.addText({ id: "date-text", x: W / 2, y: 115 * SCALE, text: "Date Loading...", fontSize: 22 * SCALE, fontColor: getTextColor(), fontFace: FONT_FACE, textAlign: "center" });
 
   ui.endUpdate();
 }
@@ -152,14 +153,14 @@ function largeStyle() {
 
   ui.beginUpdate();
 
-  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, fillColor: getBackgroundColor() });
-  ui.addShape({ id: "ellipse_Shape",    type: "ellipse",   x: PAD, y: PAD, width: SIZE - PAD * 2, height: SIZE - PAD * 2, strokeWidth: 0, fillColor: getBackgroundColor() });
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, strokeWidth: 0, fillColor: getBackgroundColor() });
+  ui.addShape({ id: "ellipse_Shape", type: "ellipse", x: PAD, y: PAD, width: SIZE - PAD * 2, height: SIZE - PAD * 2, strokeWidth: 0, fillColor: getBackgroundColor() });
 
   ui.addImage({ id: "clock-face", x: PAD, y: PAD, width: SIZE - PAD * 2, height: SIZE - PAD * 2, path: largeFace });
 
-  ui.addShape({ id: "hour-hand",   type: "line", startX: CENTER, startY: CENTER, endX: CENTER, endY: CENTER - 60 * SCALE,   strokeColor: getTextColor(), strokeWidth: 8 * SCALE });
-  ui.addShape({ id: "minute-hand", type: "line", startX: CENTER, startY: CENTER, endX: CENTER, endY: CENTER - 100 * SCALE,  strokeColor: getTextColor(), strokeWidth: 5 * SCALE });
-  ui.addShape({ id: "second-hand", type: "line", startX: CENTER, startY: CENTER, endX: CENTER, endY: CENTER - 120 * SCALE,  strokeColor: getAccentColor(), strokeWidth: 2 * SCALE });
+  ui.addShape({ id: "hour-hand", type: "line", startX: CENTER, startY: CENTER, endX: CENTER, endY: CENTER - 60 * SCALE, strokeColor: getTextColor(), strokeWidth: 8 * SCALE });
+  ui.addShape({ id: "minute-hand", type: "line", startX: CENTER, startY: CENTER, endX: CENTER, endY: CENTER - 100 * SCALE, strokeColor: getTextColor(), strokeWidth: 5 * SCALE });
+  ui.addShape({ id: "second-hand", type: "line", startX: CENTER, startY: CENTER, endX: CENTER, endY: CENTER - 120 * SCALE, strokeColor: getAccentColor(), strokeWidth: 2 * SCALE });
 
   // Center pin
   ui.addShape({ id: "pin", type: "ellipse", x: CENTER - 6 * SCALE, y: CENTER - 6 * SCALE, width: 12 * SCALE, height: 12 * SCALE, fillColor: getAccentColor(), strokeColor: getTextColor(), strokeWidth: 2 * SCALE });
@@ -171,10 +172,10 @@ function largeStyle() {
 // Initial Render
 // =============================================================================
 
-if (currentStyle === "small")     smallStyle();
+if (currentStyle === "small") smallStyle();
 else if (currentStyle === "medium") mediumStyle();
-else if (currentStyle === "wide")   wideStyle();
-else if (currentStyle === "large")  largeStyle();
+else if (currentStyle === "wide") wideStyle();
+else if (currentStyle === "large") largeStyle();
 else wideStyle();
 
 // =============================================================================
@@ -239,15 +240,15 @@ ipcRenderer.on("clockUpdate", (event, data) => {
   if (!data || data.style !== currentStyle) return;
 
   if (currentStyle === "wide") {
-    if (ui.isElementExist("time-text"))    ui.setElementProperty("time-text",    "text", data.timeText);
+    if (ui.isElementExist("time-text")) ui.setElementProperty("time-text", "text", data.timeText);
     if (ui.isElementExist("seconds-text")) ui.setElementProperty("seconds-text", "text", data.secondsText);
-    if (ui.isElementExist("date-text"))    ui.setElementProperty("date-text",    "text", data.dateText);
+    if (ui.isElementExist("date-text")) ui.setElementProperty("date-text", "text", data.dateText);
     return;
   }
 
   // Analog styles — update stored time and rotate hands
   if (currentStyle === "large" || currentStyle === "medium" || currentStyle === "small") {
-    hour   = data.hour24;
+    hour = data.hour24;
     minute = data.minute;
     second = data.second;
     updateHands();

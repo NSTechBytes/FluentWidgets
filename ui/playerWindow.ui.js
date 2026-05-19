@@ -342,6 +342,7 @@ function largeStyle() {
     id: "background_Shape",
     type: "rectangle",
     width: SIZE, height: SIZE,
+    strokeWidth: 0,
     fillColor: getBackgroundColor(),
     onMouseOver: () => {
       if (nowPlayingData && nowPlayingData.available) {
