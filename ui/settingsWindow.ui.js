@@ -123,8 +123,12 @@ function clearTabContent() {
         if (ui.isElementExist(id)) ui.removeElementById(id);
     });
 
-    // 3. Remove placeholders
-    const tabElementIds = ["widgetsPlaceholder", "generalPlaceholder", "aboutPlaceholder"];
+    // 3. Remove placeholders and about tab elements
+    const tabElementIds = [
+        "widgetsPlaceholder", "generalPlaceholder", "aboutPlaceholder",
+        "aboutLogo", "aboutTitle", "aboutVersion", "aboutLicense", 
+        "aboutGithubLogo", "aboutGithubLink"
+    ];
     tabElementIds.forEach(id => {
         if (ui.isElementExist(id)) ui.removeElementById(id);
     });
@@ -336,16 +340,78 @@ function renderTabContent() {
         });
 
     } else if (currentTab === "about") {
-        ui.addText({
-            id: "aboutPlaceholder",
-            text: "FluentWidgets v" + JSON_DATA.version + "\nA beautiful suite of system widgets built with Novadesk.\n\nCreated with love by Nasir Shahbaz.",
-            x: SIDEBAR_WIDTH + 30 * SCALE,
+        const contentWidth = BG_WIDTH - SIDEBAR_WIDTH;
+        const centerX = SIDEBAR_WIDTH + contentWidth / 2;
+
+        // 1. App Logo
+        ui.addImage({
+            id: "aboutLogo",
+            path: "assets/images/Settings/logo.png",
+            x: centerX - 36 * SCALE,
             y: 110 * SCALE,
-            width: BG_WIDTH - SIDEBAR_WIDTH - 60 * SCALE,
-            fontSize: 14 * SCALE,
-            fontColor: getFontSubtleColor(),
+            width: 72 * SCALE,
+            height: 72 * SCALE
+        });
+
+        // 2. App Name Text
+        ui.addText({
+            id: "aboutTitle",
+            text: "FluentWidgets",
+            x: centerX,
+            y: 200 * SCALE,
+            fontSize: 18 * SCALE,
+            fontWeight: "bold",
             fontFace: FONT_FACE,
-            textAlign: "lefttop"
+            fontColor: getFontColor(),
+            textAlign: "center"
+        });
+
+        // 3. Version Text
+        ui.addText({
+            id: "aboutVersion",
+            text: "Version " + (JSON_DATA.version || "1.0.0.0"),
+            x: centerX,
+            y: 230 * SCALE,
+            fontSize: 13 * SCALE,
+            fontFace: FONT_FACE,
+            fontColor: getFontSubtleColor(),
+            textAlign: "center"
+        });
+
+        // 4. License Info Text
+        ui.addText({
+            id: "aboutLicense",
+            text: "Licensed under the Apache License, Version 2.0",
+            x: centerX,
+            y: 260 * SCALE,
+            fontSize: 13 * SCALE,
+            fontFace: FONT_FACE,
+            fontColor: getFontSubtleColor(),
+            textAlign: "center"
+        });
+
+        // 5. GitHub Logo Icon Button
+        ui.addImage({
+            id: "aboutGithubLogo",
+            path: "assets/images/Settings/github.png",
+            x: centerX - 20 * SCALE,
+            y: 310 * SCALE,
+            width: 40 * SCALE,
+            height: 40 * SCALE,
+            onLeftMouseUp: () => ipcRenderer.send("openGithub")
+        });
+
+        // 6. GitHub Link Text
+        ui.addText({
+            id: "aboutGithubLink",
+            text: "View Repository on GitHub",
+            x: centerX,
+            y: 360 * SCALE,
+            fontSize: 13 * SCALE,
+            fontFace: FONT_FACE,
+            fontColor: getAccentColor(),
+            textAlign: "center",
+            onLeftMouseUp: () => ipcRenderer.send("openGithub")
         });
     }
 

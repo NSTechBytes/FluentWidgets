@@ -9,7 +9,7 @@
 
 import { widgetWindow, addon, app } from "novadesk";
 import * as fs from "fs";
-import { json, cpu, memory, network, disk, time, webFetch, audio } from "system";
+import { json, cpu, memory, network, disk, time, webFetch, audio, execute } from "system";
 
 // -----------------------------------------------------------------------------
 // Configuration
@@ -752,3 +752,7 @@ if (config.LOADED_WIDGETS) {
 }
 
 loadSettingsWindow();
+
+ipcMain.on("openGithub", () => {
+  execute("https://github.com/nasirshahbaz/FluentWidgets");
+});
