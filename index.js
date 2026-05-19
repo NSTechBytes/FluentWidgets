@@ -9,7 +9,7 @@
 
 import { widgetWindow, addon, app } from "novadesk";
 import * as fs from "fs";
-import { json, cpu, memory, network, disk, time, webFetch } from "system";
+import { json, cpu, memory, network, disk, time, webFetch, audio } from "system";
 
 // -----------------------------------------------------------------------------
 // Configuration
@@ -440,6 +440,78 @@ ipcMain.on("previous", () => nowPlaying.previous());
 publishNowPlayingData();
 
 // =============================================================================
+// Volume Widget
+// =============================================================================
+
+let volumeWindow = null;
+let volumeTimer = null;
+let isMuted = false;
+let lastVolume = 50;
+
+function publishVolumeData() {
+  const vol = audio.getVolume();
+  ipcMain.send("volumeUpdate", {
+    volume: vol,
+    isMuted: isMuted
+  });
+}
+
+function updateVolumeStyle(style) {
+  config.WINDOW_STYLES.VOLUME_WINDOW = style;
+  json.write(CONFIG_PATH, config);
+  
+  if (volumeTimer) {
+    clearInterval(volumeTimer);
+    volumeTimer = null;
+  }
+  
+  volumeWindow.refresh();
+  volumeWindow.setContextMenu(buildStyleMenu(style, updateVolumeStyle));
+  
+  setTimeout(publishVolumeData, 120);
+  volumeTimer = setInterval(publishVolumeData, 1000);
+}
+
+function loadVolumeWidget() {
+  volumeWindow = createWidgetWindow("VOLUME_WINDOW", "ui/volumeWindow.ui.js");
+  volumeWindow.setContextMenu(
+    buildStyleMenu(config.WINDOW_STYLES.VOLUME_WINDOW || "large", updateVolumeStyle),
+  );
+  publishVolumeData();
+  volumeTimer = setInterval(publishVolumeData, 1000);
+  volumeWindow.show();
+}
+
+ipcMain.on("setVolume", (event, vol) => {
+  audio.setVolume(vol);
+  isMuted = (vol === 0);
+  publishVolumeData();
+});
+
+ipcMain.on("toggleMute", (event) => {
+  const currentVol = audio.getVolume();
+  if (isMuted) {
+    audio.setVolume(lastVolume || 50);
+    isMuted = false;
+  } else {
+    lastVolume = currentVol > 0 ? currentVol : 50;
+    audio.setVolume(0);
+    isMuted = true;
+  }
+  publishVolumeData();
+});
+
+ipcMain.on("changeVolumeStep", (event, delta) => {
+  const currentVol = audio.getVolume();
+  let nextVol = currentVol + delta;
+  if (nextVol < 0) nextVol = 0;
+  if (nextVol > 100) nextVol = 100;
+  audio.setVolume(nextVol);
+  isMuted = (nextVol === 0);
+  publishVolumeData();
+});
+
+// =============================================================================
 //   Notes Widget
 // =============================================================================
 
@@ -520,6 +592,77 @@ function notesTitleInput(data) {
 ipcMain.on("notesTitleInput", (event, data) => notesTitleInput(data));
 ipcMain.on("notesInput", (event, data) => notesInput(data));
 
+function settingsInput(data) {
+  const inputBox_ID = inputBox.show({
+    widgetHwnd: settingsWindow.getHandle(),
+    x: data.x,
+    y: data.y,
+    width: data.width,
+    height: data.height,
+    fontSize: data.fontSize,
+    borderVisible: false,
+    multiline: false,
+    inputType: "Number",
+    backgroundColor: data.backgroundColor,
+    defaultValue: data.defaultValue,
+    onEnter: () => {
+      const text = inputBox.lastText().trim();
+      const isFloat = text.includes(".");
+      const val = isFloat ? parseFloat(text) : parseInt(text, 10);
+
+      if (data.type === "scale") {
+        if (!isNaN(val) && val >= 0.5 && val <= 3.0) {
+          config.SCALE = val;
+        }
+      } else if (data.type === "latitude") {
+        if (!isNaN(val)) {
+          config.LOCATION.LATITUDE = val;
+        }
+      } else if (data.type === "longitude") {
+        if (!isNaN(val)) {
+          config.LOCATION.LONGITUDE = val;
+        }
+      }
+
+      json.write(CONFIG_PATH, config);
+      settingsWindow.refresh();
+
+      // Refresh other widgets if scaling changed
+      if (data.type === "scale") {
+        if (notesWindow && !notesWindow.isDestroyed()) notesWindow.refresh();
+        if (clockWindow && !clockWindow.isDestroyed()) clockWindow.refresh();
+        if (calendarWindow && !calendarWindow.isDestroyed()) calendarWindow.refresh();
+        if (weatherWindow && !weatherWindow.isDestroyed()) weatherWindow.refresh();
+        if (monitorWindow && !monitorWindow.isDestroyed()) monitorWindow.refresh();
+        if (playerWindow && !playerWindow.isDestroyed()) playerWindow.refresh();
+        if (volumeWindow && !volumeWindow.isDestroyed()) volumeWindow.refresh();
+      }
+    },
+    onDismiss: () => {
+      ipcMain.send("inputBoxDismissed");
+    },
+    onEsc: () => {
+      ipcMain.send("inputBoxDismissed");
+    }
+  });
+}
+
+ipcMain.on("settingsInput", (event, data) => settingsInput(data));
+
+ipcMain.on("setDarkMode", (event, isDark) => {
+  config.APPEARANCE.THEME = isDark ? "dark" : "light";
+  json.write(CONFIG_PATH, config);
+
+  if (settingsWindow && !settingsWindow.isDestroyed()) settingsWindow.refresh();
+  if (notesWindow && !notesWindow.isDestroyed()) notesWindow.refresh();
+  if (clockWindow && !clockWindow.isDestroyed()) clockWindow.refresh();
+  if (calendarWindow && !calendarWindow.isDestroyed()) calendarWindow.refresh();
+  if (weatherWindow && !weatherWindow.isDestroyed()) weatherWindow.refresh();
+  if (monitorWindow && !monitorWindow.isDestroyed()) monitorWindow.refresh();
+  if (playerWindow && !playerWindow.isDestroyed()) playerWindow.refresh();
+  if (volumeWindow && !volumeWindow.isDestroyed()) volumeWindow.refresh();
+});
+
 // =============================================================================
 // Settings & Widget Loading Manager
 // =============================================================================
@@ -528,7 +671,7 @@ function setWidgetLoaded(widgetKey, loaded) {
   if (!config.LOADED_WIDGETS) config.LOADED_WIDGETS = {};
   config.LOADED_WIDGETS[widgetKey] = loaded;
   json.write(CONFIG_PATH, config);
-  
+
   if (loaded) {
     if (widgetKey === "MONITOR") {
       if (!monitorWindow || monitorWindow.isDestroyed()) loadMonitorWidget();
@@ -548,6 +691,9 @@ function setWidgetLoaded(widgetKey, loaded) {
     } else if (widgetKey === "NOTES") {
       if (!notesWindow || notesWindow.isDestroyed()) loadNotesWidget();
       else notesWindow.show();
+    } else if (widgetKey === "VOLUME") {
+      if (!volumeWindow || volumeWindow.isDestroyed()) loadVolumeWidget();
+      else volumeWindow.show();
     }
   } else {
     if (widgetKey === "MONITOR" && monitorWindow && !monitorWindow.isDestroyed()) {
@@ -562,6 +708,8 @@ function setWidgetLoaded(widgetKey, loaded) {
       playerWindow.hide();
     } else if (widgetKey === "NOTES" && notesWindow && !notesWindow.isDestroyed()) {
       notesWindow.hide();
+    } else if (widgetKey === "VOLUME" && volumeWindow && !volumeWindow.isDestroyed()) {
+      volumeWindow.hide();
     }
   }
 }
@@ -590,6 +738,7 @@ if (config.LOADED_WIDGETS) {
   if (config.LOADED_WIDGETS.WEATHER) loadWeatherWidget();
   if (config.LOADED_WIDGETS.MUSIC) loadPlayerWidget();
   if (config.LOADED_WIDGETS.NOTES) loadNotesWidget();
+  if (config.LOADED_WIDGETS.VOLUME) loadVolumeWidget();
 } else {
   // Fallback default
   loadNotesWidget();

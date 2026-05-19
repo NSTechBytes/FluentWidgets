@@ -9,8 +9,9 @@
         "CALENDAR": false,
         "MONITOR": false,
         "WEATHER": false,
-        "NOTES": true,
-        "MUSIC": false
+        "NOTES": false,
+        "MUSIC": false,
+        "VOLUME": true
     },
     "LOCATION": {
         "CITY_NAME": "London",
@@ -45,7 +46,8 @@
         "CALENDAR_WINDOW": "wide",
         "WEATHER_WINDOW": "large",
         "PLAYER_WINDOW": "large",
-        "NOTES_WINDOW": "large"
+        "NOTES_WINDOW": "large",
+        "VOLUME_WINDOW": "large"
     },
     "APPEARANCE": {
         "THEME": "dark",
