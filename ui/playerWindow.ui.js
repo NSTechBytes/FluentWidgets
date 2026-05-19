@@ -44,7 +44,7 @@ function getFontSubtleColor() { return getThemeColors().FONT_SUBTLE; }
 // =============================================================================
 
 /** The configured widget style name (controls overlay appearance) */
-const playerStyle = JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW;
+let playerStyle = JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW;
 
 /** Get the { w, h } dimensions (already scaled) for a given style key */
 function getWidgetSize(styleKey) {
@@ -67,7 +67,7 @@ function previousMusic() { ipcRenderer.send("previous"); }
 
 /** Remove all overlay UI elements */
 function hideOverlay() {
-  const isLarge = JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW === "large";
+  const isLarge = playerStyle === "large";
   const ids = ["overlay_shape", "overlay_image", "previous_image", "next_image"];
   if (isLarge) ids.push("play_pause_image", "songTitle", "artistName");
 
@@ -364,16 +364,51 @@ function largeStyle() {
 // Initial Render
 // =============================================================================
 
-if (playerStyle === "small") smallStyle();
-else if (playerStyle === "medium") mediumStyle();
-else if (playerStyle === "wide") wideStyle();
-else largeStyle();
+function render() {
+  if (playerStyle === "small") smallStyle();
+  else if (playerStyle === "medium") mediumStyle();
+  else if (playerStyle === "wide") wideStyle();
+  else largeStyle();
+}
+
+function clearUI() {
+  const ids = [
+    "background_Shape", "container", "thumbnail",
+    "overlay_shape", "overlay_image",
+    "previous_image", "play_pause_image", "next_image",
+    "songTitle", "artistName",
+    "overlay_shape_no_media"
+  ];
+  ids.forEach(id => {
+    if (ui.isElementExist(id)) ui.removeElementById(id);
+  });
+}
+
+render();
 
 // Show "no media" placeholder overlays based on the configured style
 if (playerStyle === "small") showOverlayOfNoMediaForSmallStyle();
 if (playerStyle === "medium") showOverlayOfNoMediaForMediumStyle();
 if (playerStyle === "wide") showOverlayOfNoMediaForWideStyle();
 if (playerStyle === "large") showOverlayOfNoMediaForLargeStyle();
+
+ipcRenderer.on("changePlayerStyle", (event, style) => {
+  ui.beginUpdate();
+  playerStyle = style;
+  clearUI();
+  render();
+  // Show "no media" overlay for the new style
+  const showFns = {
+    small: showOverlayOfNoMediaForSmallStyle,
+    medium: showOverlayOfNoMediaForMediumStyle,
+    wide: showOverlayOfNoMediaForWideStyle,
+    large: showOverlayOfNoMediaForLargeStyle,
+  };
+  if (!nowPlayingData || !nowPlayingData.available) {
+    if (showFns[style]) showFns[style]();
+  }
+  ui.endUpdate();
+});
 
 // =============================================================================
 // IPC — Update Now Playing Data
@@ -397,7 +432,7 @@ ipcRenderer.on("nowPlayingUpdate", (event, data) => {
   }
 
   const hasMedia = data.available;
-  const style = JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW;
+  const style = playerStyle;
 
   // Show/hide "no media" overlay per style
   const showFns = {

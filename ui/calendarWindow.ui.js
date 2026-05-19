@@ -9,7 +9,7 @@
 const JSON_DATA = ipcRenderer.invoke("getJSON");
 const SCALE = parseFloat(JSON_DATA.SCALE) || 1;
 const FONT_FACE = JSON_DATA.FONT_FACE;
-const currentStyle = JSON_DATA.WINDOW_STYLES.CALENDAR_WINDOW;
+let currentStyle = JSON_DATA.WINDOW_STYLES.CALENDAR_WINDOW;
 
 // =============================================================================
 // Theme Helpers
@@ -156,11 +156,36 @@ function mediumStyle() {
 // Initial Render
 // =============================================================================
 
-if (currentStyle === "large") largeStyle();
-else if (currentStyle === "wide") wideStyle();
-else if (currentStyle === "medium") mediumStyle();
-else if (currentStyle === "small") smallStyle();
-else largeStyle();
+function render() {
+  if (currentStyle === "large") largeStyle();
+  else if (currentStyle === "wide") wideStyle();
+  else if (currentStyle === "medium") mediumStyle();
+  else if (currentStyle === "small") smallStyle();
+  else largeStyle();
+}
+
+function clearUI() {
+  const ids = [
+    "background_Shape", "month-text", "current-day-highlight", 
+    "day-name-text", "current-date-text"
+  ];
+  for (let i = 0; i < 7; i++) ids.push("weekday_" + i);
+  for (let i = 0; i < 42; i++) ids.push("day_" + i);
+
+  ids.forEach(id => {
+    if (ui.isElementExist(id)) ui.removeElementById(id);
+  });
+}
+
+render();
+
+ipcRenderer.on("changeCalendarStyle", (event, style) => {
+  ui.beginUpdate();
+  currentStyle = style;
+  clearUI();
+  render();
+  ui.endUpdate();
+});
 
 // =============================================================================
 // IPC — Populate Calendar Grid

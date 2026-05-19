@@ -9,7 +9,7 @@
 const JSON_DATA = ipcRenderer.invoke("getJSON");
 const SCALE = parseFloat(JSON_DATA.SCALE) || 1;
 const FONT_FACE = JSON_DATA.FONT_FACE;
-const currentStyle = JSON_DATA.WINDOW_STYLES.WEATHER_WINDOW;
+let currentStyle = JSON_DATA.WINDOW_STYLES.WEATHER_WINDOW;
 
 // =============================================================================
 // Theme Helpers
@@ -121,11 +121,42 @@ function smallStyle() {
 // Initial Render
 // =============================================================================
 
-if (currentStyle === "large") largeStyle();
-else if (currentStyle === "wide") wideStyle();
-else if (currentStyle === "medium") mediumStyle();
-else if (currentStyle === "small") smallStyle();
-else largeStyle();
+function render() {
+  if (currentStyle === "large") largeStyle();
+  else if (currentStyle === "wide") wideStyle();
+  else if (currentStyle === "medium") mediumStyle();
+  else if (currentStyle === "small") smallStyle();
+  else largeStyle();
+}
+
+function clearUI() {
+  const ids = [
+    "background_Shape", "city-name-text", "current-temp-text", "high-low-text"
+  ];
+  for (let i = 0; i < 6; i++) {
+    ids.push("hourly-time-" + i);
+    ids.push("hourly-temp-" + i);
+    ids.push("daily-day-" + i);
+    ids.push("daily-min-" + i);
+    ids.push("daily-bar-bg-" + i);
+    ids.push("daily-bar-fg-" + i);
+    ids.push("daily-max-" + i);
+  }
+
+  ids.forEach(id => {
+    if (ui.isElementExist(id)) ui.removeElementById(id);
+  });
+}
+
+render();
+
+ipcRenderer.on("changeWeatherStyle", (event, style) => {
+  ui.beginUpdate();
+  currentStyle = style;
+  clearUI();
+  render();
+  ui.endUpdate();
+});
 
 // =============================================================================
 // IPC — Update Weather Data

@@ -179,7 +179,17 @@ function updateMonitorStyle(style) {
   config.WINDOW_STYLES.MONITOR_WINDOW = style;
   json.write(CONFIG_PATH, config);
   monitorWindow.setContextMenu(buildStyleMenu(monitorWindow, style, updateMonitorStyle));
-  monitorWindow.refresh();
+  if (monitorWindow && typeof monitorWindow.setSize === "function") {
+    const scale = parseFloat(config.SCALE) || 1.0;
+    const key = style.toUpperCase();
+    const size = config.WIDGET_SIZES[key] || config.WIDGET_SIZES.LARGE;
+    const w = Math.round(size.WIDTH * scale);
+    const h = Math.round(size.HEIGHT * scale);
+    monitorWindow.setSize(w, h);
+    ipcMain.send("changeMonitorStyle", style);
+  } else {
+    monitorWindow.refresh();
+  }
 }
 
 function loadMonitorWidget() {
@@ -228,7 +238,17 @@ function updateClockStyle(style) {
     clockTimer = null;
   }
 
-  clockWindow.refresh();
+  if (clockWindow && typeof clockWindow.setSize === "function") {
+    const scale = parseFloat(config.SCALE) || 1.0;
+    const key = style.toUpperCase();
+    const size = config.WIDGET_SIZES[key] || config.WIDGET_SIZES.LARGE;
+    const w = Math.round(size.WIDTH * scale);
+    const h = Math.round(size.HEIGHT * scale);
+    clockWindow.setSize(w, h);
+    ipcMain.send("changeClockStyle", style);
+  } else {
+    clockWindow.refresh();
+  }
   clockWindow.setContextMenu(buildStyleMenu(clockWindow, style, updateClockStyle));
 
   // Wait a brief moment so the newly-rendered UI script is ready
@@ -290,7 +310,17 @@ function updateCalendarStyle(style) {
     calendarTimer = null;
   }
 
-  calendarWindow.refresh();
+  if (calendarWindow && typeof calendarWindow.setSize === "function") {
+    const scale = parseFloat(config.SCALE) || 1.0;
+    const key = style.toUpperCase();
+    const size = config.WIDGET_SIZES[key] || config.WIDGET_SIZES.LARGE;
+    const w = Math.round(size.WIDTH * scale);
+    const h = Math.round(size.HEIGHT * scale);
+    calendarWindow.setSize(w, h);
+    ipcMain.send("changeCalendarStyle", style);
+  } else {
+    calendarWindow.refresh();
+  }
   calendarWindow.setContextMenu(buildStyleMenu(calendarWindow, style, updateCalendarStyle));
 
   setTimeout(() => {
@@ -386,7 +416,17 @@ function updateWeatherStyle(style) {
     weatherTimer = null;
   }
 
-  weatherWindow.refresh();
+  if (weatherWindow && typeof weatherWindow.setSize === "function") {
+    const scale = parseFloat(config.SCALE) || 1.0;
+    const key = style.toUpperCase();
+    const size = config.WIDGET_SIZES[key] || config.WIDGET_SIZES.LARGE;
+    const w = Math.round(size.WIDTH * scale);
+    const h = Math.round(size.HEIGHT * scale);
+    weatherWindow.setSize(w, h);
+    ipcMain.send("changeWeatherStyle", style);
+  } else {
+    weatherWindow.refresh();
+  }
   weatherWindow.setContextMenu(buildStyleMenu(weatherWindow, style, updateWeatherStyle));
 
   setTimeout(() => {
@@ -422,7 +462,17 @@ function updatePlayerStyle(style) {
     playerTimer = null;
   }
 
-  playerWindow.refresh();
+  if (playerWindow && typeof playerWindow.setSize === "function") {
+    const scale = parseFloat(config.SCALE) || 1.0;
+    const key = style.toUpperCase();
+    const size = config.WIDGET_SIZES[key] || config.WIDGET_SIZES.LARGE;
+    const w = Math.round(size.WIDTH * scale);
+    const h = Math.round(size.HEIGHT * scale);
+    playerWindow.setSize(w, h);
+    ipcMain.send("changePlayerStyle", style);
+  } else {
+    playerWindow.refresh();
+  }
   playerWindow.setContextMenu(buildStyleMenu(playerWindow, style, updatePlayerStyle));
 
   setTimeout(() => {
@@ -534,7 +584,17 @@ ipcMain.on("changeVolumeStep", (event, delta) => {
 function updateNotesStyle(style) {
   config.WINDOW_STYLES.NOTES_WINDOW = style;
   json.write(CONFIG_PATH, config);
-  notesWindow.refresh();
+  if (notesWindow && typeof notesWindow.setSize === "function") {
+    const scale = parseFloat(config.SCALE) || 1.0;
+    const key = style.toUpperCase();
+    const size = config.WIDGET_SIZES[key] || config.WIDGET_SIZES.LARGE;
+    const w = Math.round(size.WIDTH * scale);
+    const h = Math.round(size.HEIGHT * scale);
+    notesWindow.setSize(w, h);
+    ipcMain.send("changeNotesStyle", style);
+  } else {
+    notesWindow.refresh();
+  }
   notesWindow.setContextMenu(buildStyleMenu(notesWindow, style, updateNotesStyle));
 }
 

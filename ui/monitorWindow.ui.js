@@ -331,12 +331,37 @@ function largeStyle() {
 // Initial Render — pick the style from config
 // =============================================================================
 
-const currentStyle = JSON_DATA.WINDOW_STYLES.MONITOR_WINDOW;
+let currentStyle = JSON_DATA.WINDOW_STYLES.MONITOR_WINDOW;
 
-if (currentStyle === "small")  smallStyle();
-else if (currentStyle === "medium") mediumStyle();
-else if (currentStyle === "wide")   wideStyle();
-else largeStyle();
+function render() {
+  if (currentStyle === "small")  smallStyle();
+  else if (currentStyle === "medium") mediumStyle();
+  else if (currentStyle === "wide")   wideStyle();
+  else largeStyle();
+}
+
+function clearUI() {
+  const ids = [
+    "background_Shape",
+    "cpu-ring", "cpu-ring-icon", "cpu-ring-text", "cpu-icon", "cpu-label", "cpu-value", "cpu-graph", "div-cpu",
+    "memory-ring", "memory-ring-icon", "memory-ring-text", "memory-icon", "memory-label", "memory-value", "memory-graph", "div-memory",
+    "disk-ring", "disk-ring-icon", "disk-ring-text", "disk-icon", "disk-label", "disk-value", "disk-graph", "div-disk",
+    "net-ring", "net-ring-icon", "net-ring-text", "net-icon", "net-label", "net-value", "net-graph", "div-net"
+  ];
+  ids.forEach(id => {
+    if (ui.isElementExist(id)) ui.removeElementById(id);
+  });
+}
+
+render();
+
+ipcRenderer.on("changeMonitorStyle", (event, style) => {
+  ui.beginUpdate();
+  currentStyle = style;
+  clearUI();
+  render();
+  ui.endUpdate();
+});
 
 // =============================================================================
 // IPC — Handle incoming stats

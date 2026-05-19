@@ -345,6 +345,7 @@ function largeStyle() {
     height: SIZE,
     fillColor: getBackgroundColor(),
     mouseEventCursor: false,
+    strokeWidth: 0,
     onScrollUp: () => handleScroll("up"),
     onScrollDown: () => handleScroll("down")
   });

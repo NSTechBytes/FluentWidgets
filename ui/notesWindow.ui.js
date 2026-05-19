@@ -22,7 +22,7 @@ function getInputBoxColor() { return getThemeColors().INPUT_BOX_BG; }
 // =============================================================================
 
 /** The configured widget style name (controls overlay appearance) */
-const notesStyle = JSON_DATA.WINDOW_STYLES.NOTES_WINDOW;
+let notesStyle = JSON_DATA.WINDOW_STYLES.NOTES_WINDOW;
 
 /** Get the { w, h } dimensions (already scaled) for a given style key */
 function getWidgetSize(styleKey) {
@@ -353,8 +353,30 @@ function inputBoxDismissed() {
 
 ipcRenderer.on("inputBoxDismissed", inputBoxDismissed);
 
-if (notesStyle === "large") largeStyle();
-else if (notesStyle === "wide") wideStyle();
-else if (notesStyle === "medium") mediumStyle();
-else if (notesStyle === "small") smallStyle();
-else largeStyle();
+function render() {
+    if (notesStyle === "large") largeStyle();
+    else if (notesStyle === "wide") wideStyle();
+    else if (notesStyle === "medium") mediumStyle();
+    else if (notesStyle === "small") smallStyle();
+    else largeStyle();
+}
+
+function clearUI() {
+    const ids = [
+        "background_Shape", "top_Shape_Element", "top_Shape_Element_Title",
+        "notes_display", "bottom_Shape_Element", "notes_Saved_Time_Label"
+    ];
+    ids.forEach(id => {
+        if (ui.isElementExist(id)) ui.removeElementById(id);
+    });
+}
+
+render();
+
+ipcRenderer.on("changeNotesStyle", (event, style) => {
+    ui.beginUpdate();
+    notesStyle = style;
+    clearUI();
+    render();
+    ui.endUpdate();
+});

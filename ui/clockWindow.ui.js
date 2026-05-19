@@ -9,7 +9,7 @@
 const JSON_DATA = ipcRenderer.invoke("getJSON");
 const SCALE = parseFloat(JSON_DATA.SCALE) || 1;
 const FONT_FACE = JSON_DATA.FONT_FACE;
-const currentStyle = JSON_DATA.WINDOW_STYLES.CLOCK_WINDOW;
+let currentStyle = JSON_DATA.WINDOW_STYLES.CLOCK_WINDOW;
 
 // Pick the correct clock-face image based on the active theme
 const smallFace =
@@ -172,11 +172,36 @@ function largeStyle() {
 // Initial Render
 // =============================================================================
 
-if (currentStyle === "small") smallStyle();
-else if (currentStyle === "medium") mediumStyle();
-else if (currentStyle === "wide") wideStyle();
-else if (currentStyle === "large") largeStyle();
-else wideStyle();
+function render() {
+  if (currentStyle === "small") smallStyle();
+  else if (currentStyle === "medium") mediumStyle();
+  else if (currentStyle === "wide") wideStyle();
+  else if (currentStyle === "large") largeStyle();
+  else wideStyle();
+}
+
+function clearUI() {
+  const ids = [
+    "background_Shape", "ellipse_Shape", "clock-face",
+    "hour-hand", "minute-hand", "second-hand", "pin",
+    "time-text", "seconds-text", "date-text"
+  ];
+  ids.forEach(id => {
+    if (ui.isElementExist(id)) ui.removeElementById(id);
+  });
+}
+
+render();
+
+ipcRenderer.on("changeClockStyle", (event, style) => {
+  ui.beginUpdate();
+  currentStyle = style;
+  clearUI();
+  render();
+  // Force an immediate hand update so they don't look weird for 1 second
+  updateHands();
+  ui.endUpdate();
+});
 
 // =============================================================================
 // Hand Positioning (Trigonometry)
