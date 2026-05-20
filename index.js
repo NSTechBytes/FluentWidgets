@@ -1,94 +1,60 @@
-// =============================================================================
-// FluentWidgets - Main Process Entry Point
-// =============================================================================
-// This file runs in NovaDesk's main process. It manages widget lifecycles,
-// pulls data from system APIs, and sends updates to each widget window
-// over IPC channels. Each widget has its own UI script (in ui/) running
-// as a separate renderer process.
-// =============================================================================
-
+/** Main process entry point for FluentWidgets. Manages widget lifecycles,
+ *  system data collection, and IPC communication with renderer processes. */
 import { widgetWindow, addon, app, tray } from "novadesk";
 import * as fs from "fs";
 import { json, cpu, memory, network, disk, time, webFetch, audio, execute } from "system";
 
-// -----------------------------------------------------------------------------
-// Configuration
-// -----------------------------------------------------------------------------
-
-/** The full user configuration object loaded from disk */
 let config = {};
 
-/** Absolute path where the user's config.json is stored */
-const CONFIG_PATH = path.join(
-  app.getAppDataPath(),
-  "FluentWidgets",
-  "config.json",
-);
-console.log("CONFIG_PATH", CONFIG_PATH);
-
-/** Path to the default config shipped with the widget package */
+const CONFIG_PATH = path.join(app.getAppDataPath(), "FluentWidgets", "config.json");
 const DEFAULT_CONFIG_PATH = path.join(__dirname, "config/config.json");
 
-// -----------------------------------------------------------------------------
-// Widget Window References & Timers
-// -----------------------------------------------------------------------------
-// Each widget gets its own window instance and a timer that dictates
-// how often we push fresh data to it.
-
-let monitorWindow = null;
-let monitorTimer = null;
-
-let clockWindow = null;
-let clockTimer = null;
-
-let calendarWindow = null;
-let calendarTimer = null;
-
-let weatherWindow = null;
-let weatherTimer = null;
-
-let playerWindow = null;
-let playerTimer = null;
-
+let monitorWindow = null, monitorTimer = null;
+let clockWindow = null, clockTimer = null;
+let calendarWindow = null, calendarTimer = null;
+let weatherWindow = null, weatherTimer = null;
+let playerWindow = null, playerTimer = null;
 let notesWindow = null;
-
 let settingsWindow = null;
+let volumeWindow = null, volumeTimer = null;
+let isMuted = false, lastVolume = 50;
 
-// -----------------------------------------------------------------------------
-// Native Addons
-// -----------------------------------------------------------------------------
-
-/** Adds Windows 10/11 acrylic or mica backdrop blur to widget windows */
 const blurBehind = addon.load(path.join(__addonsPath, "BlurBehind"));
-
-/** Reads currently-playing media info from Windows (title, artist, thumbnail) */
 const nowPlaying = addon.load(path.join(__addonsPath, "NowPlaying"));
-
-/** Addon to get input from user */
 const inputBox = addon.load(path.join(__addonsPath, "InputBox"));
 
-// =============================================================================
-// Configuration Loading
-// =============================================================================
+const MONTH_NAMES = [
+  "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
+  "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER",
+];
 
-/**
- * Load (or create) the user configuration file.
- * - On first run: copy the default config into the app data folder.
- * - On subsequent runs: merge defaults so new keys are always present.
- */
+const DAY_NAMES = [
+  "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY",
+];
+
+const SHORT_DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** Maps widget keys to their window references for dynamic show/hide toggling. */
+const WIDGET_MAP = {
+  MONITOR: { ref: () => monitorWindow },
+  CLOCK: { ref: () => clockWindow },
+  CALENDAR: { ref: () => calendarWindow },
+  WEATHER: { ref: () => weatherWindow },
+  MUSIC: { ref: () => playerWindow },
+  NOTES: { ref: () => notesWindow },
+  VOLUME: { ref: () => volumeWindow },
+};
+
+/** Load config from disk, creating it from defaults on first run. */
 function loadConfig() {
   const configDir = path.join(app.getAppDataPath(), "FluentWidgets");
-
   if (!fs.exists(CONFIG_PATH)) {
     fs.mkdir(configDir);
     fs.copyFile(DEFAULT_CONFIG_PATH, CONFIG_PATH);
-    config = json.read(CONFIG_PATH);
   } else {
     fs.copyFile(DEFAULT_CONFIG_PATH, CONFIG_PATH, true);
-    config = json.read(CONFIG_PATH);
   }
-
-  // Ensure runtime tracking values exist (survives config resets)
+  config = json.read(CONFIG_PATH);
   if (!config.RUNTIME) config.RUNTIME = {};
   if (typeof config.RUNTIME.CLOCK_RENDER_ID !== "number") {
     config.RUNTIME.CLOCK_RENDER_ID = 0;
@@ -97,19 +63,9 @@ function loadConfig() {
 
 loadConfig();
 
-// -----------------------------------------------------------------------------
-// Expose config to all renderer processes
-// -----------------------------------------------------------------------------
 ipcMain.handle("getJSON", () => config);
 
-// =============================================================================
-// Shared Helpers
-// =============================================================================
-
-/**
- * Apply the BlurBehind effect to a widget window.
- * @param {object} win - A widgetWindow instance
- */
+/** Apply acrylic/mica backdrop blur and corner style to a widget window. */
 function applyBlurBehind(win) {
   blurBehind.apply(
     String(win.getHandle()),
@@ -118,16 +74,7 @@ function applyBlurBehind(win) {
   );
 }
 
-/**
- * Build a right-click context menu for switching widget styles.
- *
- * Every widget follows the same pattern: "Manage" header, separator,
- * then one item per style (small / medium / wide / large).
- *
- * @param {string}   currentStyle - The currently-active style name
- * @param {Function} onSelect     - Called with the new style name when user clicks
- * @returns {Array} Menu items ready for widgetWindow.setContextMenu()
- */
+/** Build right-click context menu with style switcher, position controls, and settings. */
 function buildStyleMenu(win, currentStyle, onSelect) {
   const styles = ["small", "medium", "wide", "large"];
   return [
@@ -138,8 +85,8 @@ function buildStyleMenu(win, currentStyle, onSelect) {
         { text: "Increase X (+10)", action: () => { const b = win.getBounds(); win.setBounds({ x: b.x + 10 }); } },
         { text: "Decrease X (-10)", action: () => { const b = win.getBounds(); win.setBounds({ x: b.x - 10 }); } },
         { text: "Increase Y (+10)", action: () => { const b = win.getBounds(); win.setBounds({ y: b.y + 10 }); } },
-        { text: "Decrease Y (-10)", action: () => { const b = win.getBounds(); win.setBounds({ y: b.y - 10 }); } }
-      ]
+        { text: "Decrease Y (-10)", action: () => { const b = win.getBounds(); win.setBounds({ y: b.y - 10 }); } },
+      ],
     },
     { type: "separator" },
     ...styles.map((style) => ({
@@ -150,21 +97,45 @@ function buildStyleMenu(win, currentStyle, onSelect) {
   ];
 }
 
-/**
- * Create a widget window, apply blur, and return it.
- * @param {string} id         - Unique window identifier
- * @param {string} scriptPath - Path (relative to package root) to the UI script
- * @returns {object} The widgetWindow instance
- */
+/** Create a widget window with blur effect applied. */
 function createWidgetWindow(id, scriptPath) {
   const win = new widgetWindow({ id, script: scriptPath, show: false });
   applyBlurBehind(win);
   return win;
 }
 
-// =============================================================================
-// Monitor Widget — CPU / RAM / Disk / Network gauges
-// =============================================================================
+/** Calculate the scaled pixel dimensions for a given style name. */
+function getScaledSize(style) {
+  const scale = parseFloat(config.SCALE) || 1;
+  const key = style.toUpperCase();
+  const size = config.WIDGET_SIZES[key] || config.WIDGET_SIZES.LARGE;
+  return { w: Math.round(size.WIDTH * scale), h: Math.round(size.HEIGHT * scale) };
+}
+
+/** Resize a widget window to match the given style and global scale. */
+function resizeWidget(win, style) {
+  if (win && typeof win.setSize === "function") {
+    const { w, h } = getScaledSize(style);
+    win.setSize(w, h);
+  }
+}
+
+function refreshAllWidgets() {
+  [notesWindow, clockWindow, calendarWindow, weatherWindow, monitorWindow, playerWindow, volumeWindow].forEach(w => {
+    if (w && !w.isDestroyed()) w.refresh();
+  });
+}
+
+const DATA_INTERVALS = {
+  MONITOR: 1000,
+  CLOCK: 1000,
+  CALENDAR: 60000,
+  WEATHER: 600000,
+  PLAYER: 1000,
+  VOLUME: 1000,
+};
+
+// ── Monitor Widget ───────────────────────────────────────────────────────────
 
 function publishMonitorStats() {
   ipcMain.send("monitor-window-stats", {
@@ -179,32 +150,19 @@ function updateMonitorStyle(style) {
   config.WINDOW_STYLES.MONITOR_WINDOW = style;
   json.write(CONFIG_PATH, config);
   monitorWindow.setContextMenu(buildStyleMenu(monitorWindow, style, updateMonitorStyle));
-  if (monitorWindow && typeof monitorWindow.setSize === "function") {
-    const scale = parseFloat(config.SCALE) || 1.0;
-    const key = style.toUpperCase();
-    const size = config.WIDGET_SIZES[key] || config.WIDGET_SIZES.LARGE;
-    const w = Math.round(size.WIDTH * scale);
-    const h = Math.round(size.HEIGHT * scale);
-    monitorWindow.setSize(w, h);
-    ipcMain.send("changeMonitorStyle", style);
-  } else {
-    monitorWindow.refresh();
-  }
+  resizeWidget(monitorWindow, style);
+  ipcMain.send("changeMonitorStyle", style);
 }
 
 function loadMonitorWidget() {
   monitorWindow = createWidgetWindow("MONITOR_WINDOW", "ui/monitorWindow.ui.js");
-  monitorWindow.setContextMenu(
-    buildStyleMenu(monitorWindow, config.WINDOW_STYLES.MONITOR_WINDOW, updateMonitorStyle),
-  );
+  monitorWindow.setContextMenu(buildStyleMenu(monitorWindow, config.WINDOW_STYLES.MONITOR_WINDOW, updateMonitorStyle));
   publishMonitorStats();
-  monitorTimer = setInterval(publishMonitorStats, 1000);
+  monitorTimer = setInterval(publishMonitorStats, DATA_INTERVALS.MONITOR);
   monitorWindow.show();
 }
 
-// =============================================================================
-// Clock Widget — Analog / Digital clock
-// =============================================================================
+// ── Clock Widget ─────────────────────────────────────────────────────────────
 
 function publishClockData() {
   const use24 = config.USE_24_HOUR_FORMAT;
@@ -221,7 +179,6 @@ function publishClockData() {
     dateText: time.time("%A, %B %d"),
   });
 
-  // Separate channels let the UI update text independently of the hands
   ipcMain.send("timeUpdate", time.time(timeFormat));
   ipcMain.send("secondsUpdate", time.time("%S"));
   ipcMain.send("dateUpdate", time.time("%A, %B %d"));
@@ -232,63 +189,36 @@ function updateClockStyle(style) {
   config.RUNTIME.CLOCK_RENDER_ID += 1;
   json.write(CONFIG_PATH, config);
 
-  // Stop the old timer so we don't push data to a stale renderer
   if (clockTimer) {
     clearInterval(clockTimer);
     clockTimer = null;
   }
 
-  if (clockWindow && typeof clockWindow.setSize === "function") {
-    const scale = parseFloat(config.SCALE) || 1.0;
-    const key = style.toUpperCase();
-    const size = config.WIDGET_SIZES[key] || config.WIDGET_SIZES.LARGE;
-    const w = Math.round(size.WIDTH * scale);
-    const h = Math.round(size.HEIGHT * scale);
-    clockWindow.setSize(w, h);
-    ipcMain.send("changeClockStyle", style);
-  } else {
-    clockWindow.refresh();
-  }
   clockWindow.setContextMenu(buildStyleMenu(clockWindow, style, updateClockStyle));
+  resizeWidget(clockWindow, style);
+  ipcMain.send("changeClockStyle", style);
 
-  // Wait a brief moment so the newly-rendered UI script is ready
   setTimeout(() => {
     publishClockData();
-    clockTimer = setInterval(publishClockData, 1000);
+    clockTimer = setInterval(publishClockData, DATA_INTERVALS.CLOCK);
   }, 120);
 }
 
 function loadClockWidget() {
   clockWindow = createWidgetWindow("CLOCK_WINDOW", "ui/clockWindow.ui.js");
-  clockWindow.setContextMenu(
-    buildStyleMenu(clockWindow, config.WINDOW_STYLES.CLOCK_WINDOW, updateClockStyle),
-  );
+  clockWindow.setContextMenu(buildStyleMenu(clockWindow, config.WINDOW_STYLES.CLOCK_WINDOW, updateClockStyle));
   publishClockData();
-  clockTimer = setInterval(publishClockData, 1000);
+  clockTimer = setInterval(publishClockData, DATA_INTERVALS.CLOCK);
   clockWindow.show();
 }
 
-// =============================================================================
-// Calendar Widget — Day / month grid
-// =============================================================================
-
-const MONTH_NAMES = [
-  "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
-  "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER",
-];
-
-const DAY_NAMES = [
-  "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY",
-  "THURSDAY", "FRIDAY", "SATURDAY",
-];
+// ── Calendar Widget ──────────────────────────────────────────────────────────
 
 function publishCalendarData() {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth();
   const date = now.getDate();
-
-  // Convert Sunday-based .getDay() to Monday-based (Mon=0 … Sun=6)
   const firstDay = new Date(year, month, 1);
   const startDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
 
@@ -310,45 +240,26 @@ function updateCalendarStyle(style) {
     calendarTimer = null;
   }
 
-  if (calendarWindow && typeof calendarWindow.setSize === "function") {
-    const scale = parseFloat(config.SCALE) || 1.0;
-    const key = style.toUpperCase();
-    const size = config.WIDGET_SIZES[key] || config.WIDGET_SIZES.LARGE;
-    const w = Math.round(size.WIDTH * scale);
-    const h = Math.round(size.HEIGHT * scale);
-    calendarWindow.setSize(w, h);
-    ipcMain.send("changeCalendarStyle", style);
-  } else {
-    calendarWindow.refresh();
-  }
   calendarWindow.setContextMenu(buildStyleMenu(calendarWindow, style, updateCalendarStyle));
+  resizeWidget(calendarWindow, style);
+  ipcMain.send("changeCalendarStyle", style);
 
   setTimeout(() => {
     publishCalendarData();
-    calendarTimer = setInterval(publishCalendarData, 60000);
+    calendarTimer = setInterval(publishCalendarData, DATA_INTERVALS.CALENDAR);
   }, 16);
 }
 
 function loadCalendarWidget() {
   calendarWindow = createWidgetWindow("CALENDAR_WINDOW", "ui/calendarWindow.ui.js");
-  calendarWindow.setContextMenu(
-    buildStyleMenu(calendarWindow, config.WINDOW_STYLES.CALENDAR_WINDOW, updateCalendarStyle),
-  );
+  calendarWindow.setContextMenu(buildStyleMenu(calendarWindow, config.WINDOW_STYLES.CALENDAR_WINDOW, updateCalendarStyle));
   publishCalendarData();
-  calendarTimer = setInterval(publishCalendarData, 60000);
+  calendarTimer = setInterval(publishCalendarData, DATA_INTERVALS.CALENDAR);
   calendarWindow.show();
 }
 
-// =============================================================================
-// Weather Widget — Current conditions + 6-day forecast
-// =============================================================================
+// ── Weather Widget ───────────────────────────────────────────────────────────
 
-const SHORT_DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-/**
- * Fetch weather from the free Open-Meteo API and push it to the widget.
- * Runs on a 10-minute interval (600 000 ms).
- */
 async function publishWeatherData() {
   try {
     const loc = config.LOCATION || {};
@@ -356,20 +267,12 @@ async function publishWeatherData() {
     const lon = loc.LONGITUDE ?? -0.1276;
     const cityName = loc.CITY_NAME ?? "London";
 
-    const url =
-      `https://api.open-meteo.com/v1/forecast` +
-      `?latitude=${lat}&longitude=${lon}` +
-      `&current=temperature_2m` +
-      `&hourly=temperature_2m` +
-      `&daily=temperature_2m_max,temperature_2m_min` +
-      `&timezone=auto`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m&hourly=temperature_2m&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
 
     const raw = await webFetch(url);
     const data = typeof raw === "string" ? JSON.parse(raw) : raw;
 
     const currentTemp = Math.round(data.current.temperature_2m);
-
-    // Pinpoint where "now" sits in the hourly array so we get the next 6 slots
     const currentHourPrefix = data.current.time.substring(0, 13);
     const hourIndex = data.hourly.time.indexOf(currentHourPrefix + ":00");
     const startIdx = hourIndex >= 0 ? hourIndex : 0;
@@ -416,38 +319,25 @@ function updateWeatherStyle(style) {
     weatherTimer = null;
   }
 
-  if (weatherWindow && typeof weatherWindow.setSize === "function") {
-    const scale = parseFloat(config.SCALE) || 1.0;
-    const key = style.toUpperCase();
-    const size = config.WIDGET_SIZES[key] || config.WIDGET_SIZES.LARGE;
-    const w = Math.round(size.WIDTH * scale);
-    const h = Math.round(size.HEIGHT * scale);
-    weatherWindow.setSize(w, h);
-    ipcMain.send("changeWeatherStyle", style);
-  } else {
-    weatherWindow.refresh();
-  }
   weatherWindow.setContextMenu(buildStyleMenu(weatherWindow, style, updateWeatherStyle));
+  resizeWidget(weatherWindow, style);
+  ipcMain.send("changeWeatherStyle", style);
 
   setTimeout(() => {
     publishWeatherData();
-    weatherTimer = setInterval(publishWeatherData, 600000);
+    weatherTimer = setInterval(publishWeatherData, DATA_INTERVALS.WEATHER);
   }, 120);
 }
 
 function loadWeatherWidget() {
   weatherWindow = createWidgetWindow("WEATHER_WINDOW", "ui/weatherWindow.ui.js");
-  weatherWindow.setContextMenu(
-    buildStyleMenu(weatherWindow, config.WINDOW_STYLES.WEATHER_WINDOW, updateWeatherStyle),
-  );
+  weatherWindow.setContextMenu(buildStyleMenu(weatherWindow, config.WINDOW_STYLES.WEATHER_WINDOW, updateWeatherStyle));
   publishWeatherData();
-  weatherTimer = setInterval(publishWeatherData, 600000);
+  weatherTimer = setInterval(publishWeatherData, DATA_INTERVALS.WEATHER);
   weatherWindow.show();
 }
 
-// =============================================================================
-// Now Playing Widget — Media playback info & controls
-// =============================================================================
+// ── Player Widget ────────────────────────────────────────────────────────────
 
 function publishNowPlayingData() {
   ipcMain.send("nowPlayingUpdate", nowPlaying.stats());
@@ -462,99 +352,60 @@ function updatePlayerStyle(style) {
     playerTimer = null;
   }
 
-  if (playerWindow && typeof playerWindow.setSize === "function") {
-    const scale = parseFloat(config.SCALE) || 1.0;
-    const key = style.toUpperCase();
-    const size = config.WIDGET_SIZES[key] || config.WIDGET_SIZES.LARGE;
-    const w = Math.round(size.WIDTH * scale);
-    const h = Math.round(size.HEIGHT * scale);
-    playerWindow.setSize(w, h);
-    ipcMain.send("changePlayerStyle", style);
-  } else {
-    playerWindow.refresh();
-  }
   playerWindow.setContextMenu(buildStyleMenu(playerWindow, style, updatePlayerStyle));
+  resizeWidget(playerWindow, style);
+  ipcMain.send("changePlayerStyle", style);
 
   setTimeout(() => {
     publishNowPlayingData();
-    playerTimer = setInterval(publishNowPlayingData, 1000);
+    playerTimer = setInterval(publishNowPlayingData, DATA_INTERVALS.PLAYER);
   }, 120);
 }
 
 function loadPlayerWidget() {
   playerWindow = createWidgetWindow("PLAYER_WINDOW", "ui/playerWindow.ui.js");
-  playerWindow.setContextMenu(
-    buildStyleMenu(playerWindow, config.WINDOW_STYLES.PLAYER_WINDOW, updatePlayerStyle),
-  );
-  playerTimer = setInterval(publishNowPlayingData, 1000);
+  playerWindow.setContextMenu(buildStyleMenu(playerWindow, config.WINDOW_STYLES.PLAYER_WINDOW, updatePlayerStyle));
+  playerTimer = setInterval(publishNowPlayingData, DATA_INTERVALS.PLAYER);
   playerWindow.show();
 }
 
-// Renderer → main IPC for media controls
 ipcMain.on("playPause", () => nowPlaying.playPause());
 ipcMain.on("next", () => nowPlaying.next());
 ipcMain.on("previous", () => nowPlaying.previous());
 
-// Push once immediately so the UI isn't blank
 publishNowPlayingData();
 
-// =============================================================================
-// Volume Widget
-// =============================================================================
-
-let volumeWindow = null;
-let volumeTimer = null;
-let isMuted = false;
-let lastVolume = 50;
+// ── Volume Widget ────────────────────────────────────────────────────────────
 
 function publishVolumeData() {
   const vol = audio.getVolume();
-  ipcMain.send("volumeUpdate", {
-    volume: vol,
-    isMuted: isMuted
-  });
+  ipcMain.send("volumeUpdate", { volume: vol, isMuted });
 }
 
 function updateVolumeStyle(style) {
   config.WINDOW_STYLES.VOLUME_WINDOW = style;
   json.write(CONFIG_PATH, config);
 
-  if (volumeWindow && typeof volumeWindow.setSize === "function") {
-    const scale = parseFloat(config.SCALE) || 1.0;
-    const key = style.toUpperCase();
-    const size = config.WIDGET_SIZES[key] || config.WIDGET_SIZES.LARGE;
-    const w = Math.round(size.WIDTH * scale);
-    const h = Math.round(size.HEIGHT * scale);
-
-    // Resize window dynamically and smoothly
-    volumeWindow.setSize(w, h);
-
-    // Notify renderer to hot-swap style elements cleanly without reloading
-    ipcMain.send("changeVolumeStyle", style);
-  } else {
-    volumeWindow.refresh();
-  }
-
   volumeWindow.setContextMenu(buildStyleMenu(volumeWindow, style, updateVolumeStyle));
+  resizeWidget(volumeWindow, style);
+  ipcMain.send("changeVolumeStyle", style);
 }
 
 function loadVolumeWidget() {
   volumeWindow = createWidgetWindow("VOLUME_WINDOW", "ui/volumeWindow.ui.js");
-  volumeWindow.setContextMenu(
-    buildStyleMenu(volumeWindow, config.WINDOW_STYLES.VOLUME_WINDOW || "large", updateVolumeStyle),
-  );
+  volumeWindow.setContextMenu(buildStyleMenu(volumeWindow, config.WINDOW_STYLES.VOLUME_WINDOW || "large", updateVolumeStyle));
   publishVolumeData();
-  volumeTimer = setInterval(publishVolumeData, 1000);
+  volumeTimer = setInterval(publishVolumeData, DATA_INTERVALS.VOLUME);
   volumeWindow.show();
 }
 
 ipcMain.on("setVolume", (event, vol) => {
   audio.setVolume(vol);
-  isMuted = (vol === 0);
+  isMuted = vol === 0;
   publishVolumeData();
 });
 
-ipcMain.on("toggleMute", (event) => {
+ipcMain.on("toggleMute", () => {
   const currentVol = audio.getVolume();
   if (isMuted) {
     audio.setVolume(lastVolume || 50);
@@ -568,160 +419,91 @@ ipcMain.on("toggleMute", (event) => {
 });
 
 ipcMain.on("changeVolumeStep", (event, delta) => {
-  const currentVol = audio.getVolume();
-  let nextVol = currentVol + delta;
-  if (nextVol < 0) nextVol = 0;
-  if (nextVol > 100) nextVol = 100;
+  let nextVol = audio.getVolume() + delta;
+  nextVol = Math.max(0, Math.min(100, nextVol));
   audio.setVolume(nextVol);
-  isMuted = (nextVol === 0);
+  isMuted = nextVol === 0;
   publishVolumeData();
 });
 
-// =============================================================================
-//   Notes Widget
-// =============================================================================
+// ── Notes Widget ─────────────────────────────────────────────────────────────
 
 function updateNotesStyle(style) {
   config.WINDOW_STYLES.NOTES_WINDOW = style;
   json.write(CONFIG_PATH, config);
-  if (notesWindow && typeof notesWindow.setSize === "function") {
-    const scale = parseFloat(config.SCALE) || 1.0;
-    const key = style.toUpperCase();
-    const size = config.WIDGET_SIZES[key] || config.WIDGET_SIZES.LARGE;
-    const w = Math.round(size.WIDTH * scale);
-    const h = Math.round(size.HEIGHT * scale);
-    notesWindow.setSize(w, h);
-    ipcMain.send("changeNotesStyle", style);
-  } else {
-    notesWindow.refresh();
-  }
   notesWindow.setContextMenu(buildStyleMenu(notesWindow, style, updateNotesStyle));
+  resizeWidget(notesWindow, style);
+  ipcMain.send("changeNotesStyle", style);
 }
 
 function loadNotesWidget() {
   notesWindow = createWidgetWindow("NOTES_WINDOW", "ui/notesWindow.ui.js");
-  notesWindow.setContextMenu(
-    buildStyleMenu(notesWindow, config.WINDOW_STYLES.NOTES_WINDOW, updateNotesStyle),
-  );
+  notesWindow.setContextMenu(buildStyleMenu(notesWindow, config.WINDOW_STYLES.NOTES_WINDOW, updateNotesStyle));
   notesWindow.show();
 }
 
-function notesInput(data) {
-  console.log("notesInput", JSON.stringify(data));
-  const inputBox_ID = inputBox.show({
-    widgetHwnd: notesWindow.getHandle(),
-    x: data.x,
-    y: data.y,
-    width: data.width,
-    height: data.height,
-    fontSize: data.fontSize - 5,
-    borderVisible: false,
-    unfocusDismiss: false,
-    multiline: true,
-    backgroundColor: data.backgroundColor,
-    defaultValue: data.defaultValue,
-    onEnter: () => {
-      const now = time.time("%m/%d/%Y %I:%M:%S %p", "en-US");
-      config.NOTES_TEXT = inputBox.lastText();
-      config.NOTES_SAVED_TIME = now;
-      json.write(CONFIG_PATH, config);
-      notesWindow.refresh();
-    },
-    onDismiss: () => {
-      ipcMain.send("inputBoxDismissed");
-    },
-    onEsc: () => {
-      ipcMain.send("inputBoxDismissed");
-    }
-  });
-}
-
-function notesTitleInput(data) {
-  const inputBox_ID = inputBox.show({
-    widgetHwnd: notesWindow.getHandle(),
-    x: data.x,
-    y: data.y,
-    width: data.width,
-    height: data.height,
-    fontSize: data.fontSize - 5,
-    borderVisible: false,
-    multiline: false,
-    backgroundColor: data.backgroundColor,
-    defaultValue: data.defaultValue,
-    onEnter: () => {
-      const now = time.time("%m/%d/%Y %I:%M:%S %p", "en-US");
-      config.NOTES_TITLE = inputBox.lastText();
-      config.NOTES_SAVED_TIME = now;
-      json.write(CONFIG_PATH, config);
-      notesWindow.refresh();
-    },
-    onDismiss: () => {
-      ipcMain.send("inputBoxDismissed");
-    },
-    onEsc: () => {
-      ipcMain.send("inputBoxDismissed");
-    }
-  });
-
-}
-
-ipcMain.on("notesTitleInput", (event, data) => notesTitleInput(data));
-ipcMain.on("notesInput", (event, data) => notesInput(data));
-
-function settingsInput(data) {
-  const inputBox_ID = inputBox.show({
-    widgetHwnd: settingsWindow.getHandle(),
+/** Show a native input overlay via InputBox addon. Calls onEnter with the submitted text and timestamp. */
+function showInputBox(win, data, onEnter) {
+  const now = time.time("%m/%d/%Y %I:%M:%S %p", "en-US");
+  inputBox.show({
+    widgetHwnd: win.getHandle(),
     x: data.x,
     y: data.y,
     width: data.width,
     height: data.height,
     fontSize: data.fontSize,
     borderVisible: false,
-    multiline: false,
-    inputType: data.inputType || "Number",
+    unfocusDismiss: false,
+    multiline: data.multiline || false,
     backgroundColor: data.backgroundColor,
     defaultValue: data.defaultValue,
-    onEnter: () => {
-      const text = inputBox.lastText().trim();
-      const isFloat = text.includes(".");
-      const val = isFloat ? parseFloat(text) : parseInt(text, 10);
+    onEnter: () => onEnter(inputBox.lastText(), now),
+    onDismiss: () => ipcMain.send("inputBoxDismissed"),
+    onEsc: () => ipcMain.send("inputBoxDismissed"),
+  });
+}
 
-      if (data.type === "scale") {
-        if (!isNaN(val) && val >= 0.5 && val <= 3.0) {
-          config.SCALE = val;
-        }
-      } else if (data.type === "latitude") {
-        if (!isNaN(val)) {
-          config.LOCATION.LATITUDE = val;
-        }
-      } else if (data.type === "longitude") {
-        if (!isNaN(val)) {
-          config.LOCATION.LONGITUDE = val;
-        }
-      } else if (data.type === "city") {
-        if (text) config.LOCATION.CITY_NAME = text;
-      }
+function notesInput(data) {
+  showInputBox(notesWindow, { ...data, fontSize: data.fontSize - 5, multiline: true }, (text, now) => {
+    config.NOTES_TEXT = text;
+    config.NOTES_SAVED_TIME = now;
+    json.write(CONFIG_PATH, config);
+    notesWindow.refresh();
+  });
+}
 
-      json.write(CONFIG_PATH, config);
-      settingsWindow.refresh();
+function notesTitleInput(data) {
+  showInputBox(notesWindow, { ...data, fontSize: data.fontSize - 5 }, (text, now) => {
+    config.NOTES_TITLE = text;
+    config.NOTES_SAVED_TIME = now;
+    json.write(CONFIG_PATH, config);
+    notesWindow.refresh();
+  });
+}
 
-      // Refresh other widgets if scaling changed
-      if (data.type === "scale") {
-        if (notesWindow && !notesWindow.isDestroyed()) notesWindow.refresh();
-        if (clockWindow && !clockWindow.isDestroyed()) clockWindow.refresh();
-        if (calendarWindow && !calendarWindow.isDestroyed()) calendarWindow.refresh();
-        if (weatherWindow && !weatherWindow.isDestroyed()) weatherWindow.refresh();
-        if (monitorWindow && !monitorWindow.isDestroyed()) monitorWindow.refresh();
-        if (playerWindow && !playerWindow.isDestroyed()) playerWindow.refresh();
-        if (volumeWindow && !volumeWindow.isDestroyed()) volumeWindow.refresh();
-      }
-    },
-    onDismiss: () => {
-      ipcMain.send("inputBoxDismissed");
-    },
-    onEsc: () => {
-      ipcMain.send("inputBoxDismissed");
+ipcMain.on("notesTitleInput", (event, data) => notesTitleInput(data));
+ipcMain.on("notesInput", (event, data) => notesInput(data));
+
+function settingsInput(data) {
+  showInputBox(settingsWindow, { ...data, inputType: data.inputType || "Number" }, (text) => {
+    const trimmed = text.trim();
+    const isFloat = trimmed.includes(".");
+    const val = isFloat ? parseFloat(trimmed) : parseInt(trimmed, 10);
+
+    if (data.type === "scale") {
+      if (!isNaN(val) && val >= 0.5 && val <= 3.0) config.SCALE = val;
+    } else if (data.type === "latitude") {
+      if (!isNaN(val)) config.LOCATION.LATITUDE = val;
+    } else if (data.type === "longitude") {
+      if (!isNaN(val)) config.LOCATION.LONGITUDE = val;
+    } else if (data.type === "city") {
+      if (trimmed) config.LOCATION.CITY_NAME = trimmed;
     }
+
+    json.write(CONFIG_PATH, config);
+    settingsWindow.refresh();
+
+    if (data.type === "scale") refreshAllWidgets();
   });
 }
 
@@ -730,65 +512,34 @@ ipcMain.on("settingsInput", (event, data) => settingsInput(data));
 ipcMain.on("setDarkMode", (event, isDark) => {
   config.APPEARANCE.THEME = isDark ? "dark" : "light";
   json.write(CONFIG_PATH, config);
-
-  if (settingsWindow && !settingsWindow.isDestroyed()) settingsWindow.refresh();
-  if (notesWindow && !notesWindow.isDestroyed()) notesWindow.refresh();
-  if (clockWindow && !clockWindow.isDestroyed()) clockWindow.refresh();
-  if (calendarWindow && !calendarWindow.isDestroyed()) calendarWindow.refresh();
-  if (weatherWindow && !weatherWindow.isDestroyed()) weatherWindow.refresh();
-  if (monitorWindow && !monitorWindow.isDestroyed()) monitorWindow.refresh();
-  if (playerWindow && !playerWindow.isDestroyed()) playerWindow.refresh();
-  if (volumeWindow && !volumeWindow.isDestroyed()) volumeWindow.refresh();
+  refreshAllWidgets();
 });
 
-// =============================================================================
-// Settings & Widget Loading Manager
-// =============================================================================
+// ── Widget Loading Manager ───────────────────────────────────────────────────
 
+/** Toggle a widget's visibility by key. Loads the widget if it doesn't exist yet. */
 function setWidgetLoaded(widgetKey, loaded) {
-  if (!config.LOADED_WIDGETS) config.LOADED_WIDGETS = {};
   config.LOADED_WIDGETS[widgetKey] = loaded;
   json.write(CONFIG_PATH, config);
 
+  const entry = WIDGET_MAP[widgetKey];
+  if (!entry) return;
+
+  const win = entry.ref();
   if (loaded) {
-    if (widgetKey === "MONITOR") {
-      if (!monitorWindow || monitorWindow.isDestroyed()) loadMonitorWidget();
-      else monitorWindow.show();
-    } else if (widgetKey === "CLOCK") {
-      if (!clockWindow || clockWindow.isDestroyed()) loadClockWidget();
-      else clockWindow.show();
-    } else if (widgetKey === "CALENDAR") {
-      if (!calendarWindow || calendarWindow.isDestroyed()) loadCalendarWidget();
-      else calendarWindow.show();
-    } else if (widgetKey === "WEATHER") {
-      if (!weatherWindow || weatherWindow.isDestroyed()) loadWeatherWidget();
-      else weatherWindow.show();
-    } else if (widgetKey === "MUSIC") {
-      if (!playerWindow || playerWindow.isDestroyed()) loadPlayerWidget();
-      else playerWindow.show();
-    } else if (widgetKey === "NOTES") {
-      if (!notesWindow || notesWindow.isDestroyed()) loadNotesWidget();
-      else notesWindow.show();
-    } else if (widgetKey === "VOLUME") {
-      if (!volumeWindow || volumeWindow.isDestroyed()) loadVolumeWidget();
-      else volumeWindow.show();
+    if (!win || win.isDestroyed()) {
+      if (widgetKey === "MONITOR") loadMonitorWidget();
+      else if (widgetKey === "CLOCK") loadClockWidget();
+      else if (widgetKey === "CALENDAR") loadCalendarWidget();
+      else if (widgetKey === "WEATHER") loadWeatherWidget();
+      else if (widgetKey === "MUSIC") loadPlayerWidget();
+      else if (widgetKey === "NOTES") loadNotesWidget();
+      else if (widgetKey === "VOLUME") loadVolumeWidget();
+    } else {
+      win.show();
     }
-  } else {
-    if (widgetKey === "MONITOR" && monitorWindow && !monitorWindow.isDestroyed()) {
-      monitorWindow.hide();
-    } else if (widgetKey === "CLOCK" && clockWindow && !clockWindow.isDestroyed()) {
-      clockWindow.hide();
-    } else if (widgetKey === "CALENDAR" && calendarWindow && !calendarWindow.isDestroyed()) {
-      calendarWindow.hide();
-    } else if (widgetKey === "WEATHER" && weatherWindow && !weatherWindow.isDestroyed()) {
-      weatherWindow.hide();
-    } else if (widgetKey === "MUSIC" && playerWindow && !playerWindow.isDestroyed()) {
-      playerWindow.hide();
-    } else if (widgetKey === "NOTES" && notesWindow && !notesWindow.isDestroyed()) {
-      notesWindow.hide();
-    } else if (widgetKey === "VOLUME" && volumeWindow && !volumeWindow.isDestroyed()) {
-      volumeWindow.hide();
-    }
+  } else if (win && !win.isDestroyed()) {
+    win.hide();
   }
 }
 
@@ -796,9 +547,8 @@ ipcMain.on("toggleWidget", (event, { widgetKey, loaded }) => {
   setWidgetLoaded(widgetKey, loaded);
 });
 
-// =============================================================================
-// Settings Window
-// =============================================================================
+// ── Settings Window ──────────────────────────────────────────────────────────
+
 function loadSettingsWindow() {
   if (settingsWindow && !settingsWindow.isDestroyed()) {
     settingsWindow.show();
@@ -810,11 +560,8 @@ function loadSettingsWindow() {
   json.write(CONFIG_PATH, config);
 }
 
-// =============================================================================
-// Launch Widgets
-// =============================================================================
+// ── Launch Widgets ───────────────────────────────────────────────────────────
 
-// Dynamic loader based on configured LOADED_WIDGETS status
 if (config.LOADED_WIDGETS) {
   if (config.LOADED_WIDGETS.MONITOR) loadMonitorWidget();
   if (config.LOADED_WIDGETS.CLOCK) loadClockWidget();
@@ -824,7 +571,6 @@ if (config.LOADED_WIDGETS) {
   if (config.LOADED_WIDGETS.NOTES) loadNotesWidget();
   if (config.LOADED_WIDGETS.VOLUME) loadVolumeWidget();
 } else {
-  // Fallback default
   loadNotesWidget();
 }
 
@@ -832,20 +578,17 @@ if (config.SETTINGS_WINDOW_OPEN !== false) {
   loadSettingsWindow();
 }
 
-// =============================================================================
-// System Tray Icon
-// =============================================================================
+// ── System Tray ──────────────────────────────────────────────────────────────
+
 const appTray = new tray("assets/icon.ico");
 appTray.setToolTip("FluentWidgets");
 appTray.setContextMenu([
   { text: "Settings", action: () => loadSettingsWindow() },
   { type: "separator" },
-  { text: "Exit App", action: () => app.exit() }
+  { text: "Exit App", action: () => app.exit() },
 ]);
 
-appTray.on("click", () => {
-  loadSettingsWindow();
-});
+appTray.on("click", () => loadSettingsWindow());
 
 ipcMain.on("openGithub", () => {
   execute("https://github.com/nstechbytes/FluentWidgets");
@@ -869,8 +612,7 @@ ipcMain.on("setCornerStyle", (event, style) => {
   if (validCorners.includes(style.toLowerCase())) {
     config.BB_STYLE.ROUND_TYPE = style.toLowerCase();
     json.write(CONFIG_PATH, config);
-    const wins = [monitorWindow, clockWindow, calendarWindow, weatherWindow, playerWindow, notesWindow, volumeWindow, settingsWindow];
-    wins.forEach(w => {
+    [monitorWindow, clockWindow, calendarWindow, weatherWindow, playerWindow, notesWindow, volumeWindow, settingsWindow].forEach(w => {
       if (w && !w.isDestroyed()) applyBlurBehind(w);
     });
   }

@@ -1,33 +1,15 @@
-// =============================================================================
-// FluentWidgets — Now Playing (Media Player) Widget (Renderer)
-// =============================================================================
-// Displays the currently-playing media (thumbnail, title, artist) and
-// provides play/pause/next/previous controls on hover (small / medium) or
-// persistently (wide / large). The main process polls the NowPlaying addon
-// every second and sends the latest track data via IPC.
-// =============================================================================
-
 const JSON_DATA = ipcRenderer.invoke("getJSON");
 const SCALE = parseFloat(JSON_DATA.SCALE) || 1;
 
-/** The most recent now-playing payload from the main process */
 let nowPlayingData = null;
 
-// -----------------------------------------------------------------------------
-// Asset paths
-// -----------------------------------------------------------------------------
 const FONT_FACE = JSON_DATA.FONT_FACE;
 const OVERLAY_COLOR = JSON_DATA.APPEARANCE.OVERLAY_COLOR;
-const OVERLAY_SUBTLE_COLOR = JSON_DATA.APPEARANCE.OVERLAY_SUBTLE_COLOR;
 const DEFAULT_THUMBNAIL = "assets/player/music.png";
-const PLAY_ICON = "assets/player/pause.png";   // shown when music IS playing
-const PAUSE_ICON = "assets/player/play.png";    // shown when music is paused
+const PLAY_ICON = "assets/player/pause.png";
+const PAUSE_ICON = "assets/player/play.png";
 const PREV_ICON = "assets/player/back.png";
 const NEXT_ICON = "assets/player/next.png";
-
-// =============================================================================
-// Theme Helpers
-// =============================================================================
 
 function getThemeColors() {
   return JSON_DATA.APPEARANCE.THEME === "dark"
@@ -39,33 +21,18 @@ function getBackgroundColor() { return getThemeColors().BACKGROUND; }
 function getFontColor() { return getThemeColors().FONT; }
 function getFontSubtleColor() { return getThemeColors().FONT_SUBTLE; }
 
-// =============================================================================
-// Widget Size Helper
-// =============================================================================
-
-/** The configured widget style name (controls overlay appearance) */
 let playerStyle = JSON_DATA.WINDOW_STYLES.PLAYER_WINDOW;
 
-/** Get the { w, h } dimensions (already scaled) for a given style key */
 function getWidgetSize(styleKey) {
   const key = (styleKey || playerStyle).toUpperCase();
   const s = JSON_DATA.WIDGET_SIZES[key] || JSON_DATA.WIDGET_SIZES.LARGE;
   return { w: s.WIDTH * SCALE, h: s.HEIGHT * SCALE };
 }
 
-// =============================================================================
-// Media Control (Renderer → Main Process)
-// =============================================================================
-
 function playPauseMusic() { ipcRenderer.send("playPause"); }
 function nextMusic() { ipcRenderer.send("next"); }
 function previousMusic() { ipcRenderer.send("previous"); }
 
-// =============================================================================
-// Hover Overlay Management (small / medium only)
-// =============================================================================
-
-/** Remove all overlay UI elements */
 function hideOverlay() {
   const isLarge = playerStyle === "large";
   const ids = ["overlay_shape", "overlay_image", "previous_image", "next_image"];
@@ -76,182 +43,72 @@ function hideOverlay() {
   });
 }
 
-/** Update the play/pause icon in overlays to reflect current state */
 function updateOverlay() {
   const icon = nowPlayingData && nowPlayingData.state === 1 ? PLAY_ICON : PAUSE_ICON;
   if (ui.isElementExist("overlay_image")) ui.setElementProperty("overlay_image", "path", icon);
   if (ui.isElementExist("play_pause_image")) ui.setElementProperty("play_pause_image", "path", icon);
 }
 
-// --- Small style overlays ------------------------------------------------
-
 function showOverlayForSmallStyle() {
   if (ui.isElementExist("overlay_shape") || ui.isElementExist("overlay_image")) return;
-
   const { w: SIZE } = getWidgetSize("small");
 
   if (nowPlayingData && nowPlayingData.available) {
-    ui.addShape({
-      id: "overlay_shape",
-      type: "rectangle",
-      x: 0, y: 0, width: SIZE, height: SIZE,
-      fillColor: OVERLAY_COLOR,
-      onLeftMouseUp: () => { playPauseMusic(); updateOverlay(); },
-    });
-    ui.addImage({
-      id: "overlay_image",
-      x: SIZE / 4, y: SIZE / 4,
-      width: SIZE / 2, height: SIZE / 2,
-      preserveAspectRatio: "crop",
-      path: nowPlayingData.state === 1 ? PLAY_ICON : PAUSE_ICON,
-    });
+    ui.addShape({ id: "overlay_shape", type: "rectangle", x: 0, y: 0, width: SIZE, height: SIZE, fillColor: OVERLAY_COLOR, onLeftMouseUp: () => { playPauseMusic(); updateOverlay(); } });
+    ui.addImage({ id: "overlay_image", x: SIZE / 4, y: SIZE / 4, width: SIZE / 2, height: SIZE / 2, preserveAspectRatio: "crop", path: nowPlayingData.state === 1 ? PLAY_ICON : PAUSE_ICON });
   } else {
-    ui.addShape({
-      id: "overlay_shape",
-      type: "rectangle",
-      x: 0, y: 0, width: SIZE, height: SIZE,
-      fillColor: OVERLAY_COLOR,
-    });
+    ui.addShape({ id: "overlay_shape", type: "rectangle", x: 0, y: 0, width: SIZE, height: SIZE, fillColor: OVERLAY_COLOR });
   }
 }
 
 function showOverlayOfNoMediaForSmallStyle() {
   if (ui.isElementExist("overlay_shape_no_media")) return;
   const { w: SIZE } = getWidgetSize("small");
-  ui.addShape({
-    id: "overlay_shape_no_media",
-    type: "rectangle",
-    x: 0, y: 0, width: SIZE, height: SIZE,
-    fillColor: OVERLAY_COLOR,
-  });
+  ui.addShape({ id: "overlay_shape_no_media", type: "rectangle", x: 0, y: 0, width: SIZE, height: SIZE, fillColor: OVERLAY_COLOR });
 }
-
-// --- Medium style overlays -----------------------------------------------
 
 function showOverlayForMediumStyle() {
   const { w: SIZE } = getWidgetSize("medium");
   const CONTAINER_SIZE = SIZE / 1.8;
 
-  if (ui.isElementExist("overlay_shape") || ui.isElementExist("overlay_image") ||
-    ui.isElementExist("previous_image") || ui.isElementExist("next_image")) return;
+  if (ui.isElementExist("overlay_shape") || ui.isElementExist("overlay_image") || ui.isElementExist("previous_image") || ui.isElementExist("next_image")) return;
 
   ui.beginUpdate();
-
-  ui.addShape({
-    id: "overlay_shape",
-    type: "rectangle",
-    x: 10 * SCALE, y: 10 * SCALE,
-    width: CONTAINER_SIZE, height: CONTAINER_SIZE,
-    fillColor: OVERLAY_COLOR, radius: 8, strokeWidth: 0,
-    onLeftMouseUp: () => { playPauseMusic(); updateOverlay(); },
-  });
-
-  ui.addImage({
-    id: "overlay_image",
-    x: 10 * SCALE + CONTAINER_SIZE / 4,
-    y: 10 * SCALE + CONTAINER_SIZE / 4,
-    width: CONTAINER_SIZE / 2, height: CONTAINER_SIZE / 2,
-    preserveAspectRatio: "crop",
-    path: nowPlayingData && nowPlayingData.state === 1 ? PLAY_ICON : PAUSE_ICON,
-  });
+  ui.addShape({ id: "overlay_shape", type: "rectangle", x: 10 * SCALE, y: 10 * SCALE, width: CONTAINER_SIZE, height: CONTAINER_SIZE, fillColor: OVERLAY_COLOR, radius: 8, strokeWidth: 0, onLeftMouseUp: () => { playPauseMusic(); updateOverlay(); } });
+  ui.addImage({ id: "overlay_image", x: 10 * SCALE + CONTAINER_SIZE / 4, y: 10 * SCALE + CONTAINER_SIZE / 4, width: CONTAINER_SIZE / 2, height: CONTAINER_SIZE / 2, preserveAspectRatio: "crop", path: nowPlayingData && nowPlayingData.state === 1 ? PLAY_ICON : PAUSE_ICON });
 
   const shapeLeft = ui.getElementProperty("overlay_shape", "x");
   const shapeW = ui.getElementProperty("overlay_shape", "width");
 
-  ui.addImage({
-    id: "previous_image",
-    x: shapeLeft + shapeW + 20 * SCALE,
-    y: ui.getElementProperty("overlay_shape", "y") + 5 * SCALE,
-    width: CONTAINER_SIZE / 3, height: CONTAINER_SIZE / 3,
-    path: PREV_ICON,
-  });
-
-  ui.addImage({
-    id: "next_image",
-    x: ui.getElementProperty("previous_image", "x"),
-    y: ui.getElementProperty("previous_image", "y") + 45 * SCALE,
-    width: CONTAINER_SIZE / 3, height: CONTAINER_SIZE / 3,
-    path: NEXT_ICON,
-  });
-
+  ui.addImage({ id: "previous_image", x: shapeLeft + shapeW + 20 * SCALE, y: ui.getElementProperty("overlay_shape", "y") + 5 * SCALE, width: CONTAINER_SIZE / 3, height: CONTAINER_SIZE / 3, path: PREV_ICON });
+  ui.addImage({ id: "next_image", x: ui.getElementProperty("previous_image", "x"), y: ui.getElementProperty("previous_image", "y") + 45 * SCALE, width: CONTAINER_SIZE / 3, height: CONTAINER_SIZE / 3, path: NEXT_ICON });
   ui.endUpdate();
 }
 
 function showOverlayOfNoMediaForMediumStyle() {
   if (ui.isElementExist("overlay_shape_no_media")) return;
   const { w: SIZE } = getWidgetSize("medium");
-  ui.addShape({
-    id: "overlay_shape_no_media",
-    type: "rectangle",
-    x: 10 * SCALE, y: 10 * SCALE,
-    width: SIZE / 1.8, height: SIZE / 1.8,
-    radius: 8, strokeWidth: 0,
-    fillColor: OVERLAY_COLOR,
-  });
+  ui.addShape({ id: "overlay_shape_no_media", type: "rectangle", x: 10 * SCALE, y: 10 * SCALE, width: SIZE / 1.8, height: SIZE / 1.8, radius: 8, strokeWidth: 0, fillColor: OVERLAY_COLOR });
 }
-
-// --- Wide style overlays (no-media placeholder) --------------------------
 
 function showOverlayOfNoMediaForWideStyle() {
   if (ui.isElementExist("overlay_shape_no_media")) return;
   const { w: W, h: H } = getWidgetSize("wide");
-  ui.addShape({
-    id: "overlay_shape_no_media",
-    type: "rectangle",
-    x: 10 * SCALE, y: 15 * SCALE,
-    width: W / 2.8, height: H / 1.25,
-    radius: 8, strokeWidth: 0,
-    fillColor: OVERLAY_COLOR,
-  });
+  ui.addShape({ id: "overlay_shape_no_media", type: "rectangle", x: 10 * SCALE, y: 15 * SCALE, width: W / 2.8, height: H / 1.25, radius: 8, strokeWidth: 0, fillColor: OVERLAY_COLOR });
 }
-
-// --- Large style overlay (no-media placeholder) --------------------------
 
 function showOverlayOfNoMediaForLargeStyle() {
   if (ui.isElementExist("overlay_shape_no_media")) return;
   const { w: SIZE } = getWidgetSize("large");
-  ui.addShape({
-    id: "overlay_shape_no_media",
-    type: "rectangle",
-    x: 0, y: 0, width: SIZE, height: SIZE,
-    strokeWidth: 0,
-    fillColor: OVERLAY_COLOR,
-  });
+  ui.addShape({ id: "overlay_shape_no_media", type: "rectangle", x: 0, y: 0, width: SIZE, height: SIZE, strokeWidth: 0, fillColor: OVERLAY_COLOR });
 }
-
-// --- Large style hover overlay (media info + controls) -------------------
 
 function showOverlayForLargeStyle() {
   const { w: SIZE } = getWidgetSize("large");
   const HOVER_H = SIZE - 120 * SCALE;
 
-  ui.addText({
-    id: "songTitle",
-    text: nowPlayingData.title,
-    x: SIZE / 2,
-    y: SIZE - HOVER_H / 2.3,
-    width: SIZE - 15 * SCALE,
-    fontSize: 18,
-    fontColor: getFontColor(),
-    fontFamily: FONT_FACE,
-    fontWeight: "bold",
-    textAlign: "center",
-    textClip: "ellipsis",
-  });
-
-  ui.addText({
-    id: "artistName",
-    text: nowPlayingData.artist,
-    x: SIZE / 2,
-    y: ui.getElementProperty("songTitle", "y") + 30 * SCALE,
-    width: SIZE - 15 * SCALE,
-    fontSize: 16,
-    fontColor: getFontSubtleColor(),
-    fontFamily: FONT_FACE,
-    fontWeight: "lighter",
-    textAlign: "center",
-    textClip: "ellipsis",
-  });
+  ui.addText({ id: "songTitle", text: nowPlayingData.title, x: SIZE / 2, y: SIZE - HOVER_H / 2.3, width: SIZE - 15 * SCALE, fontSize: 18, fontColor: getFontColor(), fontFamily: FONT_FACE, fontWeight: "bold", textAlign: "center", textClip: "ellipsis" });
+  ui.addText({ id: "artistName", text: nowPlayingData.artist, x: SIZE / 2, y: ui.getElementProperty("songTitle", "y") + 30 * SCALE, width: SIZE - 15 * SCALE, fontSize: 16, fontColor: getFontSubtleColor(), fontFamily: FONT_FACE, fontWeight: "lighter", textAlign: "center", textClip: "ellipsis" });
 
   const CTRL_SIZE = 25 * SCALE;
   const ctrlsY = ui.getElementProperty("artistName", "y") + 40 * SCALE;
@@ -262,23 +119,11 @@ function showOverlayForLargeStyle() {
   ui.addImage({ id: "next_image", x: cx + CTRL_SIZE / 2 + 15 * SCALE, y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: NEXT_ICON, onLeftMouseUp: () => nextMusic() });
 }
 
-// =============================================================================
-// Style Builders
-// =============================================================================
-
 function smallStyle() {
   const { w: SIZE } = getWidgetSize("small");
 
   ui.beginUpdate();
-  ui.addShape({
-    id: "background_Shape",
-    type: "rectangle",
-    width: SIZE, height: SIZE,
-    strokeWidth: 0,
-    fillColor: getBackgroundColor(),
-    onMouseOver: () => { if (nowPlayingData && nowPlayingData.available) showOverlayForSmallStyle(); },
-    onMouseLeave: hideOverlay,
-  });
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, strokeWidth: 0, fillColor: getBackgroundColor(), onMouseOver: () => { if (nowPlayingData && nowPlayingData.available) showOverlayForSmallStyle(); }, onMouseLeave: hideOverlay });
   ui.addImage({ id: "thumbnail", x: 0, y: 0, width: SIZE, height: SIZE, preserveAspectRatio: "crop", path: DEFAULT_THUMBNAIL });
   ui.endUpdate();
 }
@@ -288,15 +133,7 @@ function mediumStyle() {
   const CONTAINER_SIZE = SIZE / 1.8;
 
   ui.beginUpdate();
-  ui.addShape({
-    id: "background_Shape",
-    type: "rectangle",
-    width: SIZE, height: SIZE,
-    strokeWidth: 0,
-    fillColor: getBackgroundColor(),
-    onMouseOver: () => { if (nowPlayingData && nowPlayingData.available) showOverlayForMediumStyle(); },
-    onMouseLeave: hideOverlay,
-  });
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, strokeWidth: 0, fillColor: getBackgroundColor(), onMouseOver: () => { if (nowPlayingData && nowPlayingData.available) showOverlayForMediumStyle(); }, onMouseLeave: hideOverlay });
   ui.addShape({ id: "container", x: 10 * SCALE, y: 10 * SCALE, type: "rectangle", width: CONTAINER_SIZE, height: CONTAINER_SIZE, strokeWidth: 0, radius: 8 });
   ui.addShape({ id: "container_mask", type: "rectangle", width: CONTAINER_SIZE, height: CONTAINER_SIZE, strokeWidth: 0, fillColor: "rgba(200,200,200,0.1)", container: "container" });
   ui.addImage({ id: "thumbnail", x: 0, y: 0, width: CONTAINER_SIZE, height: CONTAINER_SIZE, preserveAspectRatio: "crop", path: DEFAULT_THUMBNAIL, container: "container" });
@@ -329,7 +166,6 @@ function wideStyle() {
   ui.addImage({ id: "previous_image", x: ctrlsX - CTRL_SIZE * 1.5 - 15 * SCALE, y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: PREV_ICON, onLeftMouseUp: () => previousMusic() });
   ui.addImage({ id: "play_pause_image", x: ctrlsX - CTRL_SIZE / 2, y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: (nowPlayingData && nowPlayingData.state === 1) ? PLAY_ICON : PAUSE_ICON, onLeftMouseUp: () => playPauseMusic() });
   ui.addImage({ id: "next_image", x: ctrlsX + CTRL_SIZE / 2 + 15 * SCALE, y: ctrlsY, width: CTRL_SIZE, height: CTRL_SIZE, path: NEXT_ICON, onLeftMouseUp: () => nextMusic() });
-
   ui.endUpdate();
 }
 
@@ -339,30 +175,14 @@ function largeStyle() {
 
   ui.beginUpdate();
   ui.addShape({
-    id: "background_Shape",
-    type: "rectangle",
-    width: SIZE, height: SIZE,
-    strokeWidth: 0,
-    fillColor: getBackgroundColor(),
-    onMouseOver: () => {
-      if (nowPlayingData && nowPlayingData.available) {
-        ui.setElementProperty("container", "height", HOVER_H);
-        showOverlayForLargeStyle();
-      }
-    },
-    onMouseLeave: () => {
-      ui.setElementProperty("container", "height", SIZE);
-      hideOverlay();
-    },
+    id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, strokeWidth: 0, fillColor: getBackgroundColor(),
+    onMouseOver: () => { if (nowPlayingData && nowPlayingData.available) { ui.setElementProperty("container", "height", HOVER_H); showOverlayForLargeStyle(); } },
+    onMouseLeave: () => { ui.setElementProperty("container", "height", SIZE); hideOverlay(); },
   });
   ui.addShape({ id: "container", x: 0, y: 0, type: "rectangle", width: SIZE, height: SIZE, strokeWidth: 0 });
   ui.addImage({ id: "thumbnail", x: 0, y: 0, width: SIZE, height: SIZE, preserveAspectRatio: "crop", path: DEFAULT_THUMBNAIL, container: "container" });
   ui.endUpdate();
 }
-
-// =============================================================================
-// Initial Render
-// =============================================================================
 
 function render() {
   if (playerStyle === "small") smallStyle();
@@ -372,21 +192,13 @@ function render() {
 }
 
 function clearUI() {
-  const ids = [
-    "background_Shape", "container", "thumbnail",
-    "overlay_shape", "overlay_image",
-    "previous_image", "play_pause_image", "next_image",
-    "songTitle", "artistName",
-    "overlay_shape_no_media"
-  ];
-  ids.forEach(id => {
+  ["background_Shape", "container", "thumbnail", "overlay_shape", "overlay_image", "previous_image", "play_pause_image", "next_image", "songTitle", "artistName", "overlay_shape_no_media"].forEach(id => {
     if (ui.isElementExist(id)) ui.removeElementById(id);
   });
 }
 
 render();
 
-// Show "no media" placeholder overlays based on the configured style
 if (playerStyle === "small") showOverlayOfNoMediaForSmallStyle();
 if (playerStyle === "medium") showOverlayOfNoMediaForMediumStyle();
 if (playerStyle === "wide") showOverlayOfNoMediaForWideStyle();
@@ -397,32 +209,22 @@ ipcRenderer.on("changePlayerStyle", (event, style) => {
   playerStyle = style;
   clearUI();
   render();
-  // Show "no media" overlay for the new style
-  const showFns = {
-    small: showOverlayOfNoMediaForSmallStyle,
-    medium: showOverlayOfNoMediaForMediumStyle,
-    wide: showOverlayOfNoMediaForWideStyle,
-    large: showOverlayOfNoMediaForLargeStyle,
-  };
+
+  const showFns = { small: showOverlayOfNoMediaForSmallStyle, medium: showOverlayOfNoMediaForMediumStyle, wide: showOverlayOfNoMediaForWideStyle, large: showOverlayOfNoMediaForLargeStyle };
   if (!nowPlayingData || !nowPlayingData.available) {
     if (showFns[style]) showFns[style]();
   }
   ui.endUpdate();
 });
 
-// =============================================================================
-// IPC — Update Now Playing Data
-// =============================================================================
-
+/** Update album art, track title, artist, and show/hide the no-media placeholder. */
 ipcRenderer.on("nowPlayingUpdate", (event, data) => {
   nowPlayingData = data;
 
-  // Update thumbnail
   if (ui.isElementExist("thumbnail")) {
     ui.setElementProperty("thumbnail", "path", data.available ? data.thumbnail : DEFAULT_THUMBNAIL);
   }
 
-  // Update text labels
   if (data.available) {
     if (ui.isElementExist("songTitle")) ui.setElementProperty("songTitle", "text", data.title);
     if (ui.isElementExist("artistName")) ui.setElementProperty("artistName", "text", data.artist);
@@ -434,22 +236,12 @@ ipcRenderer.on("nowPlayingUpdate", (event, data) => {
   const hasMedia = data.available;
   const style = playerStyle;
 
-  // Show/hide "no media" overlay per style
-  const showFns = {
-    small: showOverlayOfNoMediaForSmallStyle,
-    medium: showOverlayOfNoMediaForMediumStyle,
-    wide: showOverlayOfNoMediaForWideStyle,
-    large: showOverlayOfNoMediaForLargeStyle,
-  };
+  const showFns = { small: showOverlayOfNoMediaForSmallStyle, medium: showOverlayOfNoMediaForMediumStyle, wide: showOverlayOfNoMediaForWideStyle, large: showOverlayOfNoMediaForLargeStyle };
 
   if (hasMedia) {
-    if (ui.isElementExist("overlay_shape_no_media")) {
-      ui.removeElementById("overlay_shape_no_media");
-    }
-  } else if (showFns[style]) {
-    if (!ui.isElementExist("overlay_shape_no_media")) {
-      showFns[style]();
-    }
+    if (ui.isElementExist("overlay_shape_no_media")) ui.removeElementById("overlay_shape_no_media");
+  } else if (showFns[style] && !ui.isElementExist("overlay_shape_no_media")) {
+    showFns[style]();
   }
 
   updateOverlay();

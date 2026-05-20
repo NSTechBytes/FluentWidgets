@@ -1,20 +1,9 @@
-// =============================================================================
-// FluentWidgets — System Monitor Widget (Renderer)
-// =============================================================================
-// Displays CPU, RAM, Disk, and Network usage as ring gauges (small / medium /
-// wide) or as labelled sparkline graphs (large). Runs inside its own renderer
-// process and receives updates via IPC from the main process.
-// =============================================================================
-
 const JSON_DATA = ipcRenderer.invoke("getJSON");
 const SCALE = parseFloat(JSON_DATA.SCALE) || 1;
 
-// Ring-gauge dimensions (used by small / medium / wide styles)
 const RING_SIZE = 50 * SCALE;
 const RING_RADIUS = 25 * SCALE;
 const RING_THICKNESS = 5 * SCALE;
-const RING_CENTER_OFFSET = (RING_SIZE - RING_SIZE) / 2; // 0 — kept for clarity
-
 const ICON_SIZE = 20 * SCALE;
 const ICON_OFFSET = (RING_SIZE - ICON_SIZE) / 2;
 
@@ -22,28 +11,14 @@ const FONT_FACE = JSON_DATA.FONT_FACE;
 const FONT_FACE_SEMIBOLD = JSON_DATA.FONT_FACE_SEMIBOLD;
 const ICONS_PATH = "assets/icons/";
 
-// Speed ceilings used to convert raw bytes to a 0–100 percentage
-const MAX_DISK_SPEED = 1000000000;   // 1 GB/s
-const MAX_NETWORK_SPEED = 1000000000; // 1 Gbps
+const MAX_DISK_SPEED = 1000000000;
+const MAX_NETWORK_SPEED = 1000000000;
 
-// Latest readings (updated on every IPC message)
-let cpuUsage = 0;
-let memoryUsage = 0;
-let diskUsage = 0;
-let networkUsage = 0;
+let cpuUsage = 0, memoryUsage = 0, diskUsage = 0, networkUsage = 0;
 
-// History buffers for sparkline graphs (large style only)
-const cpuHistory = [];
-const memoryHistory = [];
-const diskHistory = [];
-const networkHistory = [];
+const cpuHistory = [], memoryHistory = [], diskHistory = [], networkHistory = [];
 const MAX_HISTORY = 60;
 
-// =============================================================================
-// Theme Helpers
-// =============================================================================
-
-/** Get the active theme's color palette from config */
 function getThemeColors() {
   return JSON_DATA.APPEARANCE.THEME === "dark"
     ? JSON_DATA.APPEARANCE.DARK
@@ -51,74 +26,34 @@ function getThemeColors() {
 }
 
 function getBackgroundColor() { return getThemeColors().BACKGROUND; }
-function getSubtleColor()      { return getThemeColors().SUBTLE; }
-function getIconColor()        { return getThemeColors().ICON; }
-function getTextColor()        { return getThemeColors().FONT; }
+function getFontColor() { return getThemeColors().FONT; }
+function getIconColor() { return getThemeColors().ICON; }
+function getSubtleColor() { return getThemeColors().SUBTLE; }
+function getAccentColor() { return JSON_DATA.APPEARANCE.ACCENT_COLOR; }
 
-function getAccentColor()      { return JSON_DATA.APPEARANCE.ACCENT_COLOR; }
-
-/** Map a usage percentage to the configured level color */
 function getLevelColor(percent) {
   const levels = JSON_DATA.APPEARANCE.LEVEL_COLORS;
-  if (percent >= 0 && percent < 70)  return levels.LOW;
+  if (percent >= 0 && percent < 70) return levels.LOW;
   if (percent >= 70 && percent < 90) return levels.MEDIUM;
   return levels.HIGH;
 }
 
-// =============================================================================
-// Widget Size Helper
-// =============================================================================
-
-/** Get the { w, h } dimensions (already scaled) for the current widget style */
 function getWidgetSize() {
   const key = currentStyle.toUpperCase();
   const s = JSON_DATA.WIDGET_SIZES[key] || JSON_DATA.WIDGET_SIZES.LARGE;
   return { w: s.WIDTH * SCALE, h: s.HEIGHT * SCALE };
 }
 
-// =============================================================================
-// Style Builders
-// =============================================================================
+let currentStyle = JSON_DATA.WINDOW_STYLES.MONITOR_WINDOW;
 
 function smallStyle() {
   const { w: SIZE } = getWidgetSize();
   const cx = (SIZE - RING_SIZE) / 2;
 
   ui.beginUpdate();
-
-  ui.addShape({
-    id: "background_Shape",
-    type: "rectangle",
-    width: SIZE,
-    height: SIZE,
-    strokeWidth: 0,
-    fillColor: getBackgroundColor(),
-  });
-
-  ui.addRoundLine({
-    id: "cpu-ring",
-    x: cx,
-    y: cx,
-    width: RING_SIZE,
-    height: RING_SIZE,
-    thickness: RING_THICKNESS,
-    radius: RING_RADIUS,
-    value: 0,
-    lineColor: getLevelColor(0),
-    lineColorBg: getSubtleColor(),
-    capType: "round",
-  });
-
-  ui.addImage({
-    id: "cpu-ring-icon",
-    x: cx + ICON_OFFSET,
-    y: cx + ICON_OFFSET,
-    width: ICON_SIZE,
-    height: ICON_SIZE,
-    path: ICONS_PATH + "cpu.png",
-    imageTint: getIconColor(),
-  });
-
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, strokeWidth: 0, fillColor: getBackgroundColor() });
+  ui.addRoundLine({ id: "cpu-ring", x: cx, y: cx, width: RING_SIZE, height: RING_SIZE, thickness: RING_THICKNESS, radius: RING_RADIUS, value: 0, lineColor: getLevelColor(0), lineColorBg: getSubtleColor(), capType: "round" });
+  ui.addImage({ id: "cpu-ring-icon", x: cx + ICON_OFFSET, y: cx + ICON_OFFSET, width: ICON_SIZE, height: ICON_SIZE, path: ICONS_PATH + "cpu.png", imageTint: getIconColor() });
   ui.endUpdate();
 }
 
@@ -130,42 +65,18 @@ function mediumStyle() {
   const startX = (SIZE - rowWidth) / 2;
   const startY = (SIZE - colHeight) / 2;
 
-  const ringStyle = {
-    width: RING_SIZE,
-    height: RING_SIZE,
-    thickness: RING_THICKNESS,
-    radius: RING_RADIUS,
-    value: 0,
-    lineColor: getLevelColor(0),
-    lineColorBg: getSubtleColor(),
-    capType: "round",
-  };
-
-  const iconStyle = {
-    width: ICON_SIZE,
-    height: ICON_SIZE,
-    imageTint: getIconColor(),
-  };
+  const ringStyle = { width: RING_SIZE, height: RING_SIZE, thickness: RING_THICKNESS, radius: RING_RADIUS, value: 0, lineColor: getLevelColor(0), lineColorBg: getSubtleColor(), capType: "round" };
+  const iconStyle = { width: ICON_SIZE, height: ICON_SIZE, imageTint: getIconColor() };
 
   ui.beginUpdate();
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, strokeWidth: 0, fillColor: getBackgroundColor() });
 
-  ui.addShape({
-    id: "background_Shape",
-    type: "rectangle",
-    width: SIZE,
-    height: SIZE,
-    strokeWidth: 0,
-    fillColor: getBackgroundColor(),
-  });
-
-  // Row 1 — CPU, Memory
   ui.addRoundLine({ id: "cpu-ring", x: startX, y: startY, ...ringStyle });
   ui.addImage({ id: "cpu-ring-icon", x: startX + ICON_OFFSET, y: startY + ICON_OFFSET, path: ICONS_PATH + "cpu.png", ...iconStyle });
 
   ui.addRoundLine({ id: "memory-ring", x: startX + RING_SIZE + GAP, y: startY, ...ringStyle });
   ui.addImage({ id: "memory-ring-icon", x: startX + RING_SIZE + GAP + ICON_OFFSET, y: startY + ICON_OFFSET, path: ICONS_PATH + "memory.png", ...iconStyle });
 
-  // Row 2 — Disk, Network
   const row2Y = startY + RING_SIZE + GAP;
   ui.addRoundLine({ id: "disk-ring", x: startX, y: row2Y, ...ringStyle });
   ui.addImage({ id: "disk-ring-icon", x: startX + ICON_OFFSET, y: row2Y + ICON_OFFSET, path: ICONS_PATH + "disk.png", ...iconStyle });
@@ -183,49 +94,15 @@ function wideStyle() {
   const startX = (W - totalWidth) / 2;
   const ringY = (H - RING_SIZE) / 3;
 
-  const ringStyle = {
-    y: ringY,
-    width: RING_SIZE,
-    height: RING_SIZE,
-    thickness: RING_THICKNESS,
-    radius: RING_RADIUS,
-    value: 0,
-    lineColor: getLevelColor(0),
-    lineColorBg: getSubtleColor(),
-    capType: "round",
-  };
-
-  const iconStyle = {
-    y: ringY + ICON_OFFSET,
-    width: ICON_SIZE,
-    height: ICON_SIZE,
-    imageTint: getIconColor(),
-  };
-
-  const textStyle = {
-    y: ringY + RING_SIZE + 12 * SCALE,
-    width: RING_SIZE,
-    height: 20 * SCALE,
-    text: "0%",
-    fontSize: 20 * SCALE,
-    fontColor: getTextColor(),
-    textAlign: "center",
-    fontFace: FONT_FACE,
-  };
+  const ringStyle = { y: ringY, width: RING_SIZE, height: RING_SIZE, thickness: RING_THICKNESS, radius: RING_RADIUS, value: 0, lineColor: getLevelColor(0), lineColorBg: getSubtleColor(), capType: "round" };
+  const iconStyle = { y: ringY + ICON_OFFSET, width: ICON_SIZE, height: ICON_SIZE, imageTint: getIconColor() };
+  const textStyle = { y: ringY + RING_SIZE + 12 * SCALE, width: RING_SIZE, height: 20 * SCALE, text: "0%", fontSize: 20 * SCALE, fontColor: getFontColor(), textAlign: "center", fontFace: FONT_FACE };
 
   ui.beginUpdate();
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: W, height: H, strokeWidth: 0, fillColor: getBackgroundColor() });
 
-  ui.addShape({
-    id: "background_Shape",
-    type: "rectangle",
-    width: W,
-    height: H,
-    strokeWidth: 0,
-    fillColor: getBackgroundColor(),
-  });
-
-  const iconFiles = ["cpu.png", "memory.png", "disk.png", "network.png"];
   const labels = ["cpu", "memory", "disk", "net"];
+  const iconFiles = ["cpu.png", "memory.png", "disk.png", "network.png"];
   for (let i = 0; i < 4; i++) {
     const x = startX + (RING_SIZE + GAP) * i;
     ui.addRoundLine({ id: labels[i] + "-ring", x, ...ringStyle });
@@ -242,115 +119,47 @@ function largeStyle() {
   const SECTION_H = H / 4;
 
   ui.beginUpdate();
-
-  ui.addShape({
-    id: "background_Shape",
-    type: "rectangle",
-    width: W,
-    height: H,
-    strokeWidth: 0,
-    fillColor: getBackgroundColor(),
-  });
+  ui.addShape({ id: "background_Shape", type: "rectangle", width: W, height: H, strokeWidth: 0, fillColor: getBackgroundColor() });
 
   const sections = [
-    { id: "cpu",    label: "CPU", icon: "cpu.png" },
+    { id: "cpu", label: "CPU", icon: "cpu.png" },
     { id: "memory", label: "RAM", icon: "memory.png" },
-    { id: "disk",   label: "Disk", icon: "disk.png" },
-    { id: "net",    label: "Net",  icon: "network.png" },
+    { id: "disk", label: "Disk", icon: "disk.png" },
+    { id: "net", label: "Net", icon: "network.png" },
   ];
 
   sections.forEach((sec, i) => {
     const y = SECTION_H * i + 15 * SCALE;
 
-    ui.addImage({
-      id: sec.id + "-icon",
-      x: PAD,
-      y,
-      width: 20 * SCALE,
-      height: 20 * SCALE,
-      path: ICONS_PATH + sec.icon,
-      imageTint: getIconColor(),
-    });
+    ui.addImage({ id: sec.id + "-icon", x: PAD, y, width: 20 * SCALE, height: 20 * SCALE, path: ICONS_PATH + sec.icon, imageTint: getIconColor() });
+    ui.addText({ id: sec.id + "-label", x: PAD + 30 * SCALE, y: y + 2 * SCALE, text: sec.label, fontSize: 16 * SCALE, fontColor: getFontColor(), fontFace: FONT_FACE_SEMIBOLD, textAlign: "left" });
+    ui.addText({ id: sec.id + "-value", x: W - PAD, y: y + 2 * SCALE, text: "0 %", fontSize: 16 * SCALE, fontColor: getFontColor(), fontFace: FONT_FACE, textAlign: "right" });
 
-    ui.addText({
-      id: sec.id + "-label",
-      x: PAD + 30 * SCALE,
-      y: y + 2 * SCALE,
-      text: sec.label,
-      fontSize: 16 * SCALE,
-      fontColor: getTextColor(),
-      fontFace: FONT_FACE_SEMIBOLD,
-      textAlign: "left",
-    });
+    ui.addAreaGraph({ id: sec.id + "-graph", x: PAD, y: y + 25 * SCALE, data: [], width: W - PAD * 2, height: 35 * SCALE, minValue: 0, maxValue: 100, lineColor: "rgba(0, 255, 150, 0.6)", fillColor: "rgba(0, 255, 150, 0.15)", gridVisible: false, maxPoints: MAX_HISTORY });
 
-    ui.addText({
-      id: sec.id + "-value",
-      x: W - PAD,
-      y: y + 2 * SCALE,
-      text: "0 %",
-      fontSize: 16 * SCALE,
-      fontColor: getTextColor(),
-      fontFace: FONT_FACE,
-      textAlign: "right",
-    });
-
-    ui.addAreaGraph({
-      id: sec.id + "-graph",
-      x: PAD,
-      y: y + 25 * SCALE,
-      data: [],
-      width: W - PAD * 2,
-      height: 35 * SCALE,
-      minValue: 0,
-      maxValue: 100,
-      lineColor: "rgba(0, 255, 150, 0.6)",
-      fillColor: "rgba(0, 255, 150, 0.15)",
-      gridVisible: false,
-      maxPoints: MAX_HISTORY,
-    });
-
-    // Divider line (not needed after the last section)
     if (i < sections.length - 1) {
-      ui.addShape({
-        id: "div-" + sec.id,
-        type: "rectangle",
-        x: 0,
-        y: SECTION_H * (i + 1),
-        width: W,
-        height: 1 * SCALE,
-        fillColor: getSubtleColor(),
-        strokeWidth: 0,
-      });
+      ui.addShape({ id: "div-" + sec.id, type: "rectangle", x: 0, y: SECTION_H * (i + 1), width: W, height: 1 * SCALE, fillColor: getSubtleColor(), strokeWidth: 0 });
     }
   });
 
   ui.endUpdate();
 }
 
-// =============================================================================
-// Initial Render — pick the style from config
-// =============================================================================
-
-let currentStyle = JSON_DATA.WINDOW_STYLES.MONITOR_WINDOW;
-
 function render() {
-  if (currentStyle === "small")  smallStyle();
+  if (currentStyle === "small") smallStyle();
   else if (currentStyle === "medium") mediumStyle();
-  else if (currentStyle === "wide")   wideStyle();
+  else if (currentStyle === "wide") wideStyle();
   else largeStyle();
 }
 
 function clearUI() {
-  const ids = [
-    "background_Shape",
+  const ids = ["background_Shape",
     "cpu-ring", "cpu-ring-icon", "cpu-ring-text", "cpu-icon", "cpu-label", "cpu-value", "cpu-graph", "div-cpu",
     "memory-ring", "memory-ring-icon", "memory-ring-text", "memory-icon", "memory-label", "memory-value", "memory-graph", "div-memory",
     "disk-ring", "disk-ring-icon", "disk-ring-text", "disk-icon", "disk-label", "disk-value", "disk-graph", "div-disk",
-    "net-ring", "net-ring-icon", "net-ring-text", "net-icon", "net-label", "net-value", "net-graph", "div-net"
+    "net-ring", "net-ring-icon", "net-ring-text", "net-icon", "net-label", "net-value", "net-graph", "div-net",
   ];
-  ids.forEach(id => {
-    if (ui.isElementExist(id)) ui.removeElementById(id);
-  });
+  ids.forEach(id => { if (ui.isElementExist(id)) ui.removeElementById(id); });
 }
 
 render();
@@ -363,19 +172,11 @@ ipcRenderer.on("changeMonitorStyle", (event, style) => {
   ui.endUpdate();
 });
 
-// =============================================================================
-// IPC — Handle incoming stats
-// =============================================================================
-
-/**
- * Convert an rgb(...) string to rgba(...) with a given alpha.
- */
+/** Convert rgb(...) string to rgba(...) for graph transparency. */
 function toRgba(color, alpha) {
-  if (color === "red")    return `rgba(255, 0, 0, ${alpha})`;
+  if (color === "red") return `rgba(255, 0, 0, ${alpha})`;
   if (color === "yellow") return `rgba(255, 255, 0, ${alpha})`;
-  if (color.startsWith("rgb(")) {
-    return color.replace("rgb(", "rgba(").replace(")", `, ${alpha})`);
-  }
+  if (color.startsWith("rgb(")) return color.replace("rgb(", "rgba(").replace(")", `, ${alpha})`);
   return color;
 }
 
@@ -398,6 +199,7 @@ function updateValueText(id, value) {
   }
 }
 
+/** Push a data point to a sparkline graph and update its color based on usage level. */
 function updateGraph(graphId, value, history) {
   if (!ui.isElementExist(graphId)) return;
 
@@ -409,10 +211,10 @@ function updateGraph(graphId, value, history) {
   ui.setElementProperty(graphId, "lineColor", toRgba(color, 0.6));
   ui.setElementProperty(graphId, "fillColor", toRgba(color, 0.15));
 
-  // Also update the accompanying value label
   updateValueText(graphId.replace("-graph", "-value"), value);
 }
 
+/** Clamp a raw value to a 0-100 percentage relative to the given maximum. */
 function computePercent(raw, maxVal) {
   return Math.min(Math.max((raw / maxVal) * 100, 0), 100);
 }
@@ -424,23 +226,20 @@ ipcRenderer.on("monitor-window-stats", (event, data) => {
   networkUsage = data.network;
 
   const diskPercent = computePercent(diskUsage, MAX_DISK_SPEED);
-  const netPercent  = computePercent(networkUsage, MAX_NETWORK_SPEED);
+  const netPercent = computePercent(networkUsage, MAX_NETWORK_SPEED);
 
   ui.beginUpdate();
 
-  // Ring gauges
   updateRing("cpu-ring", cpuUsage);
   updateRing("memory-ring", memoryUsage);
   updateRing("disk-ring", diskPercent);
   updateRing("net-ring", netPercent);
 
-  // Text below rings (wide style)
   updateRingText("cpu-ring", cpuUsage);
   updateRingText("memory-ring", memoryUsage);
   updateRingText("disk-ring", diskPercent);
   updateRingText("net-ring", netPercent);
 
-  // Sparkline graphs (large style)
   updateGraph("cpu-graph", cpuUsage, cpuHistory);
   updateGraph("memory-graph", memoryUsage, memoryHistory);
   updateGraph("disk-graph", diskPercent, diskHistory);
