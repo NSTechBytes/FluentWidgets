@@ -60,10 +60,10 @@ function loadConfig() {
   const metaPath = path.join(__dirname, "meta.json");
   if (fs.exists(metaPath)) {
     const meta = json.read(metaPath);
-    config.author = meta.author || "Nasir Shahbaz";
+    config.author = meta.author || "nstechbytes";
     config.version = meta.version || "1.0.0.0";
   } else {
-    config.author = "Nasir Shahbaz";
+    config.author = "nstechbytes";
     config.version = "1.0.0.0";
   }
 

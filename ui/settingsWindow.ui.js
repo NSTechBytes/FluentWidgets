@@ -201,7 +201,7 @@ function renderTabContent() {
     ui.addImage({ id: "aboutLogo", path: "assets/images/Settings/logo.png", x: centerX - 36 * SCALE, y: 100 * SCALE, width: 72 * SCALE, height: 72 * SCALE });
     ui.addText({ id: "aboutTitle", text: "FluentWidgets", x: centerX, y: 190 * SCALE, fontSize: 18 * SCALE, fontWeight: "bold", fontFace: FONT_FACE, fontColor: getFontColor(), textAlign: "center" });
     ui.addText({ id: "aboutVersion", text: "Version " + (JSON_DATA.version || "1.0.0.0"), x: centerX, y: 220 * SCALE, fontSize: 13 * SCALE, fontFace: FONT_FACE, fontColor: getFontSubtleColor(), textAlign: "center" });
-    ui.addText({ id: "aboutAuthor", text: "Created by " + (JSON_DATA.author || "Nasir Shahbaz"), x: centerX, y: 250 * SCALE, fontSize: 13 * SCALE, fontFace: FONT_FACE, fontColor: getFontSubtleColor(), textAlign: "center" });
+    ui.addText({ id: "aboutAuthor", text: "Created by " + (JSON_DATA.author || "nstechbytes"), x: centerX, y: 250 * SCALE, fontSize: 13 * SCALE, fontFace: FONT_FACE, fontColor: getFontSubtleColor(), textAlign: "center" });
     ui.addText({ id: "aboutLicense", text: "Licensed under the Apache License, Version 2.0", x: centerX, y: 280 * SCALE, fontSize: 13 * SCALE, fontFace: FONT_FACE, fontColor: getFontSubtleColor(), textAlign: "center" });
     ui.addImage({ id: "aboutGithubLogo", path: "assets/images/Settings/github.png", x: centerX - 20 * SCALE, y: 330 * SCALE, width: 40 * SCALE, height: 40 * SCALE, onLeftMouseUp: () => ipcRenderer.send("openGithub") });
     ui.addText({ id: "aboutGithubLink", text: "View Repository on GitHub", x: centerX, y: 380 * SCALE, fontSize: 13 * SCALE, fontFace: FONT_FACE, fontColor: getAccentColor(), textAlign: "center", onLeftMouseUp: () => ipcRenderer.send("openGithub") });
