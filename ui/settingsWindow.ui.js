@@ -180,8 +180,27 @@ function renderTabContent() {
     ui.addShape({ id: "cornerInputBg", type: "rectangle", x: BG_WIDTH - 30 * SCALE - 120 * SCALE, y: 435 * SCALE + 4 * SCALE, width: 120 * SCALE, height: 32 * SCALE, radius: 4 * SCALE, strokeWidth: 1 * SCALE, strokeColor: getFontSubtleColor(), fillColor: getBackgroundSubtle(), onLeftMouseUp: () => { isCornerDropdownOpen = !isCornerDropdownOpen; clearTabContent(); renderTabContent(); } });
     ui.addText({ id: "cornerInputText", text: String(JSON_DATA.BB_STYLE.ROUND_TYPE), x: BG_WIDTH - 30 * SCALE - 110 * SCALE, y: 435 * SCALE + 20 * SCALE, textAlign: "leftcenter", fontSize: 14 * SCALE, fontFace: FONT_FACE, fontColor: getFontColor(), onLeftMouseUp: () => { isCornerDropdownOpen = !isCornerDropdownOpen; clearTabContent(); renderTabContent(); } });
 
+    const use24 = JSON_DATA.USE_24_HOUR_FORMAT;
+    ui.addText({ id: "use24HourText", text: "24-Hour Clock", x: SIDEBAR_WIDTH + 30 * SCALE, y: 500 * SCALE + 20 * SCALE, textAlign: "leftcenter", fontSize: 16 * SCALE, fontWeight: 600, fontFace: FONT_FACE, fontColor: getFontColor() });
+    ui.addImage({ id: "use24HourToggleImage", path: use24 ? "assets/images/Settings/on.png" : "assets/images/Settings/off.png", x: BG_WIDTH - 30 * SCALE - 40 * SCALE, y: 500 * SCALE + 12.5 * SCALE, width: 40 * SCALE, height: 40 * SCALE, onLeftMouseUp: () => toggle24HourClock() });
+
     if (isCornerDropdownOpen) {
-      ui.addShape({ id: "cornerDropdownBg", type: "rectangle", x: BG_WIDTH - 30 * SCALE - 120 * SCALE, y: 435 * SCALE + 40 * SCALE, width: 120 * SCALE, height: 90 * SCALE, radius: 4 * SCALE, strokeWidth: 1 * SCALE, strokeColor: getFontSubtleColor(), fillColor: "rgba(30, 30, 30, 0.9)" });
+      ui.addShape({
+        id: "cornerDropdownBg",
+        type: "rectangle",
+        x: BG_WIDTH - 30 * SCALE - 120 * SCALE,
+        y: 435 * SCALE + 40 * SCALE,
+        width: 120 * SCALE,
+        height: 90 * SCALE,
+        radius: 4 * SCALE,
+        strokeWidth: 1 * SCALE,
+        strokeColor: getFontSubtleColor(),
+        fillColor: "rgba(30, 30, 30, 0.9)",
+        mouseEventCursor:false,
+        // Consume pointer events so clicks do not pass through to controls behind dropdown.
+        onLeftMouseDown: () => {},
+        onLeftMouseUp: () => {}
+      });
 
       const options = ["none", "roundsmall", "round"];
       options.forEach((opt, idx) => {
@@ -189,10 +208,6 @@ function renderTabContent() {
         ui.addText({ id: optId, text: opt, x: BG_WIDTH - 30 * SCALE - 110 * SCALE, y: 435 * SCALE + 40 * SCALE + (15 * SCALE) + (idx * 30 * SCALE), textAlign: "leftcenter", fontSize: 14 * SCALE, fontFace: FONT_FACE, fontColor: getFontColor(), onLeftMouseUp: () => { JSON_DATA.BB_STYLE.ROUND_TYPE = opt; ipcRenderer.send("setCornerStyle", opt); isCornerDropdownOpen = false; clearTabContent(); renderTabContent(); } });
       });
     }
-
-    const use24 = JSON_DATA.USE_24_HOUR_FORMAT;
-    ui.addText({ id: "use24HourText", text: "24-Hour Clock", x: SIDEBAR_WIDTH + 30 * SCALE, y: 500 * SCALE + 20 * SCALE, textAlign: "leftcenter", fontSize: 16 * SCALE, fontWeight: 600, fontFace: FONT_FACE, fontColor: getFontColor() });
-    ui.addImage({ id: "use24HourToggleImage", path: use24 ? "assets/images/Settings/on.png" : "assets/images/Settings/off.png", x: BG_WIDTH - 30 * SCALE - 40 * SCALE, y: 500 * SCALE + 12.5 * SCALE, width: 40 * SCALE, height: 40 * SCALE, onLeftMouseUp: () => toggle24HourClock() });
 
   } else if (currentTab === "about") {
     const contentWidth = BG_WIDTH - SIDEBAR_WIDTH;

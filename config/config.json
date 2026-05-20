@@ -5,13 +5,13 @@
     "FONT_FACE_SEMIBOLD": "Segoe UI Semibold",
     "USE_24_HOUR_FORMAT": false,
     "LOADED_WIDGETS": {
-        "CLOCK": false,
+        "CLOCK": true,
         "CALENDAR": false,
         "MONITOR": false,
         "WEATHER": false,
         "NOTES": false,
         "MUSIC": false,
-        "VOLUME": true
+        "VOLUME": false
     },
     "LOCATION": {
         "CITY_NAME": "London",
