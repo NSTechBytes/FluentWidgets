@@ -55,6 +55,18 @@ function loadConfig() {
     fs.copyFile(DEFAULT_CONFIG_PATH, CONFIG_PATH, true);
   }
   config = json.read(CONFIG_PATH);
+
+  // Read meta.json and merge author/version information into config for settings UI
+  const metaPath = path.join(__dirname, "meta.json");
+  if (fs.exists(metaPath)) {
+    const meta = json.read(metaPath);
+    config.author = meta.author || "Nasir Shahbaz";
+    config.version = meta.version || "1.0.0.0";
+  } else {
+    config.author = "Nasir Shahbaz";
+    config.version = "1.0.0.0";
+  }
+
   if (!config.RUNTIME) config.RUNTIME = {};
   if (typeof config.RUNTIME.CLOCK_RENDER_ID !== "number") {
     config.RUNTIME.CLOCK_RENDER_ID = 0;
@@ -616,4 +628,10 @@ ipcMain.on("setCornerStyle", (event, style) => {
       if (w && !w.isDestroyed()) applyBlurBehind(w);
     });
   }
+});
+
+ipcMain.on("set24HourFormat", (event, use24) => {
+  config.USE_24_HOUR_FORMAT = use24;
+  json.write(CONFIG_PATH, config);
+  publishClockData();
 });

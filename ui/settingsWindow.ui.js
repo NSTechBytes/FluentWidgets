@@ -71,6 +71,13 @@ function toggleDarkMode() {
   ipcRenderer.send("setDarkMode", newTheme === "dark");
 }
 
+function toggle24HourClock() {
+  const use24 = !JSON_DATA.USE_24_HOUR_FORMAT;
+  JSON_DATA.USE_24_HOUR_FORMAT = use24;
+  ui.setElementProperty("use24HourToggleImage", "path", use24 ? "assets/images/Settings/on.png" : "assets/images/Settings/off.png");
+  ipcRenderer.send("set24HourFormat", use24);
+}
+
 /** Open an input box for editing a general settings field (scale, location, corner style). */
 function editGeneralSetting(settingType, elementId, defaultValue, inputType) {
   const x = ui.getElementProperty(elementId, "x");
@@ -107,10 +114,11 @@ function clearTabContent() {
     "latitudeText", "latitudeInputBg", "latitudeInputText", "longitudeText", "longitudeInputBg",
     "longitudeInputText", "cityText", "cityInputBg", "cityInputText", "cornerText", "cornerInputBg",
     "cornerInputText", "cornerDropdownBg", "cornerOptionNone", "cornerOptionRoundSmall", "cornerOptionRound",
+    "use24HourText", "use24HourToggleImage"
   ].forEach(id => { if (ui.isElementExist(id)) ui.removeElementById(id); });
 
   ["widgetsPlaceholder", "generalPlaceholder", "aboutPlaceholder",
-    "aboutLogo", "aboutTitle", "aboutVersion", "aboutLicense",
+    "aboutLogo", "aboutTitle", "aboutVersion", "aboutAuthor", "aboutLicense",
     "aboutGithubLogo", "aboutGithubLink",
   ].forEach(id => { if (ui.isElementExist(id)) ui.removeElementById(id); });
 
@@ -182,16 +190,21 @@ function renderTabContent() {
       });
     }
 
+    const use24 = JSON_DATA.USE_24_HOUR_FORMAT;
+    ui.addText({ id: "use24HourText", text: "24-Hour Clock", x: SIDEBAR_WIDTH + 30 * SCALE, y: 500 * SCALE + 20 * SCALE, textAlign: "leftcenter", fontSize: 16 * SCALE, fontWeight: 600, fontFace: FONT_FACE, fontColor: getFontColor() });
+    ui.addImage({ id: "use24HourToggleImage", path: use24 ? "assets/images/Settings/on.png" : "assets/images/Settings/off.png", x: BG_WIDTH - 30 * SCALE - 40 * SCALE, y: 500 * SCALE + 12.5 * SCALE, width: 40 * SCALE, height: 40 * SCALE, onLeftMouseUp: () => toggle24HourClock() });
+
   } else if (currentTab === "about") {
     const contentWidth = BG_WIDTH - SIDEBAR_WIDTH;
     const centerX = SIDEBAR_WIDTH + contentWidth / 2;
 
-    ui.addImage({ id: "aboutLogo", path: "assets/images/Settings/logo.png", x: centerX - 36 * SCALE, y: 110 * SCALE, width: 72 * SCALE, height: 72 * SCALE });
-    ui.addText({ id: "aboutTitle", text: "FluentWidgets", x: centerX, y: 200 * SCALE, fontSize: 18 * SCALE, fontWeight: "bold", fontFace: FONT_FACE, fontColor: getFontColor(), textAlign: "center" });
-    ui.addText({ id: "aboutVersion", text: "Version " + (JSON_DATA.version || "1.0.0.0"), x: centerX, y: 230 * SCALE, fontSize: 13 * SCALE, fontFace: FONT_FACE, fontColor: getFontSubtleColor(), textAlign: "center" });
-    ui.addText({ id: "aboutLicense", text: "Licensed under the Apache License, Version 2.0", x: centerX, y: 260 * SCALE, fontSize: 13 * SCALE, fontFace: FONT_FACE, fontColor: getFontSubtleColor(), textAlign: "center" });
-    ui.addImage({ id: "aboutGithubLogo", path: "assets/images/Settings/github.png", x: centerX - 20 * SCALE, y: 310 * SCALE, width: 40 * SCALE, height: 40 * SCALE, onLeftMouseUp: () => ipcRenderer.send("openGithub") });
-    ui.addText({ id: "aboutGithubLink", text: "View Repository on GitHub", x: centerX, y: 360 * SCALE, fontSize: 13 * SCALE, fontFace: FONT_FACE, fontColor: getAccentColor(), textAlign: "center", onLeftMouseUp: () => ipcRenderer.send("openGithub") });
+    ui.addImage({ id: "aboutLogo", path: "assets/images/Settings/logo.png", x: centerX - 36 * SCALE, y: 100 * SCALE, width: 72 * SCALE, height: 72 * SCALE });
+    ui.addText({ id: "aboutTitle", text: "FluentWidgets", x: centerX, y: 190 * SCALE, fontSize: 18 * SCALE, fontWeight: "bold", fontFace: FONT_FACE, fontColor: getFontColor(), textAlign: "center" });
+    ui.addText({ id: "aboutVersion", text: "Version " + (JSON_DATA.version || "1.0.0.0"), x: centerX, y: 220 * SCALE, fontSize: 13 * SCALE, fontFace: FONT_FACE, fontColor: getFontSubtleColor(), textAlign: "center" });
+    ui.addText({ id: "aboutAuthor", text: "Created by " + (JSON_DATA.author || "Nasir Shahbaz"), x: centerX, y: 250 * SCALE, fontSize: 13 * SCALE, fontFace: FONT_FACE, fontColor: getFontSubtleColor(), textAlign: "center" });
+    ui.addText({ id: "aboutLicense", text: "Licensed under the Apache License, Version 2.0", x: centerX, y: 280 * SCALE, fontSize: 13 * SCALE, fontFace: FONT_FACE, fontColor: getFontSubtleColor(), textAlign: "center" });
+    ui.addImage({ id: "aboutGithubLogo", path: "assets/images/Settings/github.png", x: centerX - 20 * SCALE, y: 330 * SCALE, width: 40 * SCALE, height: 40 * SCALE, onLeftMouseUp: () => ipcRenderer.send("openGithub") });
+    ui.addText({ id: "aboutGithubLink", text: "View Repository on GitHub", x: centerX, y: 380 * SCALE, fontSize: 13 * SCALE, fontFace: FONT_FACE, fontColor: getAccentColor(), textAlign: "center", onLeftMouseUp: () => ipcRenderer.send("openGithub") });
   }
 
   ui.endUpdate();
