@@ -52,7 +52,7 @@ function loadConfig() {
     fs.mkdir(configDir);
     fs.copyFile(DEFAULT_CONFIG_PATH, CONFIG_PATH);
   } else {
-    fs.copyFile(DEFAULT_CONFIG_PATH, CONFIG_PATH, true);
+    // fs.copyFile(DEFAULT_CONFIG_PATH, CONFIG_PATH, true);
   }
   config = json.read(CONFIG_PATH);
 
@@ -136,6 +136,17 @@ function refreshAllWidgets() {
   [notesWindow, clockWindow, calendarWindow, weatherWindow, monitorWindow, playerWindow, volumeWindow].forEach(w => {
     if (w && !w.isDestroyed()) w.refresh();
   });
+
+  // Immediately push data for widgets with long update intervals so users
+  // don't wait 60s (calendar) or 10min (weather) to see updated content.
+  setTimeout(() => {
+    if (calendarWindow && !calendarWindow.isDestroyed()) publishCalendarData();
+    if (weatherWindow && !weatherWindow.isDestroyed()) publishWeatherData();
+    if (clockWindow && !clockWindow.isDestroyed()) publishClockData();
+    if (monitorWindow && !monitorWindow.isDestroyed()) publishMonitorStats();
+    if (playerWindow && !playerWindow.isDestroyed()) publishNowPlayingData();
+    if (volumeWindow && !volumeWindow.isDestroyed()) publishVolumeData();
+  }, 16);
 }
 
 const DATA_INTERVALS = {
