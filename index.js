@@ -457,6 +457,8 @@ function loadNotesWidget() {
 /** Show a native input overlay via InputBox addon. Calls onEnter with the submitted text and timestamp. */
 function showInputBox(win, data, onEnter) {
   const now = time.time("%m/%d/%Y %I:%M:%S %p", "en-US");
+  const isLight = config.APPEARANCE.THEME === "light";
+  const fontColor = isLight ? "black" : "white";
   inputBox.show({
     widgetHwnd: win.getHandle(),
     x: data.x,
@@ -468,6 +470,8 @@ function showInputBox(win, data, onEnter) {
     unfocusDismiss: false,
     multiline: data.multiline || false,
     backgroundColor: data.backgroundColor,
+    fontColor: fontColor,
+    fontFace: config.FONT_FACE || "Segoe UI",
     defaultValue: data.defaultValue,
     onEnter: () => onEnter(inputBox.lastText(), now),
     onDismiss: () => ipcMain.send("inputBoxDismissed"),
@@ -525,6 +529,9 @@ ipcMain.on("setDarkMode", (event, isDark) => {
   config.APPEARANCE.THEME = isDark ? "dark" : "light";
   json.write(CONFIG_PATH, config);
   refreshAllWidgets();
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    settingsWindow.refresh();
+  }
 });
 
 // ── Widget Loading Manager ───────────────────────────────────────────────────
