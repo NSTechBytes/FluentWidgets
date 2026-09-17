@@ -77,12 +77,31 @@ loadConfig();
 ipcMain.handle("getJSON", () => config);
 
 /** Apply acrylic/mica backdrop blur and corner style to a widget window. */
-function applyBlurBehind(win) {
-  blurBehind.apply(
-    String(win.getHandle()),
-    config.BB_STYLE.BLUR_TYPE,
-    config.BB_STYLE.ROUND_TYPE,
-  );
+function applyBlurBehind(win, attempt = 0) {
+  if (!win || win.isDestroyed()) return;
+
+  const hwnd = win.getHandle();
+  if (!hwnd) {
+    if (attempt < 10) setTimeout(() => applyBlurBehind(win, attempt + 1), 16);
+    return;
+  }
+
+  try {
+    blurBehind.apply(
+      String(hwnd),
+      config.BB_STYLE.BLUR_TYPE,
+      config.BB_STYLE.ROUND_TYPE,
+    );
+  } catch (error) {
+    // Window creation/destruction can race the add-on's IsWindow() check.
+    // Retry across a few message-loop turns, without turning a cosmetic blur
+    // failure into an unhandled promise rejection.
+    if (attempt < 10 && !win.isDestroyed()) {
+      setTimeout(() => applyBlurBehind(win, attempt + 1), 16);
+    } else {
+      console.warn("Unable to apply window blur:", error);
+    }
+  }
 }
 
 /** Build right-click context menu with style switcher, position controls, and settings. */

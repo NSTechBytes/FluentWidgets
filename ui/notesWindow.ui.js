@@ -11,7 +11,6 @@ function getBackgroundColor() { return getThemeColors().BACKGROUND; }
 function getFontColor() { return getThemeColors().FONT; }
 function getFontSubtleColor() { return getThemeColors().FONT_SUBTLE; }
 function getAccentColor() { return JSON_DATA.APPEARANCE.ACCENT_COLOR; }
-function getInputBoxColor() { return getThemeColors().INPUT_BOX_BG; }
 
 let notesStyle = JSON_DATA.WINDOW_STYLES.NOTES_WINDOW;
 let editingField = null;
@@ -125,7 +124,7 @@ function startNotesEdit(opts) {
     fontSize: opts.fontSize,
     fontColor: getFontColor(),
     fontFace: JSON_DATA.FONT_FACE,
-    fillColor: getInputBoxColor(),
+    fillColor: "transparent",
     borderWidth: 0,
     padding: [0, 0],
     onBlur: () => commitNotesEdit(),
