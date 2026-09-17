@@ -1,3 +1,17 @@
+/*
+ * Copyright (c) 2024 nstechbytes
+ *
+ * Licensed under the Apache License, Version 2.0.
+ * You may obtain a copy of the License at:
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 const JSON_DATA = ipcRenderer.invoke("getJSON");
 const SCALE = parseFloat(JSON_DATA.SCALE) || 1;
 
@@ -395,7 +409,7 @@ ipcRenderer.on("changeMonitorStyle", (event, style) => {
   ui.endUpdate();
 });
 
-/** Convert rgb(...) string to rgba(...) for graph transparency. */
+// Convert rgb(...) string to rgba(...) for graph transparency.
 function toRgba(color, alpha) {
   if (color === "red") return `rgba(255, 0, 0, ${alpha})`;
   if (color === "yellow") return `rgba(255, 255, 0, ${alpha})`;
@@ -423,7 +437,7 @@ function updateValueText(id, value) {
   }
 }
 
-/** Push a data point to a sparkline graph and update its color based on usage level. */
+// Push a data point to a sparkline graph and update its color based on usage level.
 function updateGraph(graphId, value, history) {
   if (!ui.isElementExist(graphId)) return;
 
@@ -438,7 +452,7 @@ function updateGraph(graphId, value, history) {
   updateValueText(graphId.replace("-graph", "-value"), value);
 }
 
-/** Clamp a raw value to a 0-100 percentage relative to the given maximum. */
+// Clamp a raw value to a 0-100 percentage relative to the given maximum.
 function computePercent(raw, maxVal) {
   return Math.min(Math.max((raw / maxVal) * 100, 0), 100);
 }

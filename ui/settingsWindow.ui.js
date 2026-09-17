@@ -1,3 +1,17 @@
+/*
+ * Copyright (c) 2024 nstechbytes
+ *
+ * Licensed under the Apache License, Version 2.0.
+ * You may obtain a copy of the License at:
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 const JSON_DATA = ipcRenderer.invoke("getJSON");
 const SCALE = parseFloat(JSON_DATA.SCALE) || 1;
 const FONT_FACE = JSON_DATA.FONT_FACE;
@@ -32,7 +46,7 @@ const SIDEBAR_ACTIVE_FILL = "rgba(255, 255, 255, 0.08)";
 const SIDEBAR_HOVER_FILL = "rgba(255, 255, 255, 0.14)";
 const SIDEBAR_IDLE_FILL = "rgba(0, 0, 0, 0)";
 
-/** Sidebar item hover: highlight inactive tabs; restore active/idle fill on leave. */
+// Sidebar item hover: highlight inactive tabs; restore active/idle fill on leave.
 function sidebarHoverHandlers(shapeId, tabName) {
   return {
     onMouseOver: () => {
@@ -49,7 +63,7 @@ function sidebarHoverHandlers(shapeId, tabName) {
   };
 }
 
-/** Image hover: full opacity on hover, slightly muted when idle. */
+// Image hover: full opacity on hover, slightly muted when idle.
 function imageHoverHandlers(id) {
   return {
     onMouseOver: () => ui.setElementProperties(id, { imageAlpha: 255 }),
@@ -57,7 +71,7 @@ function imageHoverHandlers(id) {
   };
 }
 
-/** Text hover: brighten to accent color, restore on leave. */
+// Text hover: brighten to accent color, restore on leave.
 function textHoverHandlers(id, normalColor) {
   return {
     onMouseOver: () => ui.setElementProperty(id, "fontColor", getAccentColor()),
@@ -65,7 +79,7 @@ function textHoverHandlers(id, normalColor) {
   };
 }
 
-/** Shape hover: swap fill (and optional stroke) while hovered. */
+// Shape hover: swap fill (and optional stroke) while hovered.
 function shapeHoverHandlers(
   id,
   normalFill,
@@ -130,7 +144,7 @@ function updateSidebarSelection() {
   ui.endUpdate();
 }
 
-/** Toggle a widget's enabled state and update the toggle switch image. */
+// Toggle a widget's enabled state and update the toggle switch image.
 function toggleWidgetState(widgetKey) {
   if (!JSON_DATA.LOADED_WIDGETS) JSON_DATA.LOADED_WIDGETS = {};
   const isLoaded = !JSON_DATA.LOADED_WIDGETS[widgetKey];
@@ -172,14 +186,14 @@ function toggle24HourClock() {
   ipcRenderer.send("set24HourFormat", use24);
 }
 
-/** Submit a settings field value from an addInputBox when it changes from the stored value. */
+// Submit a settings field value from an addInputBox when it changes from the stored value.
 function submitSetting(settingType, elementId, originalValue) {
   const text = ui.getElementProperty(elementId, "text") ?? "";
   if (String(text) === String(originalValue)) return;
   ipcRenderer.send("settingsInput", { type: settingType, text });
 }
 
-/** Create a styled addInputBox used for editable general settings fields. */
+// Create a styled addInputBox used for editable general settings fields.
 function addSettingInputBox(id, opts) {
   ui.addInputBox({
     id,

@@ -1,3 +1,17 @@
+/*
+ * Copyright (c) 2024 nstechbytes
+ *
+ * Licensed under the Apache License, Version 2.0.
+ * You may obtain a copy of the License at:
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 const JSON_DATA = ipcRenderer.invoke("getJSON");
 const SCALE = parseFloat(JSON_DATA.SCALE) || 1;
 const FONT_FACE = JSON_DATA.FONT_FACE;
@@ -31,7 +45,7 @@ function getWidgetSize() {
   return { w: s.WIDTH * SCALE, h: s.HEIGHT * SCALE };
 }
 
-/** Select the volume icon asset based on current level and mute state. */
+// Select the volume icon asset based on current level and mute state.
 function getVolumeIcon(vol, muted) {
   if (muted || vol === 0) return "assets/icons/Volume/Volume-1.png";
   if (vol <= 33) return "assets/icons/Volume/Volume1.png";
@@ -51,7 +65,7 @@ function handleScroll(direction) {
   ipcRenderer.send("changeVolumeStep", direction === "up" ? 5 : -5);
 }
 
-/** Extract the click/drag percentage (0-100) from a slider event. */
+// Extract the click/drag percentage (0-100) from a slider event.
 function getEventPercent(e) {
   if (!e) return 0;
   const pct =

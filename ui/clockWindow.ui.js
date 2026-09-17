@@ -1,3 +1,17 @@
+/*
+ * Copyright (c) 2024 nstechbytes
+ *
+ * Licensed under the Apache License, Version 2.0.
+ * You may obtain a copy of the License at:
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 const JSON_DATA = ipcRenderer.invoke("getJSON");
 const SCALE = parseFloat(JSON_DATA.SCALE) || 1;
 const FONT_FACE = JSON_DATA.FONT_FACE;
@@ -348,7 +362,7 @@ ipcRenderer.on("changeClockStyle", (event, style) => {
   ui.endUpdate();
 });
 
-/** Compute clock hand positions from angles using trigonometry. */
+// Compute clock hand positions from angles using trigonometry.
 function updateHands() {
   if (!clockGeometry) return;
   const { center, hourLen, minLen, secLen } = clockGeometry;

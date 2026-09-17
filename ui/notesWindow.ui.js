@@ -1,3 +1,17 @@
+/*
+ * Copyright (c) 2024 nstechbytes
+ *
+ * Licensed under the Apache License, Version 2.0.
+ * You may obtain a copy of the License at:
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 const JSON_DATA = ipcRenderer.invoke("getJSON");
 const SCALE = parseFloat(JSON_DATA.SCALE) || 1;
 
@@ -31,7 +45,7 @@ function getWidgetSize(styleKey) {
   return { w: s.WIDTH * SCALE, h: s.HEIGHT * SCALE };
 }
 
-/** Remove an active edit input and restore display elements. */
+// Remove an active edit input and restore display elements.
 function endEdit(restoreTitleHint) {
   if (ui.isElementExist("title_edit")) ui.removeElementById("title_edit");
   if (ui.isElementExist("notes_edit")) ui.removeElementById("notes_edit");
@@ -51,7 +65,7 @@ function endEdit(restoreTitleHint) {
   }
 }
 
-/** Save notes body via IPC when the multiline input loses focus. */
+// Save notes body via IPC when the multiline input loses focus.
 function commitNotesEdit() {
   if (editingField !== "notes") return;
   const text = ui.getElementProperty("notes_edit", "text") ?? "";
@@ -68,7 +82,7 @@ function commitNotesEdit() {
   ipcRenderer.send("notesInput", { text });
 }
 
-/** Save notes title via IPC when the single-line input submits or blurs. */
+// Save notes title via IPC when the single-line input submits or blurs.
 function commitTitleEdit() {
   if (editingField !== "title") return;
   const text = ui.getElementProperty("title_edit", "text") ?? "";

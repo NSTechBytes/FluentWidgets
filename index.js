@@ -1,5 +1,19 @@
-/** Main process entry point for FluentWidgets. Manages widget lifecycles,
- *  system data collection, and IPC communication with renderer processes. */
+/*
+ * Copyright (c) 2024 nstechbytes
+ *
+ * Licensed under the Apache License, Version 2.0.
+ * You may obtain a copy of the License at:
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// Main process entry point for FluentWidgets. Manages widget lifecycles,
+// system data collection, and IPC communication with renderer processes.
 import { widgetWindow, addon, app, tray } from "novadesk";
 import * as fs from "fs";
 import {
@@ -70,7 +84,7 @@ const DAY_NAMES = [
 
 const SHORT_DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-/** Maps widget keys to their window references for dynamic load/unload toggling. */
+// Maps widget keys to their window references for dynamic load/unload toggling.
 const WIDGET_MAP = {
   MONITOR: {
     ref: () => monitorWindow,
@@ -109,7 +123,7 @@ const WIDGET_MAP = {
   },
 };
 
-/** Load config from disk, creating it from defaults on first run. */
+// Load config from disk, creating it from defaults on first run.
 function loadConfig() {
   const configDir = path.join(app.getAppDataPath(), "FluentWidgets");
   if (!fs.exists(CONFIG_PATH)) {
@@ -141,7 +155,7 @@ loadConfig();
 
 ipcMain.handle("getJSON", () => config);
 
-/** Apply acrylic/mica backdrop blur and corner style to a widget window. */
+// Apply acrylic/mica backdrop blur and corner style to a widget window.
 function applyBlurBehind(win, attempt = 0) {
   if (!win || win.isDestroyed()) return;
 
@@ -171,7 +185,7 @@ function applyBlurBehind(win, attempt = 0) {
   }
 }
 
-/** Build right-click context menu with style switcher, position controls, and settings. */
+// Build right-click context menu with style switcher, position controls, and settings.
 function buildStyleMenu(win, currentStyle, onSelect) {
   const styles = ["small", "medium", "wide", "large"];
   return [
@@ -218,14 +232,14 @@ function buildStyleMenu(win, currentStyle, onSelect) {
   ];
 }
 
-/** Create a widget window with blur effect applied. */
+// Create a widget window with blur effect applied.
 function createWidgetWindow(id, scriptPath) {
   const win = new widgetWindow({ id, script: scriptPath, show: false });
   applyBlurBehind(win);
   return win;
 }
 
-/** Calculate the scaled pixel dimensions for a given style name. */
+// Calculate the scaled pixel dimensions for a given style name.
 function getScaledSize(style) {
   const scale = parseFloat(config.SCALE) || 1;
   const key = style.toUpperCase();
@@ -236,7 +250,7 @@ function getScaledSize(style) {
   };
 }
 
-/** Resize a widget window to match the given style and global scale. */
+// Resize a widget window to match the given style and global scale.
 function resizeWidget(win, style) {
   if (win && typeof win.setSize === "function") {
     const { w, h } = getScaledSize(style);
@@ -278,7 +292,7 @@ const DATA_INTERVALS = {
   VOLUME: 1000,
 };
 
-// ── Monitor Widget ───────────────────────────────────────────────────────────
+// ---- Monitor Widget ----
 
 function publishMonitorStats() {
   ipcMain.send("monitor-window-stats", {
@@ -330,7 +344,7 @@ function unloadMonitorWidget() {
   monitorWindow = null;
 }
 
-// ── Clock Widget ─────────────────────────────────────────────────────────────
+// ---- Clock Widget ----
 
 function publishClockData() {
   const use24 = config.USE_24_HOUR_FORMAT;
@@ -402,7 +416,7 @@ function unloadClockWidget() {
   clockWindow = null;
 }
 
-// ── Calendar Widget ──────────────────────────────────────────────────────────
+// ---- Calendar Widget ----
 
 function publishCalendarData() {
   const now = new Date();
@@ -473,7 +487,7 @@ function unloadCalendarWidget() {
   calendarWindow = null;
 }
 
-// ── Weather Widget ───────────────────────────────────────────────────────────
+// ---- Weather Widget ----
 
 async function publishWeatherData() {
   try {
@@ -577,7 +591,7 @@ function unloadWeatherWidget() {
   weatherWindow = null;
 }
 
-// ── Player Widget ────────────────────────────────────────────────────────────
+// ---- Player Widget ----
 
 function publishNowPlayingData() {
   ipcMain.send("nowPlayingUpdate", nowPlaying.stats());
@@ -657,7 +671,7 @@ function unregisterPlayerIpc() {
   ipcMain.removeListener("previous", onPrevious);
 }
 
-// ── Volume Widget ────────────────────────────────────────────────────────────
+// ---- Volume Widget ----
 
 function publishVolumeData() {
   const vol = audio.getVolume();
@@ -745,7 +759,7 @@ function unregisterVolumeIpc() {
   ipcMain.removeListener("changeVolumeStep", onChangeVolumeStep);
 }
 
-// ── Notes Widget ─────────────────────────────────────────────────────────────
+// ---- Notes Widget ----
 
 function updateNotesStyle(style) {
   config.WINDOW_STYLES.NOTES_WINDOW = style;
@@ -780,7 +794,7 @@ function unloadNotesWidget() {
   notesWindow = null;
 }
 
-/** Persist notes body text from the UI addInputBox element. */
+// Persist notes body text from the UI addInputBox element.
 function onNotesInput(event, data) {
   const now = time.time("%m/%d/%Y %I:%M:%S %p", "en-US");
   config.NOTES_TEXT = data.text ?? "";
@@ -789,7 +803,7 @@ function onNotesInput(event, data) {
   if (notesWindow && !notesWindow.isDestroyed()) notesWindow.refresh();
 }
 
-/** Persist notes title text from the UI addInputBox element. */
+// Persist notes title text from the UI addInputBox element.
 function onNotesTitleInput(event, data) {
   const now = time.time("%m/%d/%Y %I:%M:%S %p", "en-US");
   config.NOTES_TOP_TITLE = data.text ?? "";
@@ -809,7 +823,7 @@ function unregisterNotesIpc() {
   ipcMain.removeListener("notesTitleInput", onNotesTitleInput);
 }
 
-/** Persist a settings field value submitted by a UI addInputBox element. */
+// Persist a settings field value submitted by a UI addInputBox element.
 function onSettingsInput(event, data) {
   const trimmed = String(data.text ?? "").trim();
   const isFloat = trimmed.includes(".");
@@ -904,9 +918,9 @@ function unregisterSettingsIpc() {
   ipcMain.removeListener("toggleWidget", onToggleWidget);
 }
 
-// ── Widget Loading Manager ───────────────────────────────────────────────────
+// ---- Widget Loading Manager ----
 
-/** Load or fully close a widget by key. Closing destroys the window and its IPC handlers. */
+// Load or fully close a widget by key. Closing destroys the window and its IPC handlers.
 function setWidgetLoaded(widgetKey, loaded) {
   config.LOADED_WIDGETS[widgetKey] = loaded;
   json.write(CONFIG_PATH, config);
@@ -925,7 +939,7 @@ function onToggleWidget(event, { widgetKey, loaded }) {
   setWidgetLoaded(widgetKey, loaded);
 }
 
-// ── Settings Window ──────────────────────────────────────────────────────────
+// ---- Settings Window ----
 
 function loadSettingsWindow() {
   if (settingsWindow && !settingsWindow.isDestroyed()) {
@@ -948,7 +962,7 @@ function unloadSettingsWindow() {
   settingsWindow = null;
 }
 
-// ── Launch Widgets ───────────────────────────────────────────────────────────
+// ---- Launch Widgets ----
 
 if (config.LOADED_WIDGETS) {
   if (config.LOADED_WIDGETS.MONITOR) loadMonitorWidget();
@@ -966,7 +980,7 @@ if (config.SETTINGS_WINDOW_OPEN !== false) {
   loadSettingsWindow();
 }
 
-// ── System Tray ──────────────────────────────────────────────────────────────
+// ---- System Tray ----
 
 const appTray = new tray("assets/icon.ico");
 appTray.setToolTip("FluentWidgets");
