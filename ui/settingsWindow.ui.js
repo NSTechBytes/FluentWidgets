@@ -169,7 +169,7 @@ function renderTabContent() {
     const isDark = JSON_DATA.APPEARANCE.THEME === "dark";
 
     ui.addText({ id: "darkModeText", text: "Dark Mode", x: SIDEBAR_WIDTH + 30 * SCALE, y: 110 * SCALE + 20 * SCALE, textAlign: "leftcenter", fontSize: 16 * SCALE, fontWeight: 600, fontFace: FONT_FACE, fontColor: getFontColor() });
-    ui.addImage({ id: "darkModeToggleImage", path: isDark ? "assets/images/Settings/on.png" : "assets/images/Settings/off.png", x: BG_WIDTH - 30 * SCALE - 40 * SCALE, y: 110 * SCALE + 12.5 * SCALE, width: 40 * SCALE, height: 40 * SCALE, onLeftMouseUp: () => toggleDarkMode() });
+    ui.addImage({ id: "darkModeToggleImage", path: isDark ? "assets/images/Settings/on.png" : "assets/images/Settings/off.png", x: BG_WIDTH - 30 * SCALE - 40 * SCALE, y: 110 * SCALE, width: 40 * SCALE, height: 40 * SCALE, onLeftMouseUp: () => toggleDarkMode() });
 
     const inputX = BG_WIDTH - 30 * SCALE - 120 * SCALE;
     const inputW = 120 * SCALE;
@@ -193,7 +193,7 @@ function renderTabContent() {
 
     const use24 = JSON_DATA.USE_24_HOUR_FORMAT;
     ui.addText({ id: "use24HourText", text: "24-Hour Clock", x: SIDEBAR_WIDTH + 30 * SCALE, y: 500 * SCALE + 20 * SCALE, textAlign: "leftcenter", fontSize: 16 * SCALE, fontWeight: 600, fontFace: FONT_FACE, fontColor: getFontColor() });
-    ui.addImage({ id: "use24HourToggleImage", path: use24 ? "assets/images/Settings/on.png" : "assets/images/Settings/off.png", x: BG_WIDTH - 30 * SCALE - 40 * SCALE, y: 500 * SCALE + 12.5 * SCALE, width: 40 * SCALE, height: 40 * SCALE, onLeftMouseUp: () => toggle24HourClock() });
+    ui.addImage({ id: "use24HourToggleImage", path: use24 ? "assets/images/Settings/on.png" : "assets/images/Settings/off.png", x: BG_WIDTH - 30 * SCALE - 40 * SCALE, y: 500 * SCALE, width: 40 * SCALE, height: 40 * SCALE, onLeftMouseUp: () => toggle24HourClock() });
 
     if (isCornerDropdownOpen) {
       ui.addShape({
