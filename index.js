@@ -33,15 +33,15 @@ const DAY_NAMES = [
 
 const SHORT_DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-/** Maps widget keys to their window references for dynamic show/hide toggling. */
+/** Maps widget keys to their window references for dynamic load/unload toggling. */
 const WIDGET_MAP = {
-  MONITOR: { ref: () => monitorWindow },
-  CLOCK: { ref: () => clockWindow },
-  CALENDAR: { ref: () => calendarWindow },
-  WEATHER: { ref: () => weatherWindow },
-  MUSIC: { ref: () => playerWindow },
-  NOTES: { ref: () => notesWindow },
-  VOLUME: { ref: () => volumeWindow },
+  MONITOR: { ref: () => monitorWindow, load: () => loadMonitorWidget(), unload: () => unloadMonitorWidget() },
+  CLOCK: { ref: () => clockWindow, load: () => loadClockWidget(), unload: () => unloadClockWidget() },
+  CALENDAR: { ref: () => calendarWindow, load: () => loadCalendarWidget(), unload: () => unloadCalendarWidget() },
+  WEATHER: { ref: () => weatherWindow, load: () => loadWeatherWidget(), unload: () => unloadWeatherWidget() },
+  MUSIC: { ref: () => playerWindow, load: () => loadPlayerWidget(), unload: () => unloadPlayerWidget() },
+  NOTES: { ref: () => notesWindow, load: () => loadNotesWidget(), unload: () => unloadNotesWidget() },
+  VOLUME: { ref: () => volumeWindow, load: () => loadVolumeWidget(), unload: () => unloadVolumeWidget() },
 };
 
 /** Load config from disk, creating it from defaults on first run. */
@@ -88,7 +88,9 @@ function applyBlurBehind(win, attempt = 0) {
 
   try {
     blurBehind.apply(
-      String(hwnd),
+      // Keep this as a number. String() may format large handles in scientific
+      // notation, which the add-on's handle parser intentionally rejects.
+      hwnd,
       config.BB_STYLE.BLUR_TYPE,
       config.BB_STYLE.ROUND_TYPE,
     );
@@ -196,11 +198,25 @@ function updateMonitorStyle(style) {
 }
 
 function loadMonitorWidget() {
+  if (monitorWindow && !monitorWindow.isDestroyed()) {
+    monitorWindow.show();
+    return;
+  }
   monitorWindow = createWidgetWindow("MONITOR_WINDOW", "ui/monitorWindow.ui.js");
   monitorWindow.setContextMenu(buildStyleMenu(monitorWindow, config.WINDOW_STYLES.MONITOR_WINDOW, updateMonitorStyle));
   publishMonitorStats();
+  if (monitorTimer) clearInterval(monitorTimer);
   monitorTimer = setInterval(publishMonitorStats, DATA_INTERVALS.MONITOR);
   monitorWindow.show();
+}
+
+function unloadMonitorWidget() {
+  if (monitorTimer) {
+    clearInterval(monitorTimer);
+    monitorTimer = null;
+  }
+  if (monitorWindow && !monitorWindow.isDestroyed()) monitorWindow.close();
+  monitorWindow = null;
 }
 
 // ── Clock Widget ─────────────────────────────────────────────────────────────
@@ -246,11 +262,25 @@ function updateClockStyle(style) {
 }
 
 function loadClockWidget() {
+  if (clockWindow && !clockWindow.isDestroyed()) {
+    clockWindow.show();
+    return;
+  }
   clockWindow = createWidgetWindow("CLOCK_WINDOW", "ui/clockWindow.ui.js");
   clockWindow.setContextMenu(buildStyleMenu(clockWindow, config.WINDOW_STYLES.CLOCK_WINDOW, updateClockStyle));
   publishClockData();
+  if (clockTimer) clearInterval(clockTimer);
   clockTimer = setInterval(publishClockData, DATA_INTERVALS.CLOCK);
   clockWindow.show();
+}
+
+function unloadClockWidget() {
+  if (clockTimer) {
+    clearInterval(clockTimer);
+    clockTimer = null;
+  }
+  if (clockWindow && !clockWindow.isDestroyed()) clockWindow.close();
+  clockWindow = null;
 }
 
 // ── Calendar Widget ──────────────────────────────────────────────────────────
@@ -292,11 +322,25 @@ function updateCalendarStyle(style) {
 }
 
 function loadCalendarWidget() {
+  if (calendarWindow && !calendarWindow.isDestroyed()) {
+    calendarWindow.show();
+    return;
+  }
   calendarWindow = createWidgetWindow("CALENDAR_WINDOW", "ui/calendarWindow.ui.js");
   calendarWindow.setContextMenu(buildStyleMenu(calendarWindow, config.WINDOW_STYLES.CALENDAR_WINDOW, updateCalendarStyle));
   publishCalendarData();
+  if (calendarTimer) clearInterval(calendarTimer);
   calendarTimer = setInterval(publishCalendarData, DATA_INTERVALS.CALENDAR);
   calendarWindow.show();
+}
+
+function unloadCalendarWidget() {
+  if (calendarTimer) {
+    clearInterval(calendarTimer);
+    calendarTimer = null;
+  }
+  if (calendarWindow && !calendarWindow.isDestroyed()) calendarWindow.close();
+  calendarWindow = null;
 }
 
 // ── Weather Widget ───────────────────────────────────────────────────────────
@@ -371,11 +415,25 @@ function updateWeatherStyle(style) {
 }
 
 function loadWeatherWidget() {
+  if (weatherWindow && !weatherWindow.isDestroyed()) {
+    weatherWindow.show();
+    return;
+  }
   weatherWindow = createWidgetWindow("WEATHER_WINDOW", "ui/weatherWindow.ui.js");
   weatherWindow.setContextMenu(buildStyleMenu(weatherWindow, config.WINDOW_STYLES.WEATHER_WINDOW, updateWeatherStyle));
   publishWeatherData();
+  if (weatherTimer) clearInterval(weatherTimer);
   weatherTimer = setInterval(publishWeatherData, DATA_INTERVALS.WEATHER);
   weatherWindow.show();
+}
+
+function unloadWeatherWidget() {
+  if (weatherTimer) {
+    clearInterval(weatherTimer);
+    weatherTimer = null;
+  }
+  if (weatherWindow && !weatherWindow.isDestroyed()) weatherWindow.close();
+  weatherWindow = null;
 }
 
 // ── Player Widget ────────────────────────────────────────────────────────────
@@ -404,17 +462,45 @@ function updatePlayerStyle(style) {
 }
 
 function loadPlayerWidget() {
+  if (playerWindow && !playerWindow.isDestroyed()) {
+    playerWindow.show();
+    return;
+  }
+  registerPlayerIpc();
   playerWindow = createWidgetWindow("PLAYER_WINDOW", "ui/playerWindow.ui.js");
   playerWindow.setContextMenu(buildStyleMenu(playerWindow, config.WINDOW_STYLES.PLAYER_WINDOW, updatePlayerStyle));
+  publishNowPlayingData();
+  if (playerTimer) clearInterval(playerTimer);
   playerTimer = setInterval(publishNowPlayingData, DATA_INTERVALS.PLAYER);
   playerWindow.show();
 }
 
-ipcMain.on("playPause", () => nowPlaying.playPause());
-ipcMain.on("next", () => nowPlaying.next());
-ipcMain.on("previous", () => nowPlaying.previous());
+function unloadPlayerWidget() {
+  unregisterPlayerIpc();
+  if (playerTimer) {
+    clearInterval(playerTimer);
+    playerTimer = null;
+  }
+  if (playerWindow && !playerWindow.isDestroyed()) playerWindow.close();
+  playerWindow = null;
+}
 
-publishNowPlayingData();
+function onPlayPause() { nowPlaying.playPause(); }
+function onNext() { nowPlaying.next(); }
+function onPrevious() { nowPlaying.previous(); }
+
+function registerPlayerIpc() {
+  unregisterPlayerIpc();
+  ipcMain.on("playPause", onPlayPause);
+  ipcMain.on("next", onNext);
+  ipcMain.on("previous", onPrevious);
+}
+
+function unregisterPlayerIpc() {
+  ipcMain.removeListener("playPause", onPlayPause);
+  ipcMain.removeListener("next", onNext);
+  ipcMain.removeListener("previous", onPrevious);
+}
 
 // ── Volume Widget ────────────────────────────────────────────────────────────
 
@@ -433,20 +519,36 @@ function updateVolumeStyle(style) {
 }
 
 function loadVolumeWidget() {
+  if (volumeWindow && !volumeWindow.isDestroyed()) {
+    volumeWindow.show();
+    return;
+  }
+  registerVolumeIpc();
   volumeWindow = createWidgetWindow("VOLUME_WINDOW", "ui/volumeWindow.ui.js");
   volumeWindow.setContextMenu(buildStyleMenu(volumeWindow, config.WINDOW_STYLES.VOLUME_WINDOW || "large", updateVolumeStyle));
   publishVolumeData();
+  if (volumeTimer) clearInterval(volumeTimer);
   volumeTimer = setInterval(publishVolumeData, DATA_INTERVALS.VOLUME);
   volumeWindow.show();
 }
 
-ipcMain.on("setVolume", (event, vol) => {
+function unloadVolumeWidget() {
+  unregisterVolumeIpc();
+  if (volumeTimer) {
+    clearInterval(volumeTimer);
+    volumeTimer = null;
+  }
+  if (volumeWindow && !volumeWindow.isDestroyed()) volumeWindow.close();
+  volumeWindow = null;
+}
+
+function onSetVolume(event, vol) {
   audio.setVolume(vol);
   isMuted = vol === 0;
   publishVolumeData();
-});
+}
 
-ipcMain.on("toggleMute", () => {
+function onToggleMute() {
   const currentVol = audio.getVolume();
   if (isMuted) {
     audio.setVolume(lastVolume || 50);
@@ -457,15 +559,28 @@ ipcMain.on("toggleMute", () => {
     isMuted = true;
   }
   publishVolumeData();
-});
+}
 
-ipcMain.on("changeVolumeStep", (event, delta) => {
+function onChangeVolumeStep(event, delta) {
   let nextVol = audio.getVolume() + delta;
   nextVol = Math.max(0, Math.min(100, nextVol));
   audio.setVolume(nextVol);
   isMuted = nextVol === 0;
   publishVolumeData();
-});
+}
+
+function registerVolumeIpc() {
+  unregisterVolumeIpc();
+  ipcMain.on("setVolume", onSetVolume);
+  ipcMain.on("toggleMute", onToggleMute);
+  ipcMain.on("changeVolumeStep", onChangeVolumeStep);
+}
+
+function unregisterVolumeIpc() {
+  ipcMain.removeListener("setVolume", onSetVolume);
+  ipcMain.removeListener("toggleMute", onToggleMute);
+  ipcMain.removeListener("changeVolumeStep", onChangeVolumeStep);
+}
 
 // ── Notes Widget ─────────────────────────────────────────────────────────────
 
@@ -478,13 +593,24 @@ function updateNotesStyle(style) {
 }
 
 function loadNotesWidget() {
+  if (notesWindow && !notesWindow.isDestroyed()) {
+    notesWindow.show();
+    return;
+  }
+  registerNotesIpc();
   notesWindow = createWidgetWindow("NOTES_WINDOW", "ui/notesWindow.ui.js");
   notesWindow.setContextMenu(buildStyleMenu(notesWindow, config.WINDOW_STYLES.NOTES_WINDOW, updateNotesStyle));
   notesWindow.show();
 }
 
+function unloadNotesWidget() {
+  unregisterNotesIpc();
+  if (notesWindow && !notesWindow.isDestroyed()) notesWindow.close();
+  notesWindow = null;
+}
+
 /** Persist notes body text from the UI addInputBox element. */
-function notesInput(data) {
+function onNotesInput(event, data) {
   const now = time.time("%m/%d/%Y %I:%M:%S %p", "en-US");
   config.NOTES_TEXT = data.text ?? "";
   config.NOTES_SAVED_TIME = now;
@@ -493,7 +619,7 @@ function notesInput(data) {
 }
 
 /** Persist notes title text from the UI addInputBox element. */
-function notesTitleInput(data) {
+function onNotesTitleInput(event, data) {
   const now = time.time("%m/%d/%Y %I:%M:%S %p", "en-US");
   config.NOTES_TOP_TITLE = data.text ?? "";
   config.NOTES_SAVED_TIME = now;
@@ -501,11 +627,19 @@ function notesTitleInput(data) {
   if (notesWindow && !notesWindow.isDestroyed()) notesWindow.refresh();
 }
 
-ipcMain.on("notesTitleInput", (event, data) => notesTitleInput(data));
-ipcMain.on("notesInput", (event, data) => notesInput(data));
+function registerNotesIpc() {
+  unregisterNotesIpc();
+  ipcMain.on("notesInput", onNotesInput);
+  ipcMain.on("notesTitleInput", onNotesTitleInput);
+}
+
+function unregisterNotesIpc() {
+  ipcMain.removeListener("notesInput", onNotesInput);
+  ipcMain.removeListener("notesTitleInput", onNotesTitleInput);
+}
 
 /** Persist a settings field value submitted by a UI addInputBox element. */
-function settingsInput(data) {
+function onSettingsInput(event, data) {
   const trimmed = String(data.text ?? "").trim();
   const isFloat = trimmed.includes(".");
   const val = isFloat ? parseFloat(trimmed) : parseInt(trimmed, 10);
@@ -526,20 +660,73 @@ function settingsInput(data) {
   if (data.type === "scale") refreshAllWidgets();
 }
 
-ipcMain.on("settingsInput", (event, data) => settingsInput(data));
-
-ipcMain.on("setDarkMode", (event, isDark) => {
+function onSetDarkMode(event, isDark) {
   config.APPEARANCE.THEME = isDark ? "dark" : "light";
   json.write(CONFIG_PATH, config);
   refreshAllWidgets();
   if (settingsWindow && !settingsWindow.isDestroyed()) {
     settingsWindow.refresh();
   }
-});
+}
+
+function onOpenGithub() {
+  execute("https://github.com/nstechbytes/FluentWidgets");
+}
+
+function onSetSettingsActiveTab(event, tab) {
+  config.SETTINGS_ACTIVE_TAB = tab;
+  json.write(CONFIG_PATH, config);
+}
+
+function onCloseSettings() {
+  config.SETTINGS_WINDOW_OPEN = false;
+  json.write(CONFIG_PATH, config);
+  unloadSettingsWindow();
+}
+
+function onSetCornerStyle(event, style) {
+  const validCorners = ["none", "roundsmall", "round"];
+  if (validCorners.includes(style.toLowerCase())) {
+    config.BB_STYLE.ROUND_TYPE = style.toLowerCase();
+    json.write(CONFIG_PATH, config);
+    [monitorWindow, clockWindow, calendarWindow, weatherWindow, playerWindow, notesWindow, volumeWindow, settingsWindow].forEach(w => {
+      if (w && !w.isDestroyed()) applyBlurBehind(w);
+    });
+  }
+}
+
+function onSet24HourFormat(event, use24) {
+  config.USE_24_HOUR_FORMAT = use24;
+  json.write(CONFIG_PATH, config);
+  if (clockWindow && !clockWindow.isDestroyed()) publishClockData();
+}
+
+function registerSettingsIpc() {
+  unregisterSettingsIpc();
+  ipcMain.on("settingsInput", onSettingsInput);
+  ipcMain.on("setDarkMode", onSetDarkMode);
+  ipcMain.on("openGithub", onOpenGithub);
+  ipcMain.on("setSettingsActiveTab", onSetSettingsActiveTab);
+  ipcMain.on("closeSettings", onCloseSettings);
+  ipcMain.on("setCornerStyle", onSetCornerStyle);
+  ipcMain.on("set24HourFormat", onSet24HourFormat);
+  ipcMain.on("toggleWidget", onToggleWidget);
+}
+
+function unregisterSettingsIpc() {
+  ipcMain.removeListener("settingsInput", onSettingsInput);
+  ipcMain.removeListener("setDarkMode", onSetDarkMode);
+  ipcMain.removeListener("openGithub", onOpenGithub);
+  ipcMain.removeListener("setSettingsActiveTab", onSetSettingsActiveTab);
+  ipcMain.removeListener("closeSettings", onCloseSettings);
+  ipcMain.removeListener("setCornerStyle", onSetCornerStyle);
+  ipcMain.removeListener("set24HourFormat", onSet24HourFormat);
+  ipcMain.removeListener("toggleWidget", onToggleWidget);
+}
 
 // ── Widget Loading Manager ───────────────────────────────────────────────────
 
-/** Toggle a widget's visibility by key. Loads the widget if it doesn't exist yet. */
+/** Load or fully close a widget by key. Closing destroys the window and its IPC handlers. */
 function setWidgetLoaded(widgetKey, loaded) {
   config.LOADED_WIDGETS[widgetKey] = loaded;
   json.write(CONFIG_PATH, config);
@@ -547,27 +734,16 @@ function setWidgetLoaded(widgetKey, loaded) {
   const entry = WIDGET_MAP[widgetKey];
   if (!entry) return;
 
-  const win = entry.ref();
   if (loaded) {
-    if (!win || win.isDestroyed()) {
-      if (widgetKey === "MONITOR") loadMonitorWidget();
-      else if (widgetKey === "CLOCK") loadClockWidget();
-      else if (widgetKey === "CALENDAR") loadCalendarWidget();
-      else if (widgetKey === "WEATHER") loadWeatherWidget();
-      else if (widgetKey === "MUSIC") loadPlayerWidget();
-      else if (widgetKey === "NOTES") loadNotesWidget();
-      else if (widgetKey === "VOLUME") loadVolumeWidget();
-    } else {
-      win.show();
-    }
-  } else if (win && !win.isDestroyed()) {
-    win.hide();
+    entry.load();
+  } else {
+    entry.unload();
   }
 }
 
-ipcMain.on("toggleWidget", (event, { widgetKey, loaded }) => {
+function onToggleWidget(event, { widgetKey, loaded }) {
   setWidgetLoaded(widgetKey, loaded);
-});
+}
 
 // ── Settings Window ──────────────────────────────────────────────────────────
 
@@ -576,10 +752,17 @@ function loadSettingsWindow() {
     settingsWindow.show();
     return;
   }
+  registerSettingsIpc();
   settingsWindow = createWidgetWindow("SETTINGS_WINDOW", "ui/settingsWindow.ui.js");
   settingsWindow.show();
   config.SETTINGS_WINDOW_OPEN = true;
   json.write(CONFIG_PATH, config);
+}
+
+function unloadSettingsWindow() {
+  unregisterSettingsIpc();
+  if (settingsWindow && !settingsWindow.isDestroyed()) settingsWindow.close();
+  settingsWindow = null;
 }
 
 // ── Launch Widgets ───────────────────────────────────────────────────────────
@@ -611,37 +794,3 @@ appTray.setContextMenu([
 ]);
 
 appTray.on("click", () => loadSettingsWindow());
-
-ipcMain.on("openGithub", () => {
-  execute("https://github.com/nstechbytes/FluentWidgets");
-});
-
-ipcMain.on("setSettingsActiveTab", (event, tab) => {
-  config.SETTINGS_ACTIVE_TAB = tab;
-  json.write(CONFIG_PATH, config);
-});
-
-ipcMain.on("closeSettings", () => {
-  config.SETTINGS_WINDOW_OPEN = false;
-  json.write(CONFIG_PATH, config);
-  if (settingsWindow && !settingsWindow.isDestroyed()) {
-    settingsWindow.close();
-  }
-});
-
-ipcMain.on("setCornerStyle", (event, style) => {
-  const validCorners = ["none", "roundsmall", "round"];
-  if (validCorners.includes(style.toLowerCase())) {
-    config.BB_STYLE.ROUND_TYPE = style.toLowerCase();
-    json.write(CONFIG_PATH, config);
-    [monitorWindow, clockWindow, calendarWindow, weatherWindow, playerWindow, notesWindow, volumeWindow, settingsWindow].forEach(w => {
-      if (w && !w.isDestroyed()) applyBlurBehind(w);
-    });
-  }
-});
-
-ipcMain.on("set24HourFormat", (event, use24) => {
-  config.USE_24_HOUR_FORMAT = use24;
-  json.write(CONFIG_PATH, config);
-  publishClockData();
-});
