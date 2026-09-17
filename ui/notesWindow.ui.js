@@ -14,11 +14,123 @@ function getAccentColor() { return JSON_DATA.APPEARANCE.ACCENT_COLOR; }
 function getInputBoxColor() { return getThemeColors().INPUT_BOX_BG; }
 
 let notesStyle = JSON_DATA.WINDOW_STYLES.NOTES_WINDOW;
+let editingField = null;
+let titleDraft = JSON_DATA.NOTES_TOP_TITLE;
+let notesDraft = JSON_DATA.NOTES_TEXT;
 
 function getWidgetSize(styleKey) {
   const key = (styleKey || notesStyle).toUpperCase();
   const s = JSON_DATA.WIDGET_SIZES[key] || JSON_DATA.WIDGET_SIZES.LARGE;
   return { w: s.WIDTH * SCALE, h: s.HEIGHT * SCALE };
+}
+
+/** Remove an active edit input and restore display elements. */
+function endEdit(restoreTitleHint) {
+  if (ui.isElementExist("title_edit")) ui.removeElementById("title_edit");
+  if (ui.isElementExist("notes_edit")) ui.removeElementById("notes_edit");
+  editingField = null;
+
+  if (restoreTitleHint !== false && ui.isElementExist("top_Shape_Element_Title")) {
+    ui.setElementProperties("top_Shape_Element_Title", { show: true, text: titleDraft });
+  }
+  if (ui.isElementExist("notes_display")) {
+    ui.setElementProperties("notes_display", { show: true, text: notesDraft });
+  }
+}
+
+/** Save notes body via IPC when the multiline input loses focus. */
+function commitNotesEdit() {
+  if (editingField !== "notes") return;
+  const text = ui.getElementProperty("notes_edit", "text") ?? "";
+  notesDraft = text;
+  JSON_DATA.NOTES_TEXT = text;
+  editingField = null;
+  if (ui.isElementExist("notes_edit")) ui.removeElementById("notes_edit");
+  if (ui.isElementExist("notes_display")) {
+    ui.setElementProperties("notes_display", { show: true, text: text });
+  }
+  if (ui.isElementExist("top_Shape_Element_Title")) {
+    ui.setElementProperties("top_Shape_Element_Title", { text: titleDraft });
+  }
+  ipcRenderer.send("notesInput", { text });
+}
+
+/** Save notes title via IPC when the single-line input submits or blurs. */
+function commitTitleEdit() {
+  if (editingField !== "title") return;
+  const text = ui.getElementProperty("title_edit", "text") ?? "";
+  titleDraft = text;
+  JSON_DATA.NOTES_TOP_TITLE = text;
+  editingField = null;
+  if (ui.isElementExist("title_edit")) ui.removeElementById("title_edit");
+  if (ui.isElementExist("top_Shape_Element_Title")) {
+    ui.setElementProperties("top_Shape_Element_Title", { show: true, text: text });
+  }
+  ipcRenderer.send("notesTitleInput", { text });
+}
+
+function startTitleEdit(opts) {
+  if (editingField === "title") return;
+  if (editingField === "notes") commitNotesEdit();
+
+  editingField = "title";
+  if (ui.isElementExist("top_Shape_Element_Title")) {
+    ui.setElementProperties("top_Shape_Element_Title", { show: false });
+  }
+  if (ui.isElementExist("title_edit")) ui.removeElementById("title_edit");
+
+  ui.addInputBox({
+    id: "title_edit",
+    x: opts.x,
+    y: opts.y,
+    width: opts.width,
+    height: opts.height,
+    text: titleDraft,
+    fontSize: opts.fontSize,
+    fontColor: getFontColor(),
+    fontFace: JSON_DATA.FONT_FACE,
+    fontWeight: 700,
+    fillColor: getAccentColor(),
+    borderWidth: 0,
+    padding: [0, 0],
+    onEnter: () => {
+      ui.blurInputBox("title_edit");
+    },
+    onBlur: () => commitTitleEdit(),
+  });
+  ui.focusInputBox("title_edit");
+}
+
+function startNotesEdit(opts) {
+  if (editingField === "notes") return;
+  if (editingField === "title") commitTitleEdit();
+
+  editingField = "notes";
+  if (ui.isElementExist("notes_display")) {
+    ui.setElementProperties("notes_display", { show: false });
+  }
+  if (ui.isElementExist("top_Shape_Element_Title")) {
+    ui.setElementProperties("top_Shape_Element_Title", { text: "Click away to save" });
+  }
+  if (ui.isElementExist("notes_edit")) ui.removeElementById("notes_edit");
+
+  ui.addInputBox({
+    id: "notes_edit",
+    x: opts.x,
+    y: opts.y,
+    width: opts.width,
+    height: opts.height,
+    text: notesDraft,
+    multiline: true,
+    fontSize: opts.fontSize,
+    fontColor: getFontColor(),
+    fontFace: JSON_DATA.FONT_FACE,
+    fillColor: getInputBoxColor(),
+    borderWidth: 0,
+    padding: [0, 0],
+    onBlur: () => commitNotesEdit(),
+  });
+  ui.focusInputBox("notes_edit");
 }
 
 function largeStyle() {
@@ -36,24 +148,23 @@ function largeStyle() {
   ui.addShape({ id: "top_Shape_Element", type: "rectangle", width: SIZE, height: HEADER_H, fillColor: getAccentColor(), strokeWidth: 0, x: 0, y: 0 });
 
   ui.addText({
-    id: "top_Shape_Element_Title", text: JSON_DATA.NOTES_TOP_TITLE,
+    id: "top_Shape_Element_Title", text: titleDraft,
     x: PAD, y: HEADER_H / 2, width: SIZE - PAD, height: HEADER_H,
     fontSize: 16 * SCALE, fontColor: getFontColor(), fontFace: JSON_DATA.FONT_FACE,
     fontWeight: 700, textAlign: "leftcenter", textClip: "ellipsis",
-    onLeftMouseUp: () => ipcRenderer.send("notesTitleInput", { x: PAD, y: (HEADER_H / 2) - 10, width: (SIZE - PAD) - 10, height: HEADER_H / 2, fontSize: FONT_SIZE, backgroundColor: getAccentColor(), defaultValue: JSON_DATA.NOTES_TOP_TITLE }),
+    onLeftMouseUp: () => startTitleEdit({
+      x: PAD, y: (HEADER_H / 2) - 10, width: (SIZE - PAD) - 10, height: HEADER_H / 2, fontSize: FONT_SIZE,
+    }),
   });
 
   ui.addText({
-    id: "notes_display", text: JSON_DATA.NOTES_TEXT,
+    id: "notes_display", text: notesDraft,
     x: PAD, y: NOTES_Y, width: NOTES_W, height: NOTES_H,
     fontSize: FONT_SIZE, fontColor: getFontColor(), fontFace: JSON_DATA.FONT_FACE,
     textAlign: "lefttop",
-    onLeftMouseUp: () => {
-      ipcRenderer.send("notesInput", { x: PAD, y: (HEADER_H + 30 * SCALE) - 10, width: NOTES_W, height: NOTES_H, fontSize: FONT_SIZE, backgroundColor: getInputBoxColor(), defaultValue: JSON_DATA.NOTES_TEXT });
-      if (ui.isElementExist("top_Shape_Element_Title")) {
-        ui.setElementProperty("top_Shape_Element_Title", "text", "CTRL+ENTER to save and ESC to cancel");
-      }
-    },
+    onLeftMouseUp: () => startNotesEdit({
+      x: PAD, y: NOTES_Y, width: NOTES_W, height: NOTES_H, fontSize: FONT_SIZE,
+    }),
   });
 
   ui.addShape({ id: "bottom_Shape_Element", type: "rectangle", width: SIZE, height: FOOTER_H, fillColor: "rgba(0, 0, 0, 0)", strokeWidth: 0, x: 0, y: SIZE - FOOTER_H });
@@ -76,24 +187,23 @@ function wideStyle() {
   ui.addShape({ id: "top_Shape_Element", type: "rectangle", width: W, height: HEADER_H, fillColor: getAccentColor(), strokeWidth: 0, x: 0, y: 0 });
 
   ui.addText({
-    id: "top_Shape_Element_Title", text: JSON_DATA.NOTES_TOP_TITLE,
+    id: "top_Shape_Element_Title", text: titleDraft,
     x: PAD, y: HEADER_H / 2, width: W - PAD * 2, height: HEADER_H,
     fontSize: 14 * SCALE, fontColor: getFontColor(), fontFace: JSON_DATA.FONT_FACE,
     fontWeight: 700, textAlign: "leftcenter", textClip: "ellipsis",
-    onLeftMouseUp: () => ipcRenderer.send("notesTitleInput", { x: PAD, y: (HEADER_H / 2) - 9.8, width: W - PAD * 2, height: HEADER_H / 2, fontSize: FONT_SIZE, backgroundColor: getAccentColor(), defaultValue: JSON_DATA.NOTES_TOP_TITLE }),
+    onLeftMouseUp: () => startTitleEdit({
+      x: PAD, y: (HEADER_H / 2) - 9.8, width: W - PAD * 2, height: HEADER_H / 2, fontSize: FONT_SIZE,
+    }),
   });
 
   ui.addText({
-    id: "notes_display", text: JSON_DATA.NOTES_TEXT,
+    id: "notes_display", text: notesDraft,
     x: PAD, y: NOTES_Y, width: NOTES_W, height: NOTES_H,
     fontSize: FONT_SIZE, fontColor: getFontColor(), fontFace: JSON_DATA.FONT_FACE,
     textAlign: "lefttop",
-    onLeftMouseUp: () => {
-      ipcRenderer.send("notesInput", { x: PAD, y: HEADER_H + 20 * SCALE - 10, width: NOTES_W - 10, height: NOTES_H, fontSize: FONT_SIZE, backgroundColor: getInputBoxColor(), defaultValue: JSON_DATA.NOTES_TEXT });
-      if (ui.isElementExist("top_Shape_Element_Title")) {
-        ui.setElementProperty("top_Shape_Element_Title", "text", "CTRL+ENTER to save and ESC to cancel");
-      }
-    },
+    onLeftMouseUp: () => startNotesEdit({
+      x: PAD, y: NOTES_Y, width: NOTES_W, height: NOTES_H, fontSize: FONT_SIZE,
+    }),
   });
 
   ui.addShape({ id: "bottom_Shape_Element", type: "rectangle", width: W, height: FOOTER_H, fillColor: "rgba(0, 0, 0, 0)", strokeWidth: 0, x: 0, y: H - FOOTER_H });
@@ -116,24 +226,23 @@ function mediumStyle() {
   ui.addShape({ id: "top_Shape_Element", type: "rectangle", width: SIZE, height: HEADER_H, fillColor: getAccentColor(), strokeWidth: 0, x: 0, y: 0 });
 
   ui.addText({
-    id: "top_Shape_Element_Title", text: JSON_DATA.NOTES_TOP_TITLE,
+    id: "top_Shape_Element_Title", text: titleDraft,
     x: PAD, y: HEADER_H / 2, width: SIZE - PAD * 2, height: HEADER_H,
     fontSize: 13 * SCALE, fontColor: getFontColor(), fontFace: JSON_DATA.FONT_FACE,
     fontWeight: 700, textAlign: "leftcenter", textClip: "ellipsis",
-    onLeftMouseUp: () => ipcRenderer.send("notesTitleInput", { x: PAD, y: (HEADER_H / 2) - 11, width: SIZE - PAD * 2, height: HEADER_H / 2, fontSize: FONT_SIZE, backgroundColor: getAccentColor(), defaultValue: JSON_DATA.NOTES_TOP_TITLE }),
+    onLeftMouseUp: () => startTitleEdit({
+      x: PAD, y: (HEADER_H / 2) - 11, width: SIZE - PAD * 2, height: HEADER_H / 2, fontSize: FONT_SIZE,
+    }),
   });
 
   ui.addText({
-    id: "notes_display", text: JSON_DATA.NOTES_TEXT,
+    id: "notes_display", text: notesDraft,
     x: PAD, y: NOTES_Y, width: NOTES_W, height: NOTES_H,
     fontSize: FONT_SIZE, fontColor: getFontColor(), fontFace: JSON_DATA.FONT_FACE,
     textAlign: "lefttop",
-    onLeftMouseUp: () => {
-      ipcRenderer.send("notesInput", { x: PAD, y: HEADER_H + 20 * SCALE - 10, width: NOTES_W, height: NOTES_H, fontSize: FONT_SIZE, backgroundColor: getInputBoxColor(), defaultValue: JSON_DATA.NOTES_TEXT });
-      if (ui.isElementExist("top_Shape_Element_Title")) {
-        ui.setElementProperty("top_Shape_Element_Title", "text", "CTRL+ENTER to save and ESC to cancel");
-      }
-    },
+    onLeftMouseUp: () => startNotesEdit({
+      x: PAD, y: NOTES_Y, width: NOTES_W, height: NOTES_H, fontSize: FONT_SIZE,
+    }),
   });
 
   ui.addShape({ id: "bottom_Shape_Element", type: "rectangle", width: SIZE, height: FOOTER_H, fillColor: "rgba(0, 0, 0, 0)", strokeWidth: 0, x: 0, y: SIZE - FOOTER_H });
@@ -150,30 +259,16 @@ function smallStyle() {
   ui.addShape({ id: "background_Shape", type: "rectangle", width: SIZE, height: SIZE, strokeWidth: 0, fillColor: getBackgroundColor() });
 
   ui.addText({
-    id: "notes_display", text: JSON_DATA.NOTES_TEXT,
+    id: "notes_display", text: notesDraft,
     x: PAD, y: PAD, width: SIZE - PAD * 2, height: SIZE - PAD * 2,
     fontSize: FONT_SIZE, fontColor: getFontColor(), fontFace: JSON_DATA.FONT_FACE,
     textAlign: "lefttop",
-    onLeftMouseUp: () => {
-      ipcRenderer.send("notesInput", { x: PAD, y: PAD + 10 * SCALE - 7, width: SIZE - PAD * 2, height: SIZE - PAD * 2, fontSize: FONT_SIZE, backgroundColor: getInputBoxColor(), defaultValue: JSON_DATA.NOTES_TEXT });
-      if (ui.isElementExist("top_Shape_Element_Title")) {
-        ui.setElementProperty("top_Shape_Element_Title", "text", "CTRL+ENTER to save and ESC to cancel");
-      }
-    },
+    onLeftMouseUp: () => startNotesEdit({
+      x: PAD, y: PAD, width: SIZE - PAD * 2, height: SIZE - PAD * 2, fontSize: FONT_SIZE,
+    }),
   });
   ui.endUpdate();
 }
-
-function inputBoxDismissed() {
-  if (ui.isElementExist("top_Shape_Element_Title")) {
-    ui.setElementProperty("top_Shape_Element_Title", "text", JSON_DATA.NOTES_TOP_TITLE);
-  }
-  if (ui.isElementExist("notes_display")) {
-    ui.setElementProperty("notes_display", "text", JSON_DATA.NOTES_TEXT);
-  }
-}
-
-ipcRenderer.on("inputBoxDismissed", inputBoxDismissed);
 
 function render() {
   if (notesStyle === "large") largeStyle();
@@ -184,7 +279,8 @@ function render() {
 }
 
 function clearUI() {
-  ["background_Shape", "top_Shape_Element", "top_Shape_Element_Title", "notes_display", "bottom_Shape_Element", "notes_Saved_Time_Label"].forEach(id => {
+  endEdit(false);
+  ["background_Shape", "top_Shape_Element", "top_Shape_Element_Title", "notes_display", "bottom_Shape_Element", "notes_Saved_Time_Label", "title_edit", "notes_edit"].forEach(id => {
     if (ui.isElementExist(id)) ui.removeElementById(id);
   });
 }

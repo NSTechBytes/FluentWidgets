@@ -78,23 +78,34 @@ function toggle24HourClock() {
   ipcRenderer.send("set24HourFormat", use24);
 }
 
-/** Open an input box for editing a general settings field (scale, location, corner style). */
-function editGeneralSetting(settingType, elementId, defaultValue, inputType) {
-  const x = ui.getElementProperty(elementId, "x");
-  const y = ui.getElementProperty(elementId, "y");
-  const width = ui.getElementProperty(elementId, "width");
-  const height = ui.getElementProperty(elementId, "height");
-  const finalWidth = Math.max(120 * SCALE, width);
+/** Submit a settings field value from an addInputBox when it changes from the stored value. */
+function submitSetting(settingType, elementId, originalValue) {
+  const text = ui.getElementProperty(elementId, "text") ?? "";
+  if (String(text) === String(originalValue)) return;
+  ipcRenderer.send("settingsInput", { type: settingType, text });
+}
 
-  ipcRenderer.send("settingsInput", {
-    type: settingType,
-    x, y,
-    width: finalWidth,
-    height,
-    fontSize: 13 * SCALE,
-    backgroundColor: getThemeColors().INPUT_BOX_BG || "rgb(18, 18, 18)",
-    defaultValue: String(defaultValue),
-    inputType: inputType || "Number",
+/** Create a styled addInputBox used for editable general settings fields. */
+function addSettingInputBox(id, opts) {
+  ui.addInputBox({
+    id,
+    x: opts.x,
+    y: opts.y,
+    width: opts.width,
+    height: opts.height,
+    text: String(opts.value),
+    inputType: opts.inputType || "any",
+    fontSize: 14 * SCALE,
+    fontFace: FONT_FACE,
+    fontColor: getFontColor(),
+    fillColor: getBackgroundSubtle(),
+    borderWidth: 1 * SCALE,
+    borderColor: getFontSubtleColor(),
+    borderFocusColor: getAccentColor(),
+    borderRadius: 4 * SCALE,
+    padding: [10 * SCALE, 0],
+    onEnter: () => ui.blurInputBox(id),
+    onBlur: () => submitSetting(opts.type, id, opts.value),
   });
 }
 
@@ -110,9 +121,9 @@ function clearTabContent() {
     });
   });
 
-  ["darkModeText", "darkModeToggleImage", "scaleText", "scaleInputBg", "scaleInputText",
-    "latitudeText", "latitudeInputBg", "latitudeInputText", "longitudeText", "longitudeInputBg",
-    "longitudeInputText", "cityText", "cityInputBg", "cityInputText", "cornerText", "cornerInputBg",
+  ["darkModeText", "darkModeToggleImage", "scaleText", "scaleInput",
+    "latitudeText", "latitudeInput", "longitudeText", "longitudeInput",
+    "cityText", "cityInput", "cornerText", "cornerInputBg",
     "cornerInputText", "cornerDropdownBg", "cornerOptionNone", "cornerOptionRoundSmall", "cornerOptionRound",
     "use24HourText", "use24HourToggleImage"
   ].forEach(id => { if (ui.isElementExist(id)) ui.removeElementById(id); });
@@ -160,21 +171,21 @@ function renderTabContent() {
     ui.addText({ id: "darkModeText", text: "Dark Mode", x: SIDEBAR_WIDTH + 30 * SCALE, y: 110 * SCALE + 20 * SCALE, textAlign: "leftcenter", fontSize: 16 * SCALE, fontWeight: 600, fontFace: FONT_FACE, fontColor: getFontColor() });
     ui.addImage({ id: "darkModeToggleImage", path: isDark ? "assets/images/Settings/on.png" : "assets/images/Settings/off.png", x: BG_WIDTH - 30 * SCALE - 40 * SCALE, y: 110 * SCALE + 12.5 * SCALE, width: 40 * SCALE, height: 40 * SCALE, onLeftMouseUp: () => toggleDarkMode() });
 
+    const inputX = BG_WIDTH - 30 * SCALE - 120 * SCALE;
+    const inputW = 120 * SCALE;
+    const inputH = 32 * SCALE;
+
     ui.addText({ id: "scaleText", text: "UI Scale (0.5 - 3.0)", x: SIDEBAR_WIDTH + 30 * SCALE, y: 175 * SCALE + 20 * SCALE, textAlign: "leftcenter", fontSize: 16 * SCALE, fontWeight: 600, fontFace: FONT_FACE, fontColor: getFontColor() });
-    ui.addShape({ id: "scaleInputBg", type: "rectangle", x: BG_WIDTH - 30 * SCALE - 120 * SCALE, y: 175 * SCALE + 4 * SCALE, width: 120 * SCALE, height: 32 * SCALE, radius: 4 * SCALE, strokeWidth: 1 * SCALE, strokeColor: getFontSubtleColor(), fillColor: getBackgroundSubtle(), onLeftMouseUp: () => editGeneralSetting("scale", "scaleInputBg", JSON_DATA.SCALE) });
-    ui.addText({ id: "scaleInputText", text: String(JSON_DATA.SCALE), x: BG_WIDTH - 30 * SCALE - 110 * SCALE, y: 175 * SCALE + 20 * SCALE, textAlign: "leftcenter", fontSize: 14 * SCALE, fontFace: FONT_FACE, fontColor: getFontColor(), onLeftMouseUp: () => editGeneralSetting("scale", "scaleInputBg", JSON_DATA.SCALE) });
+    addSettingInputBox("scaleInput", { type: "scale", x: inputX, y: 175 * SCALE + 4 * SCALE, width: inputW, height: inputH, value: JSON_DATA.SCALE, inputType: "float" });
 
     ui.addText({ id: "latitudeText", text: "Weather Latitude", x: SIDEBAR_WIDTH + 30 * SCALE, y: 240 * SCALE + 20 * SCALE, textAlign: "leftcenter", fontSize: 16 * SCALE, fontWeight: 600, fontFace: FONT_FACE, fontColor: getFontColor() });
-    ui.addShape({ id: "latitudeInputBg", type: "rectangle", x: BG_WIDTH - 30 * SCALE - 120 * SCALE, y: 240 * SCALE + 4 * SCALE, width: 120 * SCALE, height: 32 * SCALE, radius: 4 * SCALE, strokeWidth: 1 * SCALE, strokeColor: getFontSubtleColor(), fillColor: getBackgroundSubtle(), onLeftMouseUp: () => editGeneralSetting("latitude", "latitudeInputBg", JSON_DATA.LOCATION.LATITUDE) });
-    ui.addText({ id: "latitudeInputText", text: String(JSON_DATA.LOCATION.LATITUDE), x: BG_WIDTH - 30 * SCALE - 110 * SCALE, y: 240 * SCALE + 20 * SCALE, textAlign: "leftcenter", fontSize: 14 * SCALE, fontFace: FONT_FACE, fontColor: getFontColor(), onLeftMouseUp: () => editGeneralSetting("latitude", "latitudeInputBg", JSON_DATA.LOCATION.LATITUDE) });
+    addSettingInputBox("latitudeInput", { type: "latitude", x: inputX, y: 240 * SCALE + 4 * SCALE, width: inputW, height: inputH, value: JSON_DATA.LOCATION.LATITUDE, inputType: "float" });
 
     ui.addText({ id: "longitudeText", text: "Weather Longitude", x: SIDEBAR_WIDTH + 30 * SCALE, y: 305 * SCALE + 20 * SCALE, textAlign: "leftcenter", fontSize: 16 * SCALE, fontWeight: 600, fontFace: FONT_FACE, fontColor: getFontColor() });
-    ui.addShape({ id: "longitudeInputBg", type: "rectangle", x: BG_WIDTH - 30 * SCALE - 120 * SCALE, y: 305 * SCALE + 4 * SCALE, width: 120 * SCALE, height: 32 * SCALE, radius: 4 * SCALE, strokeWidth: 1 * SCALE, strokeColor: getFontSubtleColor(), fillColor: getBackgroundSubtle(), onLeftMouseUp: () => editGeneralSetting("longitude", "longitudeInputBg", JSON_DATA.LOCATION.LONGITUDE, "Number") });
-    ui.addText({ id: "longitudeInputText", text: String(JSON_DATA.LOCATION.LONGITUDE), x: BG_WIDTH - 30 * SCALE - 110 * SCALE, y: 305 * SCALE + 20 * SCALE, textAlign: "leftcenter", fontSize: 14 * SCALE, fontFace: FONT_FACE, fontColor: getFontColor(), onLeftMouseUp: () => editGeneralSetting("longitude", "longitudeInputBg", JSON_DATA.LOCATION.LONGITUDE, "Number") });
+    addSettingInputBox("longitudeInput", { type: "longitude", x: inputX, y: 305 * SCALE + 4 * SCALE, width: inputW, height: inputH, value: JSON_DATA.LOCATION.LONGITUDE, inputType: "float" });
 
     ui.addText({ id: "cityText", text: "Weather City Name", x: SIDEBAR_WIDTH + 30 * SCALE, y: 370 * SCALE + 20 * SCALE, textAlign: "leftcenter", fontSize: 16 * SCALE, fontWeight: 600, fontFace: FONT_FACE, fontColor: getFontColor() });
-    ui.addShape({ id: "cityInputBg", type: "rectangle", x: BG_WIDTH - 30 * SCALE - 120 * SCALE, y: 370 * SCALE + 4 * SCALE, width: 120 * SCALE, height: 32 * SCALE, radius: 4 * SCALE, strokeWidth: 1 * SCALE, strokeColor: getFontSubtleColor(), fillColor: getBackgroundSubtle(), onLeftMouseUp: () => editGeneralSetting("city", "cityInputBg", JSON_DATA.LOCATION.CITY_NAME, "Text") });
-    ui.addText({ id: "cityInputText", text: String(JSON_DATA.LOCATION.CITY_NAME), x: BG_WIDTH - 30 * SCALE - 110 * SCALE, y: 370 * SCALE + 20 * SCALE, textAlign: "leftcenter", fontSize: 14 * SCALE, fontFace: FONT_FACE, fontColor: getFontColor(), onLeftMouseUp: () => editGeneralSetting("city", "cityInputBg", JSON_DATA.LOCATION.CITY_NAME, "Text") });
+    addSettingInputBox("cityInput", { type: "city", x: inputX, y: 370 * SCALE + 4 * SCALE, width: inputW, height: inputH, value: JSON_DATA.LOCATION.CITY_NAME, inputType: "any" });
 
     ui.addText({ id: "cornerText", text: "Corner Style", x: SIDEBAR_WIDTH + 30 * SCALE, y: 435 * SCALE + 20 * SCALE, textAlign: "leftcenter", fontSize: 16 * SCALE, fontWeight: 600, fontFace: FONT_FACE, fontColor: getFontColor() });
     ui.addShape({ id: "cornerInputBg", type: "rectangle", x: BG_WIDTH - 30 * SCALE - 120 * SCALE, y: 435 * SCALE + 4 * SCALE, width: 120 * SCALE, height: 32 * SCALE, radius: 4 * SCALE, strokeWidth: 1 * SCALE, strokeColor: getFontSubtleColor(), fillColor: getBackgroundSubtle(), onLeftMouseUp: () => { isCornerDropdownOpen = !isCornerDropdownOpen; clearTabContent(); renderTabContent(); } });

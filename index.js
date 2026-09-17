@@ -21,7 +21,6 @@ let isMuted = false, lastVolume = 50;
 
 const blurBehind = addon.load(path.join(__addonsPath, "BlurBehind"));
 const nowPlaying = addon.load(path.join(__addonsPath, "NowPlaying"));
-const inputBox = addon.load(path.join(__addonsPath, "InputBox"));
 
 const MONTH_NAMES = [
   "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
@@ -465,73 +464,47 @@ function loadNotesWidget() {
   notesWindow.show();
 }
 
-/** Show a native input overlay via InputBox addon. Calls onEnter with the submitted text and timestamp. */
-function showInputBox(win, data, onEnter) {
-  const now = time.time("%m/%d/%Y %I:%M:%S %p", "en-US");
-  const isLight = config.APPEARANCE.THEME === "light";
-  const fontColor = isLight ? "black" : "white";
-  inputBox.show({
-    widgetHwnd: win.getHandle(),
-    x: data.x,
-    y: data.y,
-    width: data.width,
-    height: data.height,
-    fontSize: data.fontSize,
-    borderVisible: false,
-    unfocusDismiss: false,
-    multiline: data.multiline || false,
-    backgroundColor: data.backgroundColor,
-    fontColor: fontColor,
-    fontFace: config.FONT_FACE || "Segoe UI",
-    defaultValue: data.defaultValue,
-    onEnter: () => onEnter(inputBox.lastText(), now),
-    onDismiss: () => ipcMain.send("inputBoxDismissed"),
-    onEsc: () => ipcMain.send("inputBoxDismissed"),
-  });
-}
-
+/** Persist notes body text from the UI addInputBox element. */
 function notesInput(data) {
-  showInputBox(notesWindow, { ...data, fontSize: data.fontSize - 5, multiline: true }, (text, now) => {
-    config.NOTES_TEXT = text;
-    config.NOTES_SAVED_TIME = now;
-    json.write(CONFIG_PATH, config);
-    notesWindow.refresh();
-  });
+  const now = time.time("%m/%d/%Y %I:%M:%S %p", "en-US");
+  config.NOTES_TEXT = data.text ?? "";
+  config.NOTES_SAVED_TIME = now;
+  json.write(CONFIG_PATH, config);
+  if (notesWindow && !notesWindow.isDestroyed()) notesWindow.refresh();
 }
 
+/** Persist notes title text from the UI addInputBox element. */
 function notesTitleInput(data) {
-  showInputBox(notesWindow, { ...data, fontSize: data.fontSize - 5 }, (text, now) => {
-    config.NOTES_TITLE = text;
-    config.NOTES_SAVED_TIME = now;
-    json.write(CONFIG_PATH, config);
-    notesWindow.refresh();
-  });
+  const now = time.time("%m/%d/%Y %I:%M:%S %p", "en-US");
+  config.NOTES_TOP_TITLE = data.text ?? "";
+  config.NOTES_SAVED_TIME = now;
+  json.write(CONFIG_PATH, config);
+  if (notesWindow && !notesWindow.isDestroyed()) notesWindow.refresh();
 }
 
 ipcMain.on("notesTitleInput", (event, data) => notesTitleInput(data));
 ipcMain.on("notesInput", (event, data) => notesInput(data));
 
+/** Persist a settings field value submitted by a UI addInputBox element. */
 function settingsInput(data) {
-  showInputBox(settingsWindow, { ...data, inputType: data.inputType || "Number" }, (text) => {
-    const trimmed = text.trim();
-    const isFloat = trimmed.includes(".");
-    const val = isFloat ? parseFloat(trimmed) : parseInt(trimmed, 10);
+  const trimmed = String(data.text ?? "").trim();
+  const isFloat = trimmed.includes(".");
+  const val = isFloat ? parseFloat(trimmed) : parseInt(trimmed, 10);
 
-    if (data.type === "scale") {
-      if (!isNaN(val) && val >= 0.5 && val <= 3.0) config.SCALE = val;
-    } else if (data.type === "latitude") {
-      if (!isNaN(val)) config.LOCATION.LATITUDE = val;
-    } else if (data.type === "longitude") {
-      if (!isNaN(val)) config.LOCATION.LONGITUDE = val;
-    } else if (data.type === "city") {
-      if (trimmed) config.LOCATION.CITY_NAME = trimmed;
-    }
+  if (data.type === "scale") {
+    if (!isNaN(val) && val >= 0.5 && val <= 3.0) config.SCALE = val;
+  } else if (data.type === "latitude") {
+    if (!isNaN(val)) config.LOCATION.LATITUDE = val;
+  } else if (data.type === "longitude") {
+    if (!isNaN(val)) config.LOCATION.LONGITUDE = val;
+  } else if (data.type === "city") {
+    if (trimmed) config.LOCATION.CITY_NAME = trimmed;
+  }
 
-    json.write(CONFIG_PATH, config);
-    settingsWindow.refresh();
+  json.write(CONFIG_PATH, config);
+  if (settingsWindow && !settingsWindow.isDestroyed()) settingsWindow.refresh();
 
-    if (data.type === "scale") refreshAllWidgets();
-  });
+  if (data.type === "scale") refreshAllWidgets();
 }
 
 ipcMain.on("settingsInput", (event, data) => settingsInput(data));
