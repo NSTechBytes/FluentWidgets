@@ -49,6 +49,33 @@ function getAccentColor() {
   return getThemeColors().ACCENT || JSON_DATA.APPEARANCE.ACCENT_COLOR;
 }
 
+function addRoundedTopHeader(width, height) {
+  const configuredRadius = parseFloat(JSON_DATA.APPEARANCE.BACKGROUND_RADIUS);
+  const radius = Math.max(0, Math.min(
+    Math.min(width / 2, height),
+    (isNaN(configuredRadius) ? 16 : configuredRadius) * SCALE,
+  ));
+  const right = width;
+  const bottom = height;
+  const pathData =
+    "M0 " + radius +
+    " Q0 0 " + radius + " 0" +
+    " L" + (right - radius) + " 0" +
+    " Q" + right + " 0 " + right + " " + radius +
+    " L" + right + " " + bottom +
+    " L0 " + bottom + " Z";
+
+  ui.addShape({
+    id: "top_Shape_Element",
+    type: "path",
+    x: 0,
+    y: 0,
+    pathData,
+    fillColor: getAccentColor(),
+    strokeWidth: 0,
+  });
+}
+
 let notesStyle = JSON_DATA.WINDOW_STYLES.NOTES_WINDOW;
 let titleDraft = JSON_DATA.NOTES_TOP_TITLE;
 let notesDraft = JSON_DATA.NOTES_TEXT;
@@ -85,7 +112,7 @@ function addTitleInput(opts) {
     fontColor: getFontColor(),
     fontFace: JSON_DATA.FONT_FACE,
     fontWeight: 700,
-    fillColor: getAccentColor(),
+    fillColor: "rgba(0, 0, 0, 0)",
     borderWidth: 0,
     padding: [0, 0],
     onEnter: () => ui.blurInputBox("titleInput"),
@@ -131,16 +158,7 @@ function largeStyle() {
     strokeWidth: 0,
     fillColor: getBackgroundColor(),
   });
-  ui.addShape({
-    id: "top_Shape_Element",
-    type: "rectangle",
-    width: SIZE,
-    height: HEADER_H,
-    fillColor: getAccentColor(),
-    strokeWidth: 0,
-    x: 0,
-    y: 0,
-  });
+  addRoundedTopHeader(SIZE, HEADER_H);
 
   addTitleInput({
     x: PAD,
@@ -205,16 +223,7 @@ function wideStyle() {
     strokeWidth: 0,
     fillColor: getBackgroundColor(),
   });
-  ui.addShape({
-    id: "top_Shape_Element",
-    type: "rectangle",
-    width: W,
-    height: HEADER_H,
-    fillColor: getAccentColor(),
-    strokeWidth: 0,
-    x: 0,
-    y: 0,
-  });
+  addRoundedTopHeader(W, HEADER_H);
 
   addTitleInput({
     x: PAD,
@@ -279,16 +288,7 @@ function mediumStyle() {
     strokeWidth: 0,
     fillColor: getBackgroundColor(),
   });
-  ui.addShape({
-    id: "top_Shape_Element",
-    type: "rectangle",
-    width: SIZE,
-    height: HEADER_H,
-    fillColor: getAccentColor(),
-    strokeWidth: 0,
-    x: 0,
-    y: 0,
-  });
+  addRoundedTopHeader(SIZE, HEADER_H);
 
   addTitleInput({
     x: PAD,
