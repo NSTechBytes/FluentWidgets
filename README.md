@@ -43,7 +43,7 @@ The Settings window lets you enable the widgets you use, choose a theme, set you
 
 Download the latest installer from the project releases:
 
-[Download FluentWidgets_v1.0.0.0_Setup.exe](../../releases/latest/download/FluentWidgets_v1.0.0.0_Setup.exe)
+[Download FluentWidgets_vX.X.X.X_Setup.exe](https://github.com/NSTechBytes/FluentWidgets/releases)
 
 Run the installer, then launch FluentWidgets from the Start menu or desktop shortcut. Novadesk must be installed before running the package.
 
