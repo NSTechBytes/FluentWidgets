@@ -135,33 +135,46 @@ function loadConfig() {
   }
   config = json.read(CONFIG_PATH);
 
-  // Keep appearance theme tokens in sync with packaged defaults so light/dark
-  // palette improvements apply even when an older AppData config already exists.
+  // Keep appearance theme tokens in sync with packaged defaults so palette
+  // improvements apply even when an older AppData config already exists.
   try {
     const defaults = json.read(DEFAULT_CONFIG_PATH);
     if (defaults && defaults.APPEARANCE) {
       if (!config.APPEARANCE) config.APPEARANCE = {};
-      const theme = config.APPEARANCE.THEME || defaults.APPEARANCE.THEME || "dark";
+      const themeKeys = ["DARK", "LIGHT", "DRACULA", "GITHUB"];
+      let theme = String(
+        config.APPEARANCE.THEME || defaults.APPEARANCE.THEME || "dark",
+      ).toLowerCase();
+      if (!themeKeys.includes(theme.toUpperCase())) theme = "dark";
+
+      const syncedThemes = {};
+      themeKeys.forEach((key) => {
+        syncedThemes[key] = {
+          ...(defaults.APPEARANCE[key] || {}),
+        };
+      });
+
+      const activePalette =
+        syncedThemes[theme.toUpperCase()] || syncedThemes.DARK;
+
       config.APPEARANCE = {
         ...defaults.APPEARANCE,
         ...config.APPEARANCE,
         THEME: theme,
         ACCENT_COLOR:
-          config.APPEARANCE.ACCENT_COLOR || defaults.APPEARANCE.ACCENT_COLOR,
-        DARK: { ...defaults.APPEARANCE.DARK },
-        LIGHT: { ...defaults.APPEARANCE.LIGHT },
+          activePalette.ACCENT ||
+          config.APPEARANCE.ACCENT_COLOR ||
+          defaults.APPEARANCE.ACCENT_COLOR,
+        ...syncedThemes,
         LEVEL_COLORS: {
           ...defaults.APPEARANCE.LEVEL_COLORS,
           ...(config.APPEARANCE.LEVEL_COLORS || {}),
         },
         BACKGROUND_SUBTLE:
-          theme === "light"
-            ? defaults.APPEARANCE.LIGHT.BACKGROUND_SUBTLE
-            : defaults.APPEARANCE.DARK.BACKGROUND_SUBTLE,
+          activePalette.BACKGROUND_SUBTLE ||
+          defaults.APPEARANCE.BACKGROUND_SUBTLE,
         OVERLAY_COLOR:
-          theme === "light"
-            ? defaults.APPEARANCE.LIGHT.OVERLAY || defaults.APPEARANCE.OVERLAY_COLOR
-            : defaults.APPEARANCE.DARK.OVERLAY || defaults.APPEARANCE.OVERLAY_COLOR,
+          activePalette.OVERLAY || defaults.APPEARANCE.OVERLAY_COLOR,
       };
       json.write(CONFIG_PATH, config);
     }
@@ -997,22 +1010,31 @@ function onSettingsInput(event, data) {
   }
 }
 
-function onSetDarkMode(event, isDark) {
-  config.APPEARANCE.THEME = isDark ? "dark" : "light";
-  const themeColors = isDark ? config.APPEARANCE.DARK : config.APPEARANCE.LIGHT;
-  if (themeColors) {
-    if (themeColors.BACKGROUND_SUBTLE) {
-      config.APPEARANCE.BACKGROUND_SUBTLE = themeColors.BACKGROUND_SUBTLE;
-    }
-    if (themeColors.OVERLAY) {
-      config.APPEARANCE.OVERLAY_COLOR = themeColors.OVERLAY;
-    }
+function onSetTheme(event, themeName) {
+  const key = String(themeName || "dark").toLowerCase();
+  const paletteKey = key.toUpperCase();
+  const themeColors = config.APPEARANCE[paletteKey];
+  if (!themeColors) return;
+
+  config.APPEARANCE.THEME = key;
+  if (themeColors.ACCENT) {
+    config.APPEARANCE.ACCENT_COLOR = themeColors.ACCENT;
+  }
+  if (themeColors.BACKGROUND_SUBTLE) {
+    config.APPEARANCE.BACKGROUND_SUBTLE = themeColors.BACKGROUND_SUBTLE;
+  }
+  if (themeColors.OVERLAY) {
+    config.APPEARANCE.OVERLAY_COLOR = themeColors.OVERLAY;
   }
   json.write(CONFIG_PATH, config);
   refreshAllWidgets();
   if (settingsWindow && !settingsWindow.isDestroyed()) {
     settingsWindow.refresh();
   }
+}
+
+function onSetDarkMode(event, isDark) {
+  onSetTheme(event, isDark ? "dark" : "light");
 }
 
 function onOpenGithub() {
@@ -1067,6 +1089,7 @@ function onSet24HourFormat(event, use24) {
 function registerSettingsIpc() {
   unregisterSettingsIpc();
   ipcMain.on("settingsInput", onSettingsInput);
+  ipcMain.on("setTheme", onSetTheme);
   ipcMain.on("setDarkMode", onSetDarkMode);
   ipcMain.on("openGithub", onOpenGithub);
   ipcMain.on("openPatreon", onOpenPatreon);
@@ -1080,6 +1103,7 @@ function registerSettingsIpc() {
 
 function unregisterSettingsIpc() {
   ipcMain.removeListener("settingsInput", onSettingsInput);
+  ipcMain.removeListener("setTheme", onSetTheme);
   ipcMain.removeListener("setDarkMode", onSetDarkMode);
   ipcMain.removeListener("openGithub", onOpenGithub);
   ipcMain.removeListener("openPatreon", onOpenPatreon);

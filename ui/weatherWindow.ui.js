@@ -19,9 +19,8 @@ const DEFAULT_WEATHER_ICON = "assets/WeatherIcons/cloudy.png";
 let currentStyle = JSON_DATA.WINDOW_STYLES.WEATHER_WINDOW;
 
 function getThemeColors() {
-  return JSON_DATA.APPEARANCE.THEME === "dark"
-    ? JSON_DATA.APPEARANCE.DARK
-    : JSON_DATA.APPEARANCE.LIGHT;
+  const key = String(JSON_DATA.APPEARANCE.THEME || "dark").toUpperCase();
+  return JSON_DATA.APPEARANCE[key] || JSON_DATA.APPEARANCE.DARK;
 }
 
 function getBackgroundColor() {

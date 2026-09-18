@@ -40,9 +40,8 @@ const cpuHistory = [],
 const MAX_HISTORY = 60;
 
 function getThemeColors() {
-  return JSON_DATA.APPEARANCE.THEME === "dark"
-    ? JSON_DATA.APPEARANCE.DARK
-    : JSON_DATA.APPEARANCE.LIGHT;
+  const key = String(JSON_DATA.APPEARANCE.THEME || "dark").toUpperCase();
+  return JSON_DATA.APPEARANCE[key] || JSON_DATA.APPEARANCE.DARK;
 }
 
 function getBackgroundColor() {
@@ -58,7 +57,7 @@ function getSubtleColor() {
   return getThemeColors().SUBTLE;
 }
 function getAccentColor() {
-  return JSON_DATA.APPEARANCE.ACCENT_COLOR;
+  return getThemeColors().ACCENT || JSON_DATA.APPEARANCE.ACCENT_COLOR;
 }
 
 function getLevelColor(percent) {

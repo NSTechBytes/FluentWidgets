@@ -21,9 +21,8 @@ const SIDEBAR_WIDTH = BG_WIDTH / 4;
 const SIDEBAR_HEIGHT = BG_HEIGHT;
 
 function getThemeColors() {
-  return JSON_DATA.APPEARANCE.THEME === "dark"
-    ? JSON_DATA.APPEARANCE.DARK
-    : JSON_DATA.APPEARANCE.LIGHT;
+  const key = String(JSON_DATA.APPEARANCE.THEME || "dark").toUpperCase();
+  return JSON_DATA.APPEARANCE[key] || JSON_DATA.APPEARANCE.DARK;
 }
 
 function getBackgroundColor() {
@@ -42,7 +41,7 @@ function getFontSubtleColor() {
   return getThemeColors().FONT_SUBTLE;
 }
 function getAccentColor() {
-  return JSON_DATA.APPEARANCE.ACCENT_COLOR;
+  return getThemeColors().ACCENT || JSON_DATA.APPEARANCE.ACCENT_COLOR;
 }
 function getCardColor() {
   return getThemeColors().CARD || getBackgroundSubtle();
@@ -60,9 +59,16 @@ function getCloseButtonHoverFill() {
 }
 
 const SIDEBAR_IDLE_FILL = "rgba(0, 0, 0, 0)";
+const THEME_OPTIONS = ["dark", "light", "dracula", "github"];
 
 function isDarkTheme() {
-  return JSON_DATA.APPEARANCE.THEME === "dark";
+  return getThemeColors().MODE !== "light";
+}
+
+function getThemeLabel(themeId) {
+  const key = String(themeId || "dark").toUpperCase();
+  const palette = JSON_DATA.APPEARANCE[key];
+  return (palette && palette.LABEL) || key.charAt(0) + key.slice(1).toLowerCase();
 }
 
 function getSidebarActiveFill() {
@@ -134,6 +140,7 @@ function shapeHoverHandlers(
 
 let currentTab = JSON_DATA.SETTINGS_ACTIVE_TAB || "widgets";
 let isCornerDropdownOpen = false;
+let isThemeDropdownOpen = false;
 let lastCornerDropdownPointerLog = "";
 
 // Temporary diagnostic kept deliberately low-volume: it reports only when
@@ -162,6 +169,7 @@ function switchTab(tabName) {
   clearTabContent();
   currentTab = tabName;
   isCornerDropdownOpen = false;
+  isThemeDropdownOpen = false;
   ipcRenderer.send("setSettingsActiveTab", tabName);
   updateSidebarSelection();
   renderTabContent();
@@ -215,17 +223,18 @@ function toggleWidgetState(widgetKey) {
 }
 
 function toggleDarkMode() {
-  const isDark = JSON_DATA.APPEARANCE.THEME === "dark";
-  const newTheme = isDark ? "light" : "dark";
-  JSON_DATA.APPEARANCE.THEME = newTheme;
-  ui.setElementProperty(
-    "darkModeToggleImage",
-    "path",
-    newTheme === "dark"
-      ? "assets/images/Settings/on.png"
-      : "assets/images/Settings/off.png",
-  );
-  ipcRenderer.send("setDarkMode", newTheme === "dark");
+  const next = isDarkTheme() ? "light" : "dark";
+  JSON_DATA.APPEARANCE.THEME = next;
+  ipcRenderer.send("setTheme", next);
+}
+
+function setTheme(themeId) {
+  JSON_DATA.APPEARANCE.THEME = themeId;
+  const palette = JSON_DATA.APPEARANCE[String(themeId).toUpperCase()];
+  if (palette && palette.ACCENT) {
+    JSON_DATA.APPEARANCE.ACCENT_COLOR = palette.ACCENT;
+  }
+  ipcRenderer.send("setTheme", themeId);
 }
 
 function toggle24HourClock() {
@@ -291,6 +300,18 @@ function clearTabContent() {
   });
 
   [
+    "themeText",
+    "themeInputBg",
+    "themeInputText",
+    "themeDropdownBg",
+    "themeOptionDark",
+    "themeOptionDarkBg",
+    "themeOptionLight",
+    "themeOptionLightBg",
+    "themeOptionDracula",
+    "themeOptionDraculaBg",
+    "themeOptionGithub",
+    "themeOptionGithubBg",
     "darkModeText",
     "darkModeToggleImage",
     "scaleText",
@@ -405,11 +426,11 @@ function renderTabContent() {
       });
     });
   } else if (currentTab === "general") {
-    const isDark = JSON_DATA.APPEARANCE.THEME === "dark";
+    const currentTheme = String(JSON_DATA.APPEARANCE.THEME || "dark").toLowerCase();
 
     ui.addText({
-      id: "darkModeText",
-      text: "Dark Mode",
+      id: "themeText",
+      text: "Theme",
       x: SIDEBAR_WIDTH + 30 * SCALE,
       y: 110 * SCALE + 20 * SCALE,
       textAlign: "leftcenter",
@@ -418,18 +439,53 @@ function renderTabContent() {
       fontFace: FONT_FACE,
       fontColor: getFontColor(),
     });
-    ui.addImage({
-      id: "darkModeToggleImage",
-      path: isDark
-        ? "assets/images/Settings/on.png"
-        : "assets/images/Settings/off.png",
-      x: BG_WIDTH - 30 * SCALE - 40 * SCALE,
-      y: 110 * SCALE,
-      width: 40 * SCALE,
-      height: 40 * SCALE,
-      imageAlpha: 210,
-      ...imageHoverHandlers("darkModeToggleImage"),
-      onLeftMouseUp: () => toggleDarkMode(),
+    ui.addShape({
+      id: "themeInputBg",
+      type: "rectangle",
+      x: BG_WIDTH - 30 * SCALE - 120 * SCALE,
+      y: 110 * SCALE + 4 * SCALE,
+      width: 120 * SCALE,
+      height: 32 * SCALE,
+      radius: 4 * SCALE,
+      strokeWidth: 1 * SCALE,
+      strokeColor: getFontSubtleColor(),
+      fillColor: getBackgroundSubtle(),
+      ...shapeHoverHandlers(
+        "themeInputBg",
+        getBackgroundSubtle(),
+        getCardHoverColor(),
+        getFontSubtleColor(),
+        getAccentColor(),
+      ),
+      onLeftMouseUp: () => {
+        isThemeDropdownOpen = !isThemeDropdownOpen;
+        isCornerDropdownOpen = false;
+        clearTabContent();
+        renderTabContent();
+      },
+    });
+    ui.addText({
+      id: "themeInputText",
+      text: getThemeLabel(currentTheme),
+      x: BG_WIDTH - 30 * SCALE - 110 * SCALE,
+      y: 110 * SCALE + 20 * SCALE,
+      textAlign: "leftcenter",
+      fontSize: 14 * SCALE,
+      fontFace: FONT_FACE,
+      fontColor: getFontColor(),
+      ...shapeHoverHandlers(
+        "themeInputBg",
+        getBackgroundSubtle(),
+        getCardHoverColor(),
+        getFontSubtleColor(),
+        getAccentColor(),
+      ),
+      onLeftMouseUp: () => {
+        isThemeDropdownOpen = !isThemeDropdownOpen;
+        isCornerDropdownOpen = false;
+        clearTabContent();
+        renderTabContent();
+      },
     });
 
     const inputX = BG_WIDTH - 30 * SCALE - 120 * SCALE;
@@ -551,6 +607,7 @@ function renderTabContent() {
       ),
       onLeftMouseUp: () => {
         isCornerDropdownOpen = !isCornerDropdownOpen;
+        isThemeDropdownOpen = false;
         clearTabContent();
         renderTabContent();
       },
@@ -573,6 +630,7 @@ function renderTabContent() {
       ),
       onLeftMouseUp: () => {
         isCornerDropdownOpen = !isCornerDropdownOpen;
+        isThemeDropdownOpen = false;
         clearTabContent();
         renderTabContent();
       },
@@ -603,6 +661,80 @@ function renderTabContent() {
       ...imageHoverHandlers("use24HourToggleImage"),
       onLeftMouseUp: () => toggle24HourClock(),
     });
+
+    if (isThemeDropdownOpen) {
+      const dropdownFill = isDarkTheme()
+        ? "rgba(36, 36, 40, 0.96)"
+        : "rgba(255, 255, 255, 0.94)";
+      const optionHoverFill = getCardHoverColor();
+      const themeDropdownH = 5 * SCALE + THEME_OPTIONS.length * 28 * SCALE;
+      ui.addShape({
+        id: "themeDropdownBg",
+        type: "rectangle",
+        x: BG_WIDTH - 30 * SCALE - 120 * SCALE,
+        y: 110 * SCALE + 40 * SCALE,
+        width: 120 * SCALE,
+        height: themeDropdownH,
+        radius: 4 * SCALE,
+        strokeWidth: 1 * SCALE,
+        strokeColor: getFontSubtleColor(),
+        fillColor: dropdownFill,
+        mouseEventCursor: false,
+        onLeftMouseDown: () => {},
+        onLeftMouseUp: () => {},
+      });
+
+      THEME_OPTIONS.forEach((opt, idx) => {
+        const suffix = opt.charAt(0).toUpperCase() + opt.slice(1);
+        const optId = "themeOption" + suffix;
+        const optBgId = optId + "Bg";
+        const rowY = 110 * SCALE + 40 * SCALE + 5 * SCALE + idx * 28 * SCALE;
+        const normalText = getFontColor();
+        const selectOption = () => {
+          isThemeDropdownOpen = false;
+          setTheme(opt);
+          clearTabContent();
+          renderTabContent();
+        };
+        const itemHover = {
+          onMouseOver: () => {
+            ui.setElementProperty(optBgId, "fillColor", optionHoverFill);
+            ui.setElementProperty(optId, "fontColor", getAccentColor());
+          },
+          onMouseLeave: () => {
+            ui.setElementProperty(optBgId, "fillColor", "rgba(0,0,0,0)");
+            ui.setElementProperty(optId, "fontColor", normalText);
+          },
+        };
+        ui.addShape({
+          id: optBgId,
+          type: "rectangle",
+          x: BG_WIDTH - 30 * SCALE - 116 * SCALE,
+          y: rowY,
+          width: 112 * SCALE,
+          height: 26 * SCALE,
+          radius: 3 * SCALE,
+          strokeWidth: 0,
+          fillColor: "rgba(0,0,0,0)",
+          ...itemHover,
+          onLeftMouseUp: selectOption,
+        });
+        ui.addText({
+          id: optId,
+          text: getThemeLabel(opt),
+          x: BG_WIDTH - 30 * SCALE - 110 * SCALE,
+          y: rowY + 13 * SCALE,
+          width: 100 * SCALE,
+          height: 26 * SCALE,
+          textAlign: "leftcenter",
+          fontSize: 14 * SCALE,
+          fontFace: FONT_FACE,
+          fontColor: normalText,
+          ...itemHover,
+          onLeftMouseUp: selectOption,
+        });
+      });
+    }
 
     if (isCornerDropdownOpen) {
       console.log("[Corner dropdown] rendering options");
@@ -690,7 +822,7 @@ function renderTabContent() {
       });
     }
   } else if (currentTab === "about") {
-    const isDark = JSON_DATA.APPEARANCE.THEME === "dark";
+    const isDark = isDarkTheme();
     const contentX = SIDEBAR_WIDTH + 30 * SCALE;
     const contentW = BG_WIDTH - SIDEBAR_WIDTH - 60 * SCALE;
     const muted = getFontSubtleColor();

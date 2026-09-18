@@ -18,9 +18,8 @@ const FONT_FACE = JSON_DATA.FONT_FACE;
 let currentStyle = JSON_DATA.WINDOW_STYLES.CALENDAR_WINDOW;
 
 function getThemeColors() {
-  return JSON_DATA.APPEARANCE.THEME === "dark"
-    ? JSON_DATA.APPEARANCE.DARK
-    : JSON_DATA.APPEARANCE.LIGHT;
+  const key = String(JSON_DATA.APPEARANCE.THEME || "dark").toUpperCase();
+  return JSON_DATA.APPEARANCE[key] || JSON_DATA.APPEARANCE.DARK;
 }
 
 function getBackgroundColor() {
@@ -33,7 +32,7 @@ function getSubtleColor() {
   return getThemeColors().FONT_SUBTLE;
 }
 function getAccentColor() {
-  return JSON_DATA.APPEARANCE.ACCENT_COLOR;
+  return getThemeColors().ACCENT || JSON_DATA.APPEARANCE.ACCENT_COLOR;
 }
 
 function getWidgetSize() {

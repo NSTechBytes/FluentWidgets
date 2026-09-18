@@ -16,9 +16,8 @@ const JSON_DATA = ipcRenderer.invoke("getJSON");
 const SCALE = parseFloat(JSON_DATA.SCALE) || 1;
 
 function getThemeColors() {
-  return JSON_DATA.APPEARANCE.THEME === "dark"
-    ? JSON_DATA.APPEARANCE.DARK
-    : JSON_DATA.APPEARANCE.LIGHT;
+  const key = String(JSON_DATA.APPEARANCE.THEME || "dark").toUpperCase();
+  return JSON_DATA.APPEARANCE[key] || JSON_DATA.APPEARANCE.DARK;
 }
 
 function getBackgroundColor() {
@@ -31,7 +30,7 @@ function getFontSubtleColor() {
   return getThemeColors().FONT_SUBTLE;
 }
 function getAccentColor() {
-  return JSON_DATA.APPEARANCE.ACCENT_COLOR;
+  return getThemeColors().ACCENT || JSON_DATA.APPEARANCE.ACCENT_COLOR;
 }
 
 let notesStyle = JSON_DATA.WINDOW_STYLES.NOTES_WINDOW;

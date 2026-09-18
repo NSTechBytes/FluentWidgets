@@ -60,6 +60,9 @@
         },
         "BACKGROUND_SUBTLE": "rgba(255, 255, 255, 0.08)",
         "DARK": {
+            "MODE": "dark",
+            "LABEL": "Dark",
+            "ACCENT": "#0078D4",
             "BACKGROUND": "rgba(22, 22, 26, 0.55)",
             "FONT": "rgb(255, 255, 255)",
             "FONT_SUBTLE": "rgba(255, 255, 255, 0.68)",
@@ -72,6 +75,9 @@
             "OVERLAY": "rgba(0, 0, 0, 0.55)"
         },
         "LIGHT": {
+            "MODE": "light",
+            "LABEL": "Light",
+            "ACCENT": "#0078D4",
             "BACKGROUND": "rgba(245, 247, 250, 0.78)",
             "FONT": "rgb(28, 28, 30)",
             "FONT_SUBTLE": "rgba(28, 28, 30, 0.58)",
@@ -82,6 +88,36 @@
             "CARD": "rgba(255, 255, 255, 0.7)",
             "CARD_HOVER": "rgba(0, 0, 0, 0.08)",
             "OVERLAY": "rgba(255, 255, 255, 0.55)"
+        },
+        "DRACULA": {
+            "MODE": "dark",
+            "LABEL": "Dracula",
+            "ACCENT": "#BD93F9",
+            "BACKGROUND": "rgba(40, 42, 54, 0.72)",
+            "FONT": "rgb(248, 248, 242)",
+            "FONT_SUBTLE": "rgba(248, 248, 242, 0.7)",
+            "SUBTLE": "rgba(98, 114, 164, 0.85)",
+            "ICON": "rgb(248, 248, 242)",
+            "INPUT_BOX_BG": "rgb(68, 71, 90)",
+            "BACKGROUND_SUBTLE": "rgba(68, 71, 90, 0.65)",
+            "CARD": "rgba(68, 71, 90, 0.55)",
+            "CARD_HOVER": "rgba(98, 114, 164, 0.45)",
+            "OVERLAY": "rgba(40, 42, 54, 0.7)"
+        },
+        "GITHUB": {
+            "MODE": "dark",
+            "LABEL": "GitHub",
+            "ACCENT": "#2F81F7",
+            "BACKGROUND": "rgba(13, 17, 23, 0.78)",
+            "FONT": "rgb(230, 237, 243)",
+            "FONT_SUBTLE": "rgba(230, 237, 243, 0.68)",
+            "SUBTLE": "rgba(110, 118, 129, 0.9)",
+            "ICON": "rgb(230, 237, 243)",
+            "INPUT_BOX_BG": "rgb(22, 27, 34)",
+            "BACKGROUND_SUBTLE": "rgba(33, 38, 45, 0.9)",
+            "CARD": "rgba(22, 27, 34, 0.85)",
+            "CARD_HOVER": "rgba(48, 54, 61, 0.95)",
+            "OVERLAY": "rgba(1, 4, 9, 0.72)"
         }
     },
     "SETTINGS_WINDOW_OPEN": true,

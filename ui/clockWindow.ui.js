@@ -17,26 +17,27 @@ const SCALE = parseFloat(JSON_DATA.SCALE) || 1;
 const FONT_FACE = JSON_DATA.FONT_FACE;
 let currentStyle = JSON_DATA.WINDOW_STYLES.CLOCK_WINDOW;
 
-const smallFace =
-  JSON_DATA.APPEARANCE.THEME === "dark"
-    ? "assets/icons/small-face-1.png"
-    : "assets/icons/small-face-0.png";
+function getThemeColors() {
+  const key = String(JSON_DATA.APPEARANCE.THEME || "dark").toUpperCase();
+  return JSON_DATA.APPEARANCE[key] || JSON_DATA.APPEARANCE.DARK;
+}
 
-const largeFace =
-  JSON_DATA.APPEARANCE.THEME === "dark"
-    ? "assets/icons/face-1.png"
-    : "assets/icons/face-0.png";
+function isDarkTheme() {
+  return getThemeColors().MODE !== "light";
+}
+
+const smallFace = isDarkTheme()
+  ? "assets/icons/small-face-1.png"
+  : "assets/icons/small-face-0.png";
+
+const largeFace = isDarkTheme()
+  ? "assets/icons/face-1.png"
+  : "assets/icons/face-0.png";
 
 let hour = 0,
   minute = 0,
   second = 0;
 let clockGeometry = null;
-
-function getThemeColors() {
-  return JSON_DATA.APPEARANCE.THEME === "dark"
-    ? JSON_DATA.APPEARANCE.DARK
-    : JSON_DATA.APPEARANCE.LIGHT;
-}
 
 function getBackgroundColor() {
   return getThemeColors().BACKGROUND;
@@ -48,7 +49,7 @@ function getSubtleColor() {
   return getThemeColors().SUBTLE;
 }
 function getAccentColor() {
-  return JSON_DATA.APPEARANCE.ACCENT_COLOR;
+  return getThemeColors().ACCENT || JSON_DATA.APPEARANCE.ACCENT_COLOR;
 }
 
 function getWidgetSize() {
