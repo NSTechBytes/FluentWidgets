@@ -227,8 +227,7 @@ ui.on("mouseDown", (e) => {
   }
 
   if (closed) {
-    clearTabContent();
-    renderTabContent();
+    refreshTabContent();
   }
 });
 
@@ -449,6 +448,15 @@ function clearTabContent() {
   ui.endUpdate();
 }
 
+// Keep the old content on screen until its replacement is complete. This
+// avoids presenting a transient empty frame when a dropdown opens or closes.
+function refreshTabContent() {
+  ui.beginUpdate();
+  clearTabContent();
+  renderTabContent();
+  ui.endUpdate();
+}
+
 function renderTabContent() {
   ui.beginUpdate();
 
@@ -546,8 +554,7 @@ function renderTabContent() {
         isThemeDropdownOpen = !isThemeDropdownOpen;
         isCornerDropdownOpen = false;
         isBlurTypeDropdownOpen = false;
-        clearTabContent();
-        renderTabContent();
+        refreshTabContent();
       },
     });
     ui.addText({
@@ -572,8 +579,7 @@ function renderTabContent() {
         isThemeDropdownOpen = !isThemeDropdownOpen;
         isCornerDropdownOpen = false;
         isBlurTypeDropdownOpen = false;
-        clearTabContent();
-        renderTabContent();
+        refreshTabContent();
       },
     });
 
@@ -593,8 +599,7 @@ function renderTabContent() {
       isBlurTypeDropdownOpen = !isBlurTypeDropdownOpen;
       isThemeDropdownOpen = false;
       isCornerDropdownOpen = false;
-      clearTabContent();
-      renderTabContent();
+      refreshTabContent();
     };
     ui.addShape({
       id: "blurTypeInputBg",
@@ -770,8 +775,7 @@ function renderTabContent() {
         isCornerDropdownOpen = !isCornerDropdownOpen;
         isThemeDropdownOpen = false;
         isBlurTypeDropdownOpen = false;
-        clearTabContent();
-        renderTabContent();
+        refreshTabContent();
       },
     });
     ui.addText({
@@ -795,8 +799,7 @@ function renderTabContent() {
         isCornerDropdownOpen = !isCornerDropdownOpen;
         isThemeDropdownOpen = false;
         isBlurTypeDropdownOpen = false;
-        clearTabContent();
-        renderTabContent();
+        refreshTabContent();
       },
     });
 
@@ -853,8 +856,7 @@ function renderTabContent() {
           JSON_DATA.BB_STYLE.BLUR_TYPE = opt;
           ipcRenderer.send("setBlurType", opt);
           isBlurTypeDropdownOpen = false;
-          clearTabContent();
-          renderTabContent();
+          refreshTabContent();
         };
         ui.addShape({
           id: optBgId, type: "rectangle", x: settingControlX + 4 * SCALE, y: rowY,
@@ -901,8 +903,7 @@ function renderTabContent() {
         const selectOption = () => {
           isThemeDropdownOpen = false;
           setTheme(opt);
-          clearTabContent();
-          renderTabContent();
+          refreshTabContent();
         };
         const itemHover = {
           onMouseOver: () => {
@@ -979,8 +980,7 @@ function renderTabContent() {
           JSON_DATA.BB_STYLE.ROUND_TYPE = opt;
           ipcRenderer.send("setCornerStyle", opt);
           isCornerDropdownOpen = false;
-          clearTabContent();
-          renderTabContent();
+          refreshTabContent();
         };
         const itemHover = {
           onMouseOver: () => {
