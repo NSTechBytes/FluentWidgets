@@ -178,6 +178,11 @@ function loadConfig() {
           config.APPEARANCE.BACKGROUND_OPACITY !== null
             ? config.APPEARANCE.BACKGROUND_OPACITY
             : (defaults.APPEARANCE.BACKGROUND_OPACITY ?? 0.55),
+        BACKGROUND_RADIUS:
+          config.APPEARANCE.BACKGROUND_RADIUS !== undefined &&
+          config.APPEARANCE.BACKGROUND_RADIUS !== null
+            ? config.APPEARANCE.BACKGROUND_RADIUS
+            : (defaults.APPEARANCE.BACKGROUND_RADIUS ?? 16),
         OVERLAY_COLOR:
           activePalette.OVERLAY || defaults.APPEARANCE.OVERLAY_COLOR,
       };
@@ -1002,6 +1007,10 @@ function onSettingsInput(event, data) {
     if (!isNaN(val) && val >= 0 && val <= 1) {
       config.APPEARANCE.BACKGROUND_OPACITY = val;
     }
+  } else if (data.type === "backgroundRadius") {
+    if (!isNaN(val) && val >= 0 && val <= 100) {
+      config.APPEARANCE.BACKGROUND_RADIUS = val;
+    }
   } else if (data.type === "latitude") {
     if (!isNaN(val)) config.LOCATION.LATITUDE = val;
   } else if (data.type === "longitude") {
@@ -1013,7 +1022,8 @@ function onSettingsInput(event, data) {
   json.write(CONFIG_PATH, config);
   if (settingsWindow && !settingsWindow.isDestroyed()) settingsWindow.refresh();
 
-  if (data.type === "scale" || data.type === "opacity") {
+  if (data.type === "scale" || data.type === "opacity" ||
+      data.type === "backgroundRadius") {
     refreshAllWidgets();
   } else if (
     data.type === "latitude" ||
@@ -1199,7 +1209,7 @@ function loadSettingsWindow() {
   const scale = parseFloat(config.SCALE) || 1;
   const bounds = getCenteredBounds(
     Math.round(600 * scale),
-    Math.round(700 * scale),
+    Math.round(765 * scale),
   );
   settingsWindow = new widgetWindow({
     id: "SETTINGS_WINDOW",

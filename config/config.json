@@ -60,6 +60,7 @@
         },
         "BACKGROUND_SUBTLE": "rgba(255, 255, 255, 0.08)",
         "BACKGROUND_OPACITY": 0.55,
+        "BACKGROUND_RADIUS": 16,
         "DARK": {
             "MODE": "dark",
             "LABEL": "Dark",

@@ -16,7 +16,7 @@ const JSON_DATA = ipcRenderer.invoke("getJSON");
 const SCALE = parseFloat(JSON_DATA.SCALE) || 1;
 const FONT_FACE = JSON_DATA.FONT_FACE;
 const BG_WIDTH = 600 * SCALE;
-const BG_HEIGHT = 700 * SCALE;
+const BG_HEIGHT = 765 * SCALE;
 const SIDEBAR_WIDTH = BG_WIDTH / 4;
 const SIDEBAR_HEIGHT = BG_HEIGHT;
 
@@ -420,6 +420,8 @@ function clearTabContent() {
     "darkModeToggleImage",
     "opacityText",
     "opacityInput",
+    "backgroundRadiusText",
+    "backgroundRadiusInput",
     "scaleText",
     "scaleInput",
     "latitudeText",
@@ -696,6 +698,27 @@ function renderTabContent() {
     });
 
     ui.addText({
+      id: "backgroundRadiusText",
+      text: "Background Corner Radius (0 - 100)",
+      x: SIDEBAR_WIDTH + 30 * SCALE,
+      y: 630 * SCALE + 20 * SCALE,
+      textAlign: "leftcenter",
+      fontSize: 16 * SCALE,
+      fontWeight: 600,
+      fontFace: FONT_FACE,
+      fontColor: getFontColor(),
+    });
+    addSettingInputBox("backgroundRadiusInput", {
+      type: "backgroundRadius",
+      x: inputX,
+      y: 630 * SCALE + 4 * SCALE,
+      width: inputW,
+      height: inputH,
+      value: JSON_DATA.APPEARANCE.BACKGROUND_RADIUS ?? 16,
+      inputType: "integer",
+    });
+
+    ui.addText({
       id: "scaleText",
       text: "UI Scale (0.5 - 3.0)",
       x: SIDEBAR_WIDTH + 30 * SCALE,
@@ -851,7 +874,7 @@ function renderTabContent() {
       id: "use24HourText",
       text: "24-Hour Clock",
       x: SIDEBAR_WIDTH + 30 * SCALE,
-      y: 630 * SCALE + 20 * SCALE,
+      y: 695 * SCALE + 20 * SCALE,
       textAlign: "leftcenter",
       fontSize: 16 * SCALE,
       fontWeight: 600,
@@ -864,7 +887,7 @@ function renderTabContent() {
         ? "assets/images/Settings/on.png"
         : "assets/images/Settings/off.png",
       x: BG_WIDTH - 30 * SCALE - 40 * SCALE,
-      y: 630 * SCALE,
+      y: 695 * SCALE,
       width: 40 * SCALE,
       height: 40 * SCALE,
       imageAlpha: 210,
@@ -1291,6 +1314,10 @@ ui.addShape({
   type: "rectangle",
   width: BG_WIDTH,
   height: BG_HEIGHT,
+  radius: Math.max(0, Math.min(100,
+    isNaN(parseFloat(JSON_DATA.APPEARANCE.BACKGROUND_RADIUS))
+      ? 16
+      : parseFloat(JSON_DATA.APPEARANCE.BACKGROUND_RADIUS))) * SCALE,
   fillColor: getBackgroundColor(),
   strokeWidth: 0,
 });

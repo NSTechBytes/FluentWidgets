@@ -14,6 +14,14 @@
 
 const JSON_DATA = ipcRenderer.invoke("getJSON");
 const SCALE = parseFloat(JSON_DATA.SCALE) || 1;
+const configuredBackgroundRadius = parseFloat(JSON_DATA.APPEARANCE.BACKGROUND_RADIUS);
+const BACKGROUND_RADIUS = Math.max(0, Math.min(100,
+  isNaN(configuredBackgroundRadius) ? 16 : configuredBackgroundRadius)) * SCALE;
+const addShapeWithBackgroundRadius = ui.addShape.bind(ui);
+ui.addShape = (options) => {
+  if (options && options.id === "background_Shape") options.radius = BACKGROUND_RADIUS;
+  return addShapeWithBackgroundRadius(options);
+};
 
 const RING_SIZE = 50 * SCALE;
 const RING_RADIUS = 25 * SCALE;
