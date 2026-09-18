@@ -985,7 +985,15 @@ function onSettingsInput(event, data) {
   json.write(CONFIG_PATH, config);
   if (settingsWindow && !settingsWindow.isDestroyed()) settingsWindow.refresh();
 
-  if (data.type === "scale") refreshAllWidgets();
+  if (data.type === "scale") {
+    refreshAllWidgets();
+  } else if (
+    data.type === "latitude" ||
+    data.type === "longitude" ||
+    data.type === "city"
+  ) {
+    if (weatherWindow && !weatherWindow.isDestroyed()) publishWeatherData();
+  }
 }
 
 function onSetDarkMode(event, isDark) {
