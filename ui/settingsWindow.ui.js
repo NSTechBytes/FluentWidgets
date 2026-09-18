@@ -337,6 +337,7 @@ function addSettingInputBox(id, opts) {
     fontSize: 14 * SCALE,
     fontFace: FONT_FACE,
     fontColor: getFontColor(),
+    caretColor: "rgb(0, 0, 0)",
     fillColor: getBackgroundSubtle(),
     borderWidth: 1 * SCALE,
     borderColor: getFontSubtleColor(),
