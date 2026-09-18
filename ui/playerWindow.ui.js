@@ -18,7 +18,7 @@ const SCALE = parseFloat(JSON_DATA.SCALE) || 1;
 let nowPlayingData = null;
 
 const FONT_FACE = JSON_DATA.FONT_FACE;
-const OVERLAY_COLOR = JSON_DATA.APPEARANCE.OVERLAY_COLOR;
+const OVERLAY_COLOR = "rgba(0, 0, 0, 0.45)";
 const DEFAULT_THUMBNAIL = "assets/player/music.png";
 const PLAY_ICON = "assets/player/pause.png";
 const PAUSE_ICON = "assets/player/play.png";

@@ -30,7 +30,10 @@ function getBackgroundColor() {
   return getThemeColors().BACKGROUND;
 }
 function getBackgroundSubtle() {
-  return JSON_DATA.APPEARANCE.BACKGROUND_SUBTLE;
+  return (
+    getThemeColors().BACKGROUND_SUBTLE ||
+    JSON_DATA.APPEARANCE.BACKGROUND_SUBTLE
+  );
 }
 function getFontColor() {
   return getThemeColors().FONT;
@@ -41,23 +44,43 @@ function getFontSubtleColor() {
 function getAccentColor() {
   return JSON_DATA.APPEARANCE.ACCENT_COLOR;
 }
+function getCardColor() {
+  return getThemeColors().CARD || getBackgroundSubtle();
+}
+function getCardHoverColor() {
+  return getThemeColors().CARD_HOVER || getBackgroundSubtle();
+}
 
-const SIDEBAR_ACTIVE_FILL = "rgba(255, 255, 255, 0.08)";
-const SIDEBAR_HOVER_FILL = "rgba(255, 255, 255, 0.14)";
 const SIDEBAR_IDLE_FILL = "rgba(0, 0, 0, 0)";
+
+function isDarkTheme() {
+  return JSON_DATA.APPEARANCE.THEME === "dark";
+}
+
+function getSidebarActiveFill() {
+  return isDarkTheme()
+    ? "rgba(255, 255, 255, 0.08)"
+    : "rgba(0, 0, 0, 0.06)";
+}
+
+function getSidebarHoverFill() {
+  return isDarkTheme()
+    ? "rgba(255, 255, 255, 0.14)"
+    : "rgba(0, 0, 0, 0.1)";
+}
 
 // Sidebar item hover: highlight inactive tabs; restore active/idle fill on leave.
 function sidebarHoverHandlers(shapeId, tabName) {
   return {
     onMouseOver: () => {
       if (currentTab !== tabName)
-        ui.setElementProperty(shapeId, "fillColor", SIDEBAR_HOVER_FILL);
+        ui.setElementProperty(shapeId, "fillColor", getSidebarHoverFill());
     },
     onMouseLeave: () => {
       ui.setElementProperty(
         shapeId,
         "fillColor",
-        currentTab === tabName ? SIDEBAR_ACTIVE_FILL : SIDEBAR_IDLE_FILL,
+        currentTab === tabName ? getSidebarActiveFill() : SIDEBAR_IDLE_FILL,
       );
     },
   };
@@ -120,17 +143,17 @@ function updateSidebarSelection() {
   ui.setElementProperty(
     "sidebarWidgetItemShape",
     "fillColor",
-    currentTab === "widgets" ? SIDEBAR_ACTIVE_FILL : SIDEBAR_IDLE_FILL,
+    currentTab === "widgets" ? getSidebarActiveFill() : SIDEBAR_IDLE_FILL,
   );
   ui.setElementProperty(
     "sidebarGeneralItemShape",
     "fillColor",
-    currentTab === "general" ? SIDEBAR_ACTIVE_FILL : SIDEBAR_IDLE_FILL,
+    currentTab === "general" ? getSidebarActiveFill() : SIDEBAR_IDLE_FILL,
   );
   ui.setElementProperty(
     "sidebarAboutItemShape",
     "fillColor",
-    currentTab === "about" ? SIDEBAR_ACTIVE_FILL : SIDEBAR_IDLE_FILL,
+    currentTab === "about" ? getSidebarActiveFill() : SIDEBAR_IDLE_FILL,
   );
 
   let indicatorY = 180 * SCALE + 14.5 * SCALE;
@@ -489,7 +512,7 @@ function renderTabContent() {
       ...shapeHoverHandlers(
         "cornerInputBg",
         getBackgroundSubtle(),
-        "rgba(255, 255, 255, 0.12)",
+        getCardHoverColor(),
         getFontSubtleColor(),
         getAccentColor(),
       ),
@@ -511,7 +534,7 @@ function renderTabContent() {
       ...shapeHoverHandlers(
         "cornerInputBg",
         getBackgroundSubtle(),
-        "rgba(255, 255, 255, 0.12)",
+        getCardHoverColor(),
         getFontSubtleColor(),
         getAccentColor(),
       ),
@@ -559,7 +582,9 @@ function renderTabContent() {
         radius: 4 * SCALE,
         strokeWidth: 1 * SCALE,
         strokeColor: getFontSubtleColor(),
-        fillColor: "rgba(30, 30, 30, 0.9)",
+        fillColor: isDarkTheme()
+          ? "rgba(30, 30, 30, 0.92)"
+          : "rgba(255, 255, 255, 0.94)",
         mouseEventCursor: false,
         onLeftMouseDown: () => {},
         onLeftMouseUp: () => {},
@@ -594,13 +619,17 @@ function renderTabContent() {
     const isDark = JSON_DATA.APPEARANCE.THEME === "dark";
     const contentX = SIDEBAR_WIDTH + 30 * SCALE;
     const contentW = BG_WIDTH - SIDEBAR_WIDTH - 60 * SCALE;
-    const muted = isDark ? "rgba(255, 255, 255, 0.72)" : "rgba(0, 0, 0, 0.62)";
-    const cardFill = isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.05)";
-    const cardHover = isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.09)";
-    const panelFill = isDark ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.035)";
-    const dividerColor = isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.12)";
+    const muted = getFontSubtleColor();
+    const cardFill = getCardColor();
+    const cardHover = getCardHoverColor();
+    const panelFill = isDark
+      ? "rgba(255, 255, 255, 0.04)"
+      : "rgba(255, 255, 255, 0.55)";
+    const dividerColor = getThemeColors().SUBTLE;
     const accent = getAccentColor();
-    const accentHover = isDark ? "rgba(0, 140, 230, 0.95)" : "rgba(0, 120, 212, 0.92)";
+    const accentHover = isDark
+      ? "rgba(0, 140, 230, 0.95)"
+      : "rgba(0, 120, 212, 0.92)";
 
     /** Shared full-width action row used for GitHub / Patreon cards. */
     function addAboutActionCard(opts) {
@@ -849,7 +878,7 @@ ui.addShape({
   height: 45 * SCALE,
   strokeWidth: 0,
   radius: 8 * SCALE,
-  fillColor: SIDEBAR_ACTIVE_FILL,
+  fillColor: getSidebarActiveFill(),
   ...sidebarHoverHandlers("sidebarWidgetItemShape", "widgets"),
   onLeftMouseUp: () => switchTab("widgets"),
 });

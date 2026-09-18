@@ -134,6 +134,40 @@ function loadConfig() {
   }
   config = json.read(CONFIG_PATH);
 
+  // Keep appearance theme tokens in sync with packaged defaults so light/dark
+  // palette improvements apply even when an older AppData config already exists.
+  try {
+    const defaults = json.read(DEFAULT_CONFIG_PATH);
+    if (defaults && defaults.APPEARANCE) {
+      if (!config.APPEARANCE) config.APPEARANCE = {};
+      const theme = config.APPEARANCE.THEME || defaults.APPEARANCE.THEME || "dark";
+      config.APPEARANCE = {
+        ...defaults.APPEARANCE,
+        ...config.APPEARANCE,
+        THEME: theme,
+        ACCENT_COLOR:
+          config.APPEARANCE.ACCENT_COLOR || defaults.APPEARANCE.ACCENT_COLOR,
+        DARK: { ...defaults.APPEARANCE.DARK },
+        LIGHT: { ...defaults.APPEARANCE.LIGHT },
+        LEVEL_COLORS: {
+          ...defaults.APPEARANCE.LEVEL_COLORS,
+          ...(config.APPEARANCE.LEVEL_COLORS || {}),
+        },
+        BACKGROUND_SUBTLE:
+          theme === "light"
+            ? defaults.APPEARANCE.LIGHT.BACKGROUND_SUBTLE
+            : defaults.APPEARANCE.DARK.BACKGROUND_SUBTLE,
+        OVERLAY_COLOR:
+          theme === "light"
+            ? defaults.APPEARANCE.LIGHT.OVERLAY || defaults.APPEARANCE.OVERLAY_COLOR
+            : defaults.APPEARANCE.DARK.OVERLAY || defaults.APPEARANCE.OVERLAY_COLOR,
+      };
+      json.write(CONFIG_PATH, config);
+    }
+  } catch (error) {
+    console.warn("Unable to sync appearance theme tokens:", error);
+  }
+
   // Read meta.json and merge author/version information into config for settings UI
   const metaPath = path.join(__dirname, "meta.json");
   if (fs.exists(metaPath)) {
@@ -847,6 +881,15 @@ function onSettingsInput(event, data) {
 
 function onSetDarkMode(event, isDark) {
   config.APPEARANCE.THEME = isDark ? "dark" : "light";
+  const themeColors = isDark ? config.APPEARANCE.DARK : config.APPEARANCE.LIGHT;
+  if (themeColors) {
+    if (themeColors.BACKGROUND_SUBTLE) {
+      config.APPEARANCE.BACKGROUND_SUBTLE = themeColors.BACKGROUND_SUBTLE;
+    }
+    if (themeColors.OVERLAY) {
+      config.APPEARANCE.OVERLAY_COLOR = themeColors.OVERLAY;
+    }
+  }
   json.write(CONFIG_PATH, config);
   refreshAllWidgets();
   if (settingsWindow && !settingsWindow.isDestroyed()) {
