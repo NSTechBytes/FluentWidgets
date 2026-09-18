@@ -152,6 +152,22 @@ function shapeHoverHandlers(
   };
 }
 
+function addDropdownChevron(id, x, y, expanded) {
+  ui.addShape({
+    id,
+    type: "path",
+    x,
+    y,
+    width: 12 * SCALE,
+    height: 6 * SCALE,
+    pathData: expanded ? "M0 6 L6 0 L12 6" : "M0 0 L6 6 L12 0",
+    fillColor: "rgba(0,0,0,0)",
+    strokeColor: getFontSubtleColor(),
+    strokeWidth: 1.5 * SCALE,
+    strokeLineJoin: "round",
+  });
+}
+
 let currentTab = JSON_DATA.SETTINGS_ACTIVE_TAB || "widgets";
 let isCornerDropdownOpen = false;
 let isThemeDropdownOpen = false;
@@ -379,6 +395,7 @@ function clearTabContent() {
     "themeText",
     "themeInputBg",
     "themeInputText",
+    "themeInputChevron",
     "themeDropdownBg",
     "themeOptionDark",
     "themeOptionDarkBg",
@@ -391,6 +408,7 @@ function clearTabContent() {
     "blurTypeText",
     "blurTypeInputBg",
     "blurTypeInputText",
+    "blurTypeInputChevron",
     "blurTypeDropdownBg",
     "blurTypeOptionNone",
     "blurTypeOptionNoneBg",
@@ -413,6 +431,7 @@ function clearTabContent() {
     "cornerText",
     "cornerInputBg",
     "cornerInputText",
+    "cornerInputChevron",
     "cornerDropdownBg",
     "cornerOptionNone",
     "cornerOptionNoneBg",
@@ -588,6 +607,12 @@ function renderTabContent() {
         refreshTabContent();
       },
     });
+    addDropdownChevron(
+      "themeInputChevron",
+      settingControlX + settingControlWidth - 22 * SCALE,
+      110 * SCALE + 17 * SCALE,
+      isThemeDropdownOpen,
+    );
 
     const currentBlurType = String(JSON_DATA.BB_STYLE.BLUR_TYPE || "blur").toLowerCase();
     ui.addText({
@@ -634,6 +659,12 @@ function renderTabContent() {
       ...shapeHoverHandlers("blurTypeInputBg", getBackgroundSubtle(), getCardHoverColor(), getFontSubtleColor(), getAccentColor()),
       onLeftMouseUp: toggleBlurTypeDropdown,
     });
+    addDropdownChevron(
+      "blurTypeInputChevron",
+      settingControlX + settingControlWidth - 22 * SCALE,
+      175 * SCALE + 17 * SCALE,
+      isBlurTypeDropdownOpen,
+    );
 
     const inputX = settingControlX;
     const inputW = 120 * SCALE;
@@ -808,6 +839,12 @@ function renderTabContent() {
         refreshTabContent();
       },
     });
+    addDropdownChevron(
+      "cornerInputChevron",
+      settingControlX + settingControlWidth - 22 * SCALE,
+      565 * SCALE + 17 * SCALE,
+      isCornerDropdownOpen,
+    );
 
     const use24 = JSON_DATA.USE_24_HOUR_FORMAT;
     ui.addText({
