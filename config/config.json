@@ -52,7 +52,7 @@
     "APPEARANCE": {
         "THEME": "dark",
         "ACCENT_COLOR": "#0078D4",
-        "OVERLAY_COLOR": "rgba(0, 0, 0, 0.4)",
+        "OVERLAY_COLOR": "rgba(0, 0, 0, 0.55)",
         "LEVEL_COLORS": {
             "LOW": "rgb(45, 210, 85)",
             "MEDIUM": "rgb(255, 193, 7)",
@@ -60,16 +60,16 @@
         },
         "BACKGROUND_SUBTLE": "rgba(255, 255, 255, 0.08)",
         "DARK": {
-            "BACKGROUND": "rgba(18, 18, 18, 0.28)",
-            "FONT": "rgb(250, 250, 250)",
-            "FONT_SUBTLE": "rgba(255, 255, 255, 0.55)",
-            "SUBTLE": "rgba(255, 255, 255, 0.28)",
-            "ICON": "rgb(250, 250, 250)",
-            "INPUT_BOX_BG": "rgb(28, 28, 30)",
+            "BACKGROUND": "rgba(22, 22, 26, 0.55)",
+            "FONT": "rgb(255, 255, 255)",
+            "FONT_SUBTLE": "rgba(255, 255, 255, 0.68)",
+            "SUBTLE": "rgba(255, 255, 255, 0.38)",
+            "ICON": "rgb(255, 255, 255)",
+            "INPUT_BOX_BG": "rgb(40, 40, 44)",
             "BACKGROUND_SUBTLE": "rgba(255, 255, 255, 0.08)",
-            "CARD": "rgba(255, 255, 255, 0.06)",
-            "CARD_HOVER": "rgba(255, 255, 255, 0.12)",
-            "OVERLAY": "rgba(0, 0, 0, 0.45)"
+            "CARD": "rgba(255, 255, 255, 0.09)",
+            "CARD_HOVER": "rgba(255, 255, 255, 0.15)",
+            "OVERLAY": "rgba(0, 0, 0, 0.55)"
         },
         "LIGHT": {
             "BACKGROUND": "rgba(245, 247, 250, 0.78)",

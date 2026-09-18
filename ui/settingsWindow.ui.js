@@ -59,13 +59,13 @@ function isDarkTheme() {
 
 function getSidebarActiveFill() {
   return isDarkTheme()
-    ? "rgba(255, 255, 255, 0.08)"
+    ? "rgba(255, 255, 255, 0.11)"
     : "rgba(0, 0, 0, 0.06)";
 }
 
 function getSidebarHoverFill() {
   return isDarkTheme()
-    ? "rgba(255, 255, 255, 0.14)"
+    ? "rgba(255, 255, 255, 0.17)"
     : "rgba(0, 0, 0, 0.1)";
 }
 
@@ -583,7 +583,7 @@ function renderTabContent() {
         strokeWidth: 1 * SCALE,
         strokeColor: getFontSubtleColor(),
         fillColor: isDarkTheme()
-          ? "rgba(30, 30, 30, 0.92)"
+          ? "rgba(36, 36, 40, 0.96)"
           : "rgba(255, 255, 255, 0.94)",
         mouseEventCursor: false,
         onLeftMouseDown: () => {},
@@ -623,12 +623,12 @@ function renderTabContent() {
     const cardFill = getCardColor();
     const cardHover = getCardHoverColor();
     const panelFill = isDark
-      ? "rgba(255, 255, 255, 0.04)"
+      ? "rgba(255, 255, 255, 0.05)"
       : "rgba(255, 255, 255, 0.55)";
     const dividerColor = getThemeColors().SUBTLE;
     const accent = getAccentColor();
     const accentHover = isDark
-      ? "rgba(0, 140, 230, 0.95)"
+      ? "rgba(40, 160, 245, 1)"
       : "rgba(0, 120, 212, 0.92)";
 
     /** Shared full-width action row used for GitHub / Patreon cards. */

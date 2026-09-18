@@ -32,6 +32,9 @@ function getBackgroundColor() {
 function getFontColor() {
   return getThemeColors().FONT;
 }
+function getIconColor() {
+  return getThemeColors().ICON;
+}
 function getSubtleColor() {
   return getThemeColors().SUBTLE;
 }
@@ -112,6 +115,7 @@ function smallStyle() {
     width: 40 * SCALE,
     height: 40 * SCALE,
     path: getVolumeIcon(volumeVal, isMuted),
+    imageTint: getIconColor(),
   });
   ui.endUpdate();
 }
@@ -139,6 +143,7 @@ function mediumStyle() {
     width: 45 * SCALE,
     height: 45 * SCALE,
     path: getVolumeIcon(volumeVal, isMuted),
+    imageTint: getIconColor(),
     onLeftMouseUp: toggleMute,
   });
   ui.addText({
@@ -218,6 +223,7 @@ function wideStyle() {
     width: 90 * SCALE,
     height: 90 * SCALE,
     path: getVolumeIcon(volumeVal, isMuted),
+    imageTint: getIconColor(),
     onLeftMouseUp: toggleMute,
   });
   ui.addText({
@@ -309,6 +315,7 @@ function largeStyle() {
     width: 90 * SCALE,
     height: 90 * SCALE,
     path: getVolumeIcon(volumeVal, isMuted),
+    imageTint: getIconColor(),
     onLeftMouseUp: toggleMute,
   });
   ui.addText({
@@ -415,12 +422,12 @@ ipcRenderer.on("volumeUpdate", (event, data) => {
 
   ui.beginUpdate();
 
-  if (ui.isElementExist("volume_icon"))
-    ui.setElementProperty(
-      "volume_icon",
-      "path",
-      getVolumeIcon(volumeVal, isMuted),
-    );
+  if (ui.isElementExist("volume_icon")) {
+    ui.setElementProperties("volume_icon", {
+      path: getVolumeIcon(volumeVal, isMuted),
+      imageTint: getIconColor(),
+    });
+  }
 
   if (ui.isElementExist("volume_text"))
     ui.setElementProperty(
