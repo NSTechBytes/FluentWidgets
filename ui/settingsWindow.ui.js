@@ -1309,23 +1309,44 @@ function renderTabContent() {
   ui.endUpdate();
 }
 
+const configuredSettingsRadius = parseFloat(JSON_DATA.APPEARANCE.BACKGROUND_RADIUS);
+const settingsBackgroundRadius = Math.max(0, Math.min(
+  100,
+  isNaN(configuredSettingsRadius) ? 16 : configuredSettingsRadius,
+)) * SCALE;
+
 ui.addShape({
   id: "backgroundShape",
   type: "rectangle",
   width: BG_WIDTH,
   height: BG_HEIGHT,
-  radius: Math.max(0, Math.min(100,
-    isNaN(parseFloat(JSON_DATA.APPEARANCE.BACKGROUND_RADIUS))
-      ? 16
-      : parseFloat(JSON_DATA.APPEARANCE.BACKGROUND_RADIUS))) * SCALE,
+  radius: settingsBackgroundRadius,
   fillColor: getBackgroundColor(),
   strokeWidth: 0,
 });
+
+// Curve only the outer left edge. The sidebar's right edge remains flush with
+// the main Settings panel.
+const sidebarRadius = Math.min(
+  settingsBackgroundRadius,
+  SIDEBAR_WIDTH / 2,
+  SIDEBAR_HEIGHT / 2,
+);
+const sidebarPath =
+  "M" + sidebarRadius + " 0" +
+  " L" + SIDEBAR_WIDTH + " 0" +
+  " L" + SIDEBAR_WIDTH + " " + SIDEBAR_HEIGHT +
+  " L" + sidebarRadius + " " + SIDEBAR_HEIGHT +
+  " Q0 " + SIDEBAR_HEIGHT + " 0 " + (SIDEBAR_HEIGHT - sidebarRadius) +
+  " L0 " + sidebarRadius +
+  " Q0 0 " + sidebarRadius + " 0 Z";
+
 ui.addShape({
   id: "sideBar",
-  type: "rectangle",
-  width: SIDEBAR_WIDTH,
-  height: SIDEBAR_HEIGHT,
+  type: "path",
+  x: 0,
+  y: 0,
+  pathData: sidebarPath,
   strokeWidth: 0,
   fillColor: getBackgroundSubtle(),
 });
