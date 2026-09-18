@@ -160,7 +160,7 @@ ui.on("mouseMove", (e) => {
 
   if (location !== lastCornerDropdownPointerLog) {
     lastCornerDropdownPointerLog = location;
-    console.log("[Corner dropdown] pointer " + location + " at " + x + "," + y);
+    //console.log("[Corner dropdown] pointer " + location + " at " + x + "," + y);
   }
 });
 
@@ -199,12 +199,12 @@ ui.on("mouseDown", (e) => {
   if (isCornerDropdownOpen && !inCornerDropdown) {
     isCornerDropdownOpen = false;
     closed = true;
-    console.log("[Corner dropdown] closed by outside click");
+    //console.log("[Corner dropdown] closed by outside click");
   }
   if (isThemeDropdownOpen && !inThemeDropdown) {
     isThemeDropdownOpen = false;
     closed = true;
-    console.log("[Theme dropdown] closed by outside click");
+    //console.log("[Theme dropdown] closed by outside click");
   }
 
   if (closed) {
@@ -813,7 +813,7 @@ function renderTabContent() {
     }
 
     if (isCornerDropdownOpen) {
-      console.log("[Corner dropdown] rendering options");
+      //console.log("[Corner dropdown] rendering options");
       lastCornerDropdownPointerLog = "";
       const dropdownFill = isDarkTheme()
         ? "rgba(36, 36, 40, 0.96)"
@@ -852,12 +852,12 @@ function renderTabContent() {
         };
         const itemHover = {
           onMouseOver: () => {
-            console.log("[Corner dropdown] hover enter: " + opt);
+            //console.log("[Corner dropdown] hover enter: " + opt);
             ui.setElementProperty(optBgId, "fillColor", optionHoverFill);
             ui.setElementProperty(optId, "fontColor", getAccentColor());
           },
           onMouseLeave: () => {
-            console.log("[Corner dropdown] hover leave: " + opt);
+            //console.log("[Corner dropdown] hover leave: " + opt);
             ui.setElementProperty(optBgId, "fillColor", "rgba(0,0,0,0)");
             ui.setElementProperty(optId, "fontColor", normalText);
           },
@@ -876,7 +876,7 @@ function renderTabContent() {
           mouseEventCursorName: "hand",
           ...itemHover,
           onLeftMouseUp: () => {
-            console.log("[Corner dropdown] selected: " + opt);
+            //console.log("[Corner dropdown] selected: " + opt);
             selectOption();
           },
         });
