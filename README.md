@@ -36,8 +36,16 @@ The Settings window lets you enable the widgets you use, choose a theme, set you
 ## Requirements
 
 - Windows
-- [Novadesk](https://github.com/OfficialNovadesk/novadesk)
+- [Novadesk](https://novadesk.pages.dev/)
 - The bundled `BlurBehind` and `NowPlaying` Novadesk add-ons
+
+## Download
+
+Download the latest installer from the project releases:
+
+[Download FluentWidgets_v1.0.0.0_Setup.exe](../../releases/latest/download/FluentWidgets_v1.0.0.0_Setup.exe)
+
+Run the installer, then launch FluentWidgets from the Start menu or desktop shortcut. Novadesk must be installed before running the package.
 
 ## Run from source
 
