@@ -388,6 +388,7 @@ function clearUI() {
     "background_Shape",
     "volume_icon",
     "volume_text",
+    "volume_title",
     "volume_status",
     "volume_subtitle",
     "slider_track",
