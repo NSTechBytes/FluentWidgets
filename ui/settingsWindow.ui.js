@@ -184,6 +184,47 @@ function getSidebarIndicatorY(tabName) {
   return 180 * SCALE + 14.5 * SCALE;
 }
 
+// Animate display-only tab content into place. Input boxes and dropdown
+// popups are deliberately excluded so focusing or opening a control remains
+// immediate and does not disturb its caret or hit target.
+function animateTabContentEntrance() {
+  let ids = [];
+  if (currentTab === "widgets") {
+    const widgetIds = ["clock", "calendar", "monitor", "weather", "notes", "music", "volume"];
+    widgetIds.forEach((id) => {
+      ids.push(id + "Icon", id + "Text", id + "ToggleImage");
+    });
+  } else if (currentTab === "general") {
+    ids = [
+      "themeText", "blurTypeText", "opacityText", "scaleText",
+      "latitudeText", "longitudeText", "cityText", "cornerText",
+      "backgroundRadiusText", "use24HourText", "use24HourToggleImage",
+    ];
+  } else if (currentTab === "about") {
+    ids = [
+      "aboutPanel", "aboutLogo", "aboutAppName", "aboutVersion",
+      "aboutAuthor", "aboutDivider", "aboutLicenseLabel", "aboutLicense",
+      "aboutGithubCard", "aboutGithubLogo", "aboutGithubTitle",
+      "aboutGithubDesc", "aboutPatreonCard", "aboutPatreonLogo",
+      "aboutPatreonTitle", "aboutPatreonDesc", "aboutUpdateBtn",
+      "aboutUpdateText",
+    ];
+  }
+
+  ids.forEach((id) => {
+    if (!ui.isElementExist(id)) return;
+    const x = Number(ui.getElementProperty(id, "x"));
+    if (!Number.isFinite(x)) return;
+    ui.animate({
+      id,
+      duration: 200,
+      easing: "ease-out",
+      from: { x: x + 14 * SCALE },
+      to: { x },
+    });
+  });
+}
+
 // Temporary diagnostic kept deliberately low-volume: it reports only when
 // the pointer enters a different dropdown row (or leaves the popup).
 ui.on("mouseMove", (e) => {
@@ -1336,6 +1377,7 @@ function renderTabContent(animate = false) {
       from: { x: titleX + 12 * SCALE },
       to: { x: titleX },
     });
+    animateTabContentEntrance();
   }
 }
 
