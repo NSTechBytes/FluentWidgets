@@ -332,6 +332,7 @@ function addSettingInputBox(id, opts) {
     height: opts.height,
     text: String(opts.value),
     inputType: opts.inputType || "any",
+    align: "right",
     fontSize: 14 * SCALE,
     fontFace: FONT_FACE,
     fontColor: getFontColor(),
