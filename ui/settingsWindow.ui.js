@@ -16,7 +16,7 @@ const JSON_DATA = ipcRenderer.invoke("getJSON");
 const SCALE = parseFloat(JSON_DATA.SCALE) || 1;
 const FONT_FACE = JSON_DATA.FONT_FACE;
 const BG_WIDTH = 600 * SCALE;
-const BG_HEIGHT = 650 * SCALE;
+const BG_HEIGHT = 700 * SCALE;
 const SIDEBAR_WIDTH = BG_WIDTH / 4;
 const SIDEBAR_HEIGHT = BG_HEIGHT;
 
@@ -151,7 +151,7 @@ ui.on("mouseMove", (e) => {
   const x = Math.round(e.__clientX);
   const y = Math.round(e.__clientY);
   const left = BG_WIDTH - 30 * SCALE - 120 * SCALE;
-  const top = 435 * SCALE + 40 * SCALE;
+  const top = 500 * SCALE + 40 * SCALE;
   let location = "outside";
   if (x >= left && x < left + 120 * SCALE && y >= top && y < top + 90 * SCALE) {
     const row = Math.floor((y - (top + 5 * SCALE)) / (28 * SCALE));
@@ -314,6 +314,8 @@ function clearTabContent() {
     "themeOptionGithubBg",
     "darkModeText",
     "darkModeToggleImage",
+    "opacityText",
+    "opacityInput",
     "scaleText",
     "scaleInput",
     "latitudeText",
@@ -491,12 +493,37 @@ function renderTabContent() {
     const inputX = BG_WIDTH - 30 * SCALE - 120 * SCALE;
     const inputW = 120 * SCALE;
     const inputH = 32 * SCALE;
+    const opacityValue =
+      JSON_DATA.APPEARANCE.BACKGROUND_OPACITY !== undefined
+        ? JSON_DATA.APPEARANCE.BACKGROUND_OPACITY
+        : 0.55;
+
+    ui.addText({
+      id: "opacityText",
+      text: "Background Opacity (0 - 1)",
+      x: SIDEBAR_WIDTH + 30 * SCALE,
+      y: 175 * SCALE + 20 * SCALE,
+      textAlign: "leftcenter",
+      fontSize: 16 * SCALE,
+      fontWeight: 600,
+      fontFace: FONT_FACE,
+      fontColor: getFontColor(),
+    });
+    addSettingInputBox("opacityInput", {
+      type: "opacity",
+      x: inputX,
+      y: 175 * SCALE + 4 * SCALE,
+      width: inputW,
+      height: inputH,
+      value: opacityValue,
+      inputType: "float",
+    });
 
     ui.addText({
       id: "scaleText",
       text: "UI Scale (0.5 - 3.0)",
       x: SIDEBAR_WIDTH + 30 * SCALE,
-      y: 175 * SCALE + 20 * SCALE,
+      y: 240 * SCALE + 20 * SCALE,
       textAlign: "leftcenter",
       fontSize: 16 * SCALE,
       fontWeight: 600,
@@ -506,7 +533,7 @@ function renderTabContent() {
     addSettingInputBox("scaleInput", {
       type: "scale",
       x: inputX,
-      y: 175 * SCALE + 4 * SCALE,
+      y: 240 * SCALE + 4 * SCALE,
       width: inputW,
       height: inputH,
       value: JSON_DATA.SCALE,
@@ -517,7 +544,7 @@ function renderTabContent() {
       id: "latitudeText",
       text: "Weather Latitude",
       x: SIDEBAR_WIDTH + 30 * SCALE,
-      y: 240 * SCALE + 20 * SCALE,
+      y: 305 * SCALE + 20 * SCALE,
       textAlign: "leftcenter",
       fontSize: 16 * SCALE,
       fontWeight: 600,
@@ -527,7 +554,7 @@ function renderTabContent() {
     addSettingInputBox("latitudeInput", {
       type: "latitude",
       x: inputX,
-      y: 240 * SCALE + 4 * SCALE,
+      y: 305 * SCALE + 4 * SCALE,
       width: inputW,
       height: inputH,
       value: JSON_DATA.LOCATION.LATITUDE,
@@ -538,7 +565,7 @@ function renderTabContent() {
       id: "longitudeText",
       text: "Weather Longitude",
       x: SIDEBAR_WIDTH + 30 * SCALE,
-      y: 305 * SCALE + 20 * SCALE,
+      y: 370 * SCALE + 20 * SCALE,
       textAlign: "leftcenter",
       fontSize: 16 * SCALE,
       fontWeight: 600,
@@ -548,7 +575,7 @@ function renderTabContent() {
     addSettingInputBox("longitudeInput", {
       type: "longitude",
       x: inputX,
-      y: 305 * SCALE + 4 * SCALE,
+      y: 370 * SCALE + 4 * SCALE,
       width: inputW,
       height: inputH,
       value: JSON_DATA.LOCATION.LONGITUDE,
@@ -559,7 +586,7 @@ function renderTabContent() {
       id: "cityText",
       text: "Weather City Name",
       x: SIDEBAR_WIDTH + 30 * SCALE,
-      y: 370 * SCALE + 20 * SCALE,
+      y: 435 * SCALE + 20 * SCALE,
       textAlign: "leftcenter",
       fontSize: 16 * SCALE,
       fontWeight: 600,
@@ -569,7 +596,7 @@ function renderTabContent() {
     addSettingInputBox("cityInput", {
       type: "city",
       x: inputX,
-      y: 370 * SCALE + 4 * SCALE,
+      y: 435 * SCALE + 4 * SCALE,
       width: inputW,
       height: inputH,
       value: JSON_DATA.LOCATION.CITY_NAME,
@@ -580,7 +607,7 @@ function renderTabContent() {
       id: "cornerText",
       text: "Corner Style",
       x: SIDEBAR_WIDTH + 30 * SCALE,
-      y: 435 * SCALE + 20 * SCALE,
+      y: 500 * SCALE + 20 * SCALE,
       textAlign: "leftcenter",
       fontSize: 16 * SCALE,
       fontWeight: 600,
@@ -591,7 +618,7 @@ function renderTabContent() {
       id: "cornerInputBg",
       type: "rectangle",
       x: BG_WIDTH - 30 * SCALE - 120 * SCALE,
-      y: 435 * SCALE + 4 * SCALE,
+      y: 500 * SCALE + 4 * SCALE,
       width: 120 * SCALE,
       height: 32 * SCALE,
       radius: 4 * SCALE,
@@ -616,7 +643,7 @@ function renderTabContent() {
       id: "cornerInputText",
       text: String(JSON_DATA.BB_STYLE.ROUND_TYPE),
       x: BG_WIDTH - 30 * SCALE - 110 * SCALE,
-      y: 435 * SCALE + 20 * SCALE,
+      y: 500 * SCALE + 20 * SCALE,
       textAlign: "leftcenter",
       fontSize: 14 * SCALE,
       fontFace: FONT_FACE,
@@ -641,7 +668,7 @@ function renderTabContent() {
       id: "use24HourText",
       text: "24-Hour Clock",
       x: SIDEBAR_WIDTH + 30 * SCALE,
-      y: 500 * SCALE + 20 * SCALE,
+      y: 565 * SCALE + 20 * SCALE,
       textAlign: "leftcenter",
       fontSize: 16 * SCALE,
       fontWeight: 600,
@@ -654,7 +681,7 @@ function renderTabContent() {
         ? "assets/images/Settings/on.png"
         : "assets/images/Settings/off.png",
       x: BG_WIDTH - 30 * SCALE - 40 * SCALE,
-      y: 500 * SCALE,
+      y: 565 * SCALE,
       width: 40 * SCALE,
       height: 40 * SCALE,
       imageAlpha: 210,
@@ -747,7 +774,7 @@ function renderTabContent() {
         id: "cornerDropdownBg",
         type: "rectangle",
         x: BG_WIDTH - 30 * SCALE - 120 * SCALE,
-        y: 435 * SCALE + 40 * SCALE,
+        y: 500 * SCALE + 40 * SCALE,
         width: 120 * SCALE,
         height: 90 * SCALE,
         radius: 4 * SCALE,
@@ -765,7 +792,7 @@ function renderTabContent() {
           idx === 0 ? "None" : idx === 1 ? "RoundSmall" : "Round";
         const optId = "cornerOption" + suffix;
         const optBgId = optId + "Bg";
-        const rowY = 435 * SCALE + 40 * SCALE + 5 * SCALE + idx * 28 * SCALE;
+        const rowY = 500 * SCALE + 40 * SCALE + 5 * SCALE + idx * 28 * SCALE;
         const normalText = getFontColor();
         const selectOption = () => {
           JSON_DATA.BB_STYLE.ROUND_TYPE = opt;

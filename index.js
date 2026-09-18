@@ -173,6 +173,11 @@ function loadConfig() {
         BACKGROUND_SUBTLE:
           activePalette.BACKGROUND_SUBTLE ||
           defaults.APPEARANCE.BACKGROUND_SUBTLE,
+        BACKGROUND_OPACITY:
+          config.APPEARANCE.BACKGROUND_OPACITY !== undefined &&
+          config.APPEARANCE.BACKGROUND_OPACITY !== null
+            ? config.APPEARANCE.BACKGROUND_OPACITY
+            : (defaults.APPEARANCE.BACKGROUND_OPACITY ?? 0.55),
         OVERLAY_COLOR:
           activePalette.OVERLAY || defaults.APPEARANCE.OVERLAY_COLOR,
       };
@@ -988,6 +993,10 @@ function onSettingsInput(event, data) {
 
   if (data.type === "scale") {
     if (!isNaN(val) && val >= 0.5 && val <= 3.0) config.SCALE = val;
+  } else if (data.type === "opacity") {
+    if (!isNaN(val) && val >= 0 && val <= 1) {
+      config.APPEARANCE.BACKGROUND_OPACITY = val;
+    }
   } else if (data.type === "latitude") {
     if (!isNaN(val)) config.LOCATION.LATITUDE = val;
   } else if (data.type === "longitude") {
@@ -999,7 +1008,7 @@ function onSettingsInput(event, data) {
   json.write(CONFIG_PATH, config);
   if (settingsWindow && !settingsWindow.isDestroyed()) settingsWindow.refresh();
 
-  if (data.type === "scale") {
+  if (data.type === "scale" || data.type === "opacity") {
     refreshAllWidgets();
   } else if (
     data.type === "latitude" ||
@@ -1163,7 +1172,7 @@ function loadSettingsWindow() {
   const scale = parseFloat(config.SCALE) || 1;
   const bounds = getCenteredBounds(
     Math.round(600 * scale),
-    Math.round(650 * scale),
+    Math.round(700 * scale),
   );
   settingsWindow = new widgetWindow({
     id: "SETTINGS_WINDOW",

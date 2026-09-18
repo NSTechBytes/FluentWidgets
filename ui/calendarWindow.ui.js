@@ -23,7 +23,15 @@ function getThemeColors() {
 }
 
 function getBackgroundColor() {
-  return getThemeColors().BACKGROUND;
+  const color = getThemeColors().BACKGROUND;
+  const opacity = parseFloat(JSON_DATA.APPEARANCE.BACKGROUND_OPACITY);
+  if (isNaN(opacity)) return color;
+  const a = Math.max(0, Math.min(1, opacity));
+  const m = String(color).match(
+    /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/i,
+  );
+  if (!m) return color;
+  return "rgba(" + m[1] + ", " + m[2] + ", " + m[3] + ", " + a + ")";
 }
 function getFontColor() {
   return getThemeColors().FONT;
