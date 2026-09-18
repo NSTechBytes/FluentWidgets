@@ -61,6 +61,8 @@ function getCloseButtonHoverFill() {
 const SIDEBAR_IDLE_FILL = "rgba(0, 0, 0, 0)";
 const THEME_OPTIONS = ["dark", "light", "dracula", "github"];
 const BLUR_TYPE_OPTIONS = ["none", "acrylic", "blur"];
+// InputBox bounds include its 10px padding on both sides.
+const SETTING_INPUT_OUTER_WIDTH = 140 * SCALE;
 
 function isDarkTheme() {
   return getThemeColors().MODE !== "light";
@@ -160,7 +162,7 @@ ui.on("mouseMove", (e) => {
   const left = BG_WIDTH - 30 * SCALE - 120 * SCALE;
   const top = 565 * SCALE + 40 * SCALE;
   let location = "outside";
-  if (x >= left && x < left + 120 * SCALE && y >= top && y < top + 90 * SCALE) {
+  if (x >= left && x < left + SETTING_INPUT_OUTER_WIDTH && y >= top && y < top + 90 * SCALE) {
     const row = Math.floor((y - (top + 5 * SCALE)) / (28 * SCALE));
     location = row >= 0 && row < 3 ? "row " + row : "popup gap";
   }
@@ -183,10 +185,10 @@ ui.on("mouseDown", (e) => {
   const left = BG_WIDTH - 30 * SCALE - 120 * SCALE;
   const isInDropdown = (inputTop, popupTop, popupHeight) => {
     const inInput =
-      x >= left && x < left + 120 * SCALE &&
+      x >= left && x < left + SETTING_INPUT_OUTER_WIDTH &&
       y >= inputTop && y < inputTop + 32 * SCALE;
     const inPopup =
-      x >= left && x < left + 120 * SCALE &&
+      x >= left && x < left + SETTING_INPUT_OUTER_WIDTH &&
       y >= popupTop && y < popupTop + popupHeight;
     return inInput || inPopup;
   };
@@ -507,6 +509,9 @@ function renderTabContent() {
     });
   } else if (currentTab === "general") {
     const currentTheme = String(JSON_DATA.APPEARANCE.THEME || "dark").toLowerCase();
+    // One shared geometry for input boxes and dropdown fields.
+    const settingControlX = BG_WIDTH - 30 * SCALE - 120 * SCALE;
+    const settingControlWidth = SETTING_INPUT_OUTER_WIDTH;
 
     ui.addText({
       id: "themeText",
@@ -522,9 +527,9 @@ function renderTabContent() {
     ui.addShape({
       id: "themeInputBg",
       type: "rectangle",
-      x: BG_WIDTH - 30 * SCALE - 120 * SCALE,
+      x: settingControlX,
       y: 110 * SCALE + 4 * SCALE,
-      width: 120 * SCALE,
+      width: settingControlWidth,
       height: 32 * SCALE,
       radius: 4 * SCALE,
       strokeWidth: 1 * SCALE,
@@ -548,9 +553,11 @@ function renderTabContent() {
     ui.addText({
       id: "themeInputText",
       text: getThemeLabel(currentTheme),
-      x: BG_WIDTH - 30 * SCALE - 110 * SCALE,
+      // Right-aligned TextElement positions use x as the right-edge anchor.
+      x: settingControlX + settingControlWidth - 10 * SCALE,
       y: 110 * SCALE + 20 * SCALE,
-      textAlign: "leftcenter",
+      width: 120 * SCALE,
+      textAlign: "rightcenter",
       fontSize: 14 * SCALE,
       fontFace: FONT_FACE,
       fontColor: getFontColor(),
@@ -592,9 +599,9 @@ function renderTabContent() {
     ui.addShape({
       id: "blurTypeInputBg",
       type: "rectangle",
-      x: BG_WIDTH - 30 * SCALE - 120 * SCALE,
+      x: settingControlX,
       y: 175 * SCALE + 4 * SCALE,
-      width: 120 * SCALE,
+      width: settingControlWidth,
       height: 32 * SCALE,
       radius: 4 * SCALE,
       strokeWidth: 1 * SCALE,
@@ -606,9 +613,10 @@ function renderTabContent() {
     ui.addText({
       id: "blurTypeInputText",
       text: getBlurTypeLabel(currentBlurType),
-      x: BG_WIDTH - 30 * SCALE - 110 * SCALE,
+      x: settingControlX + settingControlWidth - 10 * SCALE,
       y: 175 * SCALE + 20 * SCALE,
-      textAlign: "leftcenter",
+      width: 120 * SCALE,
+      textAlign: "rightcenter",
       fontSize: 14 * SCALE,
       fontFace: FONT_FACE,
       fontColor: getFontColor(),
@@ -616,7 +624,7 @@ function renderTabContent() {
       onLeftMouseUp: toggleBlurTypeDropdown,
     });
 
-    const inputX = BG_WIDTH - 30 * SCALE - 120 * SCALE;
+    const inputX = settingControlX;
     const inputW = 120 * SCALE;
     const inputH = 32 * SCALE;
     const opacityValue =
@@ -743,9 +751,9 @@ function renderTabContent() {
     ui.addShape({
       id: "cornerInputBg",
       type: "rectangle",
-      x: BG_WIDTH - 30 * SCALE - 120 * SCALE,
+      x: settingControlX,
       y: 565 * SCALE + 4 * SCALE,
-      width: 120 * SCALE,
+      width: settingControlWidth,
       height: 32 * SCALE,
       radius: 4 * SCALE,
       strokeWidth: 1 * SCALE,
@@ -769,9 +777,10 @@ function renderTabContent() {
     ui.addText({
       id: "cornerInputText",
       text: String(JSON_DATA.BB_STYLE.ROUND_TYPE),
-      x: BG_WIDTH - 30 * SCALE - 110 * SCALE,
+      x: settingControlX + settingControlWidth - 10 * SCALE,
       y: 565 * SCALE + 20 * SCALE,
-      textAlign: "leftcenter",
+      width: 120 * SCALE,
+      textAlign: "rightcenter",
       fontSize: 14 * SCALE,
       fontFace: FONT_FACE,
       fontColor: getFontColor(),
@@ -824,8 +833,8 @@ function renderTabContent() {
       const optionHoverFill = getCardHoverColor();
       ui.addShape({
         id: "blurTypeDropdownBg", type: "rectangle",
-        x: BG_WIDTH - 30 * SCALE - 120 * SCALE, y: dropdownTop,
-        width: 120 * SCALE, height: 5 * SCALE + BLUR_TYPE_OPTIONS.length * 28 * SCALE,
+        x: settingControlX, y: dropdownTop,
+        width: settingControlWidth, height: 5 * SCALE + BLUR_TYPE_OPTIONS.length * 28 * SCALE,
         radius: 4 * SCALE, strokeWidth: 1 * SCALE, strokeColor: getFontSubtleColor(),
         fillColor: isDarkTheme() ? "rgba(36, 36, 40, 0.96)" : "rgba(255, 255, 255, 0.94)",
         mouseEventCursor: false, onLeftMouseDown: () => {}, onLeftMouseUp: () => {},
@@ -848,14 +857,14 @@ function renderTabContent() {
           renderTabContent();
         };
         ui.addShape({
-          id: optBgId, type: "rectangle", x: BG_WIDTH - 30 * SCALE - 116 * SCALE, y: rowY,
-          width: 112 * SCALE, height: 26 * SCALE, radius: 3 * SCALE, strokeWidth: 0,
+          id: optBgId, type: "rectangle", x: settingControlX + 4 * SCALE, y: rowY,
+          width: 132 * SCALE, height: 26 * SCALE, radius: 3 * SCALE, strokeWidth: 0,
           fillColor: "rgba(0,0,0,0)", mouseEventCursor: true, mouseEventCursorName: "hand",
           ...hover, onLeftMouseUp: selectOption,
         });
         ui.addText({
-          id: optId, text: getBlurTypeLabel(opt), x: BG_WIDTH - 30 * SCALE - 110 * SCALE,
-          y: rowY + 13 * SCALE, width: 100 * SCALE, height: 26 * SCALE,
+          id: optId, text: getBlurTypeLabel(opt), x: settingControlX + 10 * SCALE,
+          y: rowY + 13 * SCALE, width: 120 * SCALE, height: 26 * SCALE,
           textAlign: "leftcenter", fontSize: 14 * SCALE, fontFace: FONT_FACE, fontColor: normalText,
         });
       });
@@ -870,9 +879,9 @@ function renderTabContent() {
       ui.addShape({
         id: "themeDropdownBg",
         type: "rectangle",
-        x: BG_WIDTH - 30 * SCALE - 120 * SCALE,
+        x: settingControlX,
         y: 110 * SCALE + 40 * SCALE,
-        width: 120 * SCALE,
+        width: settingControlWidth,
         height: themeDropdownH,
         radius: 4 * SCALE,
         strokeWidth: 1 * SCALE,
@@ -908,9 +917,9 @@ function renderTabContent() {
         ui.addShape({
           id: optBgId,
           type: "rectangle",
-          x: BG_WIDTH - 30 * SCALE - 116 * SCALE,
+          x: settingControlX + 4 * SCALE,
           y: rowY,
-          width: 112 * SCALE,
+          width: 132 * SCALE,
           height: 26 * SCALE,
           radius: 3 * SCALE,
           strokeWidth: 0,
@@ -921,9 +930,9 @@ function renderTabContent() {
         ui.addText({
           id: optId,
           text: getThemeLabel(opt),
-          x: BG_WIDTH - 30 * SCALE - 110 * SCALE,
+          x: settingControlX + 10 * SCALE,
           y: rowY + 13 * SCALE,
-          width: 100 * SCALE,
+          width: 120 * SCALE,
           height: 26 * SCALE,
           textAlign: "leftcenter",
           fontSize: 14 * SCALE,
@@ -945,9 +954,9 @@ function renderTabContent() {
       ui.addShape({
         id: "cornerDropdownBg",
         type: "rectangle",
-        x: BG_WIDTH - 30 * SCALE - 120 * SCALE,
+        x: settingControlX,
         y: 565 * SCALE + 40 * SCALE,
-        width: 120 * SCALE,
+        width: settingControlWidth,
         height: 90 * SCALE,
         radius: 4 * SCALE,
         strokeWidth: 1 * SCALE,
@@ -988,9 +997,9 @@ function renderTabContent() {
         ui.addShape({
           id: optBgId,
           type: "rectangle",
-          x: BG_WIDTH - 30 * SCALE - 116 * SCALE,
+          x: settingControlX + 4 * SCALE,
           y: rowY,
-          width: 112 * SCALE,
+          width: 132 * SCALE,
           height: 26 * SCALE,
           radius: 3 * SCALE,
           strokeWidth: 0,
@@ -1006,9 +1015,9 @@ function renderTabContent() {
         ui.addText({
           id: optId,
           text: opt,
-          x: BG_WIDTH - 30 * SCALE - 110 * SCALE,
+          x: settingControlX + 10 * SCALE,
           y: rowY + 13 * SCALE,
-          width: 100 * SCALE,
+          width: 120 * SCALE,
           height: 26 * SCALE,
           textAlign: "leftcenter",
           fontSize: 14 * SCALE,
