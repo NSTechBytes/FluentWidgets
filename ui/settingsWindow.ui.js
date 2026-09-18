@@ -174,6 +174,16 @@ let isThemeDropdownOpen = false;
 let isBlurTypeDropdownOpen = false;
 let lastCornerDropdownPointerLog = "";
 
+function getSidebarIndicatorY(tabName) {
+  if (tabName === "general") {
+    return 180 * SCALE + 55 * SCALE + 14.5 * SCALE;
+  }
+  if (tabName === "about") {
+    return 180 * SCALE + 55 * SCALE * 2 + 14.5 * SCALE;
+  }
+  return 180 * SCALE + 14.5 * SCALE;
+}
+
 // Temporary diagnostic kept deliberately low-volume: it reports only when
 // the pointer enters a different dropdown row (or leaves the popup).
 ui.on("mouseMove", (e) => {
@@ -255,17 +265,18 @@ ui.on("mouseDown", (e) => {
 
 function switchTab(tabName) {
   if (currentTab === tabName) return;
+  const previousTab = currentTab;
   clearTabContent();
   currentTab = tabName;
   isCornerDropdownOpen = false;
   isThemeDropdownOpen = false;
   isBlurTypeDropdownOpen = false;
   ipcRenderer.send("setSettingsActiveTab", tabName);
-  updateSidebarSelection();
-  renderTabContent();
+  updateSidebarSelection(true, previousTab);
+  renderTabContent(true);
 }
 
-function updateSidebarSelection() {
+function updateSidebarSelection(animateIndicator = false, previousTab = currentTab) {
   ui.beginUpdate();
 
   ui.setElementProperty(
@@ -284,15 +295,21 @@ function updateSidebarSelection() {
     currentTab === "about" ? getSidebarActiveFill() : SIDEBAR_IDLE_FILL,
   );
 
-  let indicatorY = 180 * SCALE + 14.5 * SCALE;
-  if (currentTab === "general") {
-    indicatorY = 180 * SCALE + 55 * SCALE + 14.5 * SCALE;
-  } else if (currentTab === "about") {
-    indicatorY = 180 * SCALE + 55 * SCALE * 2 + 14.5 * SCALE;
+  const indicatorY = getSidebarIndicatorY(currentTab);
+  if (!animateIndicator) {
+    ui.setElementProperty("sidebarActiveIndicator", "y", indicatorY);
   }
-
-  ui.setElementProperty("sidebarActiveIndicator", "y", indicatorY);
   ui.endUpdate();
+
+  if (animateIndicator && ui.isElementExist("sidebarActiveIndicator")) {
+    ui.animate({
+      id: "sidebarActiveIndicator",
+      duration: 180,
+      easing: "ease-out",
+      from: { y: getSidebarIndicatorY(previousTab) },
+      to: { y: indicatorY },
+    });
+  }
 }
 
 // Toggle a widget's enabled state and update the toggle switch image.
@@ -485,7 +502,7 @@ function refreshTabContent() {
   ui.endUpdate();
 }
 
-function renderTabContent() {
+function renderTabContent(animate = false) {
   ui.beginUpdate();
 
   let titleText = "Widgets Settings";
@@ -1307,6 +1324,19 @@ function renderTabContent() {
   }
 
   ui.endUpdate();
+
+  // A small title motion gives tab changes a clear visual transition without
+  // animating interactive controls or causing dropdown/input flicker.
+  if (animate && ui.isElementExist("tabTitle")) {
+    const titleX = SIDEBAR_WIDTH + 30 * SCALE;
+    ui.animate({
+      id: "tabTitle",
+      duration: 180,
+      easing: "ease-out",
+      from: { x: titleX + 12 * SCALE },
+      to: { x: titleX },
+    });
+  }
 }
 
 const configuredSettingsRadius = parseFloat(JSON_DATA.APPEARANCE.BACKGROUND_RADIUS);
@@ -1553,4 +1583,4 @@ ui.addText({
 });
 
 updateSidebarSelection();
-renderTabContent();
+renderTabContent(true);
