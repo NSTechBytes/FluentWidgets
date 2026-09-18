@@ -134,6 +134,28 @@ function shapeHoverHandlers(
 
 let currentTab = JSON_DATA.SETTINGS_ACTIVE_TAB || "widgets";
 let isCornerDropdownOpen = false;
+let lastCornerDropdownPointerLog = "";
+
+// Temporary diagnostic kept deliberately low-volume: it reports only when
+// the pointer enters a different dropdown row (or leaves the popup).
+ui.on("mouseMove", (e) => {
+  if (!isCornerDropdownOpen || !e) return;
+
+  const x = Math.round(e.__clientX);
+  const y = Math.round(e.__clientY);
+  const left = BG_WIDTH - 30 * SCALE - 120 * SCALE;
+  const top = 435 * SCALE + 40 * SCALE;
+  let location = "outside";
+  if (x >= left && x < left + 120 * SCALE && y >= top && y < top + 90 * SCALE) {
+    const row = Math.floor((y - (top + 5 * SCALE)) / (28 * SCALE));
+    location = row >= 0 && row < 3 ? "row " + row : "popup gap";
+  }
+
+  if (location !== lastCornerDropdownPointerLog) {
+    lastCornerDropdownPointerLog = location;
+    console.log("[Corner dropdown] pointer " + location + " at " + x + "," + y);
+  }
+});
 
 function switchTab(tabName) {
   if (currentTab === tabName) return;
@@ -284,8 +306,11 @@ function clearTabContent() {
     "cornerInputText",
     "cornerDropdownBg",
     "cornerOptionNone",
+    "cornerOptionNoneBg",
     "cornerOptionRoundSmall",
+    "cornerOptionRoundSmallBg",
     "cornerOptionRound",
+    "cornerOptionRoundBg",
     "use24HourText",
     "use24HourToggleImage",
   ].forEach((id) => {
@@ -580,6 +605,12 @@ function renderTabContent() {
     });
 
     if (isCornerDropdownOpen) {
+      console.log("[Corner dropdown] rendering options");
+      lastCornerDropdownPointerLog = "";
+      const dropdownFill = isDarkTheme()
+        ? "rgba(36, 36, 40, 0.96)"
+        : "rgba(255, 255, 255, 0.94)";
+      const optionHoverFill = getCardHoverColor();
       ui.addShape({
         id: "cornerDropdownBg",
         type: "rectangle",
@@ -590,9 +621,7 @@ function renderTabContent() {
         radius: 4 * SCALE,
         strokeWidth: 1 * SCALE,
         strokeColor: getFontSubtleColor(),
-        fillColor: isDarkTheme()
-          ? "rgba(36, 36, 40, 0.96)"
-          : "rgba(255, 255, 255, 0.94)",
+        fillColor: dropdownFill,
         mouseEventCursor: false,
         onLeftMouseDown: () => {},
         onLeftMouseUp: () => {},
@@ -600,26 +629,63 @@ function renderTabContent() {
 
       const options = ["none", "roundsmall", "round"];
       options.forEach((opt, idx) => {
-        const optId =
-          "cornerOption" +
-          (idx === 0 ? "None" : idx === 1 ? "RoundSmall" : "Round");
+        const suffix =
+          idx === 0 ? "None" : idx === 1 ? "RoundSmall" : "Round";
+        const optId = "cornerOption" + suffix;
+        const optBgId = optId + "Bg";
+        const rowY = 435 * SCALE + 40 * SCALE + 5 * SCALE + idx * 28 * SCALE;
+        const normalText = getFontColor();
+        const selectOption = () => {
+          JSON_DATA.BB_STYLE.ROUND_TYPE = opt;
+          ipcRenderer.send("setCornerStyle", opt);
+          isCornerDropdownOpen = false;
+          clearTabContent();
+          renderTabContent();
+        };
+        const itemHover = {
+          onMouseOver: () => {
+            console.log("[Corner dropdown] hover enter: " + opt);
+            ui.setElementProperty(optBgId, "fillColor", optionHoverFill);
+            ui.setElementProperty(optId, "fontColor", getAccentColor());
+          },
+          onMouseLeave: () => {
+            console.log("[Corner dropdown] hover leave: " + opt);
+            ui.setElementProperty(optBgId, "fillColor", "rgba(0,0,0,0)");
+            ui.setElementProperty(optId, "fontColor", normalText);
+          },
+        };
+        ui.addShape({
+          id: optBgId,
+          type: "rectangle",
+          x: BG_WIDTH - 30 * SCALE - 116 * SCALE,
+          y: rowY,
+          width: 112 * SCALE,
+          height: 26 * SCALE,
+          radius: 3 * SCALE,
+          strokeWidth: 0,
+          fillColor: "rgba(0,0,0,0)",
+          mouseEventCursor: true,
+          mouseEventCursorName: "hand",
+          ...itemHover,
+          onLeftMouseUp: () => {
+            console.log("[Corner dropdown] selected: " + opt);
+            selectOption();
+          },
+        });
         ui.addText({
           id: optId,
           text: opt,
           x: BG_WIDTH - 30 * SCALE - 110 * SCALE,
-          y: 435 * SCALE + 40 * SCALE + 15 * SCALE + idx * 30 * SCALE,
+          y: rowY + 13 * SCALE,
+          width: 100 * SCALE,
+          height: 26 * SCALE,
           textAlign: "leftcenter",
           fontSize: 14 * SCALE,
           fontFace: FONT_FACE,
-          fontColor: getFontColor(),
-          ...textHoverHandlers(optId, getFontColor()),
-          onLeftMouseUp: () => {
-            JSON_DATA.BB_STYLE.ROUND_TYPE = opt;
-            ipcRenderer.send("setCornerStyle", opt);
-            isCornerDropdownOpen = false;
-            clearTabContent();
-            renderTabContent();
-          },
+          fontColor: normalText,
+          // The background owns pointer events for the complete row. Keeping
+          // this overlay display-only avoids the label and background
+          // repeatedly stealing hover ownership from one another.
         });
       });
     }
