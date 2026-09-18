@@ -1215,6 +1215,10 @@ function loadSettingsWindow() {
     id: "SETTINGS_WINDOW",
     script: "ui/settingsWindow.ui.js",
     show: false,
+    // Settings behaves like an application window, so give it its own taskbar
+    // button instead of treating it as a desktop-only widget.
+    showInToolbar: true,
+    toolbarTitle: "FluentWidgets Settings",
     ...bounds,
   });
   applyBlurBehind(settingsWindow);
