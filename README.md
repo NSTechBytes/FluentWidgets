@@ -60,7 +60,7 @@ The project entry point is `index.js`. If your Novadesk executable is in a diffe
 
 ## Settings
 
-Configuration is stored in `config/config.json`.
+Configuration is stored in `%appdata%/FluentWidgets/FluentWidgets/config.json"`.
 
 The General tab includes the following options:
 
