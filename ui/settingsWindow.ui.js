@@ -37,6 +37,12 @@ function getBackgroundSubtle() {
 function getFontColor() {
   return getThemeColors().FONT;
 }
+function getInputCaretColor() {
+  const theme = String(JSON_DATA.APPEARANCE.THEME || "dark").toLowerCase();
+  return ["dark", "dracula", "github"].includes(theme)
+    ? "rgb(255, 255, 255)"
+    : "rgb(0, 0, 0)";
+}
 function getFontSubtleColor() {
   return getThemeColors().FONT_SUBTLE;
 }
@@ -337,7 +343,7 @@ function addSettingInputBox(id, opts) {
     fontSize: 14 * SCALE,
     fontFace: FONT_FACE,
     fontColor: getFontColor(),
-    caretColor: "rgb(0, 0, 0)",
+    caretColor: getInputCaretColor(),
     fillColor: getBackgroundSubtle(),
     borderWidth: 1 * SCALE,
     borderColor: getFontSubtleColor(),
