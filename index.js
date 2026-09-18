@@ -26,6 +26,7 @@ import {
   webFetch,
   audio,
   execute,
+  displayMetrics,
 } from "system";
 
 let config = {};
@@ -1117,16 +1118,36 @@ function onToggleWidget(event, { widgetKey, loaded }) {
 
 // ---- Settings Window ----
 
+function getCenteredBounds(width, height) {
+  const metrics = displayMetrics.getMetrics();
+  const area =
+    (metrics.primary && metrics.primary.workArea) || metrics.virtualScreen;
+  return {
+    x: Math.round(area.x + (area.width - width) / 2),
+    y: Math.round(area.y + (area.height - height) / 2),
+    width,
+    height,
+  };
+}
+
 function loadSettingsWindow() {
   if (settingsWindow && !settingsWindow.isDestroyed()) {
     settingsWindow.show();
     return;
   }
   registerSettingsIpc();
-  settingsWindow = createWidgetWindow(
-    "SETTINGS_WINDOW",
-    "ui/settingsWindow.ui.js",
+  const scale = parseFloat(config.SCALE) || 1;
+  const bounds = getCenteredBounds(
+    Math.round(600 * scale),
+    Math.round(650 * scale),
   );
+  settingsWindow = new widgetWindow({
+    id: "SETTINGS_WINDOW",
+    script: "ui/settingsWindow.ui.js",
+    show: false,
+    ...bounds,
+  });
+  applyBlurBehind(settingsWindow);
   settingsWindow.disableContextMenu(true);
   settingsWindow.show();
   config.SETTINGS_WINDOW_OPEN = true;
