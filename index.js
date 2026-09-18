@@ -220,7 +220,7 @@ function applyBlurBehind(win, attempt = 0) {
 }
 
 // Build right-click context menu with style switcher, position controls, and settings.
-function buildStyleMenu(win, currentStyle, onSelect) {
+function buildStyleMenu(win, currentStyle, onSelect, widgetKey) {
   const styles = ["small", "medium", "wide", "large"];
   return [
     { text: "Settings", action: () => loadSettingsWindow() },
@@ -263,6 +263,11 @@ function buildStyleMenu(win, currentStyle, onSelect) {
       checked: currentStyle === style,
       action: () => onSelect(style),
     })),
+    { type: "separator" },
+    {
+      text: "Remove Widget",
+      action: () => setWidgetLoaded(widgetKey, false),
+    },
   ];
 }
 
@@ -341,7 +346,7 @@ function updateMonitorStyle(style) {
   config.WINDOW_STYLES.MONITOR_WINDOW = style;
   json.write(CONFIG_PATH, config);
   monitorWindow.setContextMenu(
-    buildStyleMenu(monitorWindow, style, updateMonitorStyle),
+    buildStyleMenu(monitorWindow, style, updateMonitorStyle, "MONITOR"),
   );
   resizeWidget(monitorWindow, style);
   ipcMain.send("changeMonitorStyle", style);
@@ -361,6 +366,7 @@ function loadMonitorWidget() {
       monitorWindow,
       config.WINDOW_STYLES.MONITOR_WINDOW,
       updateMonitorStyle,
+      "MONITOR",
     ),
   );
   publishMonitorStats();
@@ -411,7 +417,7 @@ function updateClockStyle(style) {
   }
 
   clockWindow.setContextMenu(
-    buildStyleMenu(clockWindow, style, updateClockStyle),
+    buildStyleMenu(clockWindow, style, updateClockStyle, "CLOCK"),
   );
   resizeWidget(clockWindow, style);
   ipcMain.send("changeClockStyle", style);
@@ -433,6 +439,7 @@ function loadClockWidget() {
       clockWindow,
       config.WINDOW_STYLES.CLOCK_WINDOW,
       updateClockStyle,
+      "CLOCK",
     ),
   );
   publishClockData();
@@ -479,7 +486,7 @@ function updateCalendarStyle(style) {
   }
 
   calendarWindow.setContextMenu(
-    buildStyleMenu(calendarWindow, style, updateCalendarStyle),
+    buildStyleMenu(calendarWindow, style, updateCalendarStyle, "CALENDAR"),
   );
   resizeWidget(calendarWindow, style);
   ipcMain.send("changeCalendarStyle", style);
@@ -504,6 +511,7 @@ function loadCalendarWidget() {
       calendarWindow,
       config.WINDOW_STYLES.CALENDAR_WINDOW,
       updateCalendarStyle,
+      "CALENDAR",
     ),
   );
   publishCalendarData();
@@ -523,6 +531,92 @@ function unloadCalendarWidget() {
 
 // ---- Weather Widget ----
 
+const WEATHER_ICON_DIR = "assets/WeatherIcons/";
+
+/** Map WMO weather_code (+ day/night) to a WeatherIcons asset path. */
+function getWeatherIconPath(code, isDay) {
+  const day = isDay === 1 || isDay === true;
+  let name = "cloudy";
+
+  switch (code) {
+    case 0:
+      name = day ? "clear_day" : "clear_night";
+      break;
+    case 1:
+      name = day ? "mostly_clear_day" : "mostly_clear_night";
+      break;
+    case 2:
+      name = day ? "partly_cloudy_day" : "partly_cloudy_night";
+      break;
+    case 3:
+      name = day ? "mostly_cloudy_day" : "mostly_cloudy_night";
+      break;
+    case 45:
+    case 48:
+      name = "haze_fog_dust_smoke";
+      break;
+    case 51:
+    case 53:
+    case 55:
+      name = "drizzle";
+      break;
+    case 56:
+    case 57:
+      name = "icy";
+      break;
+    case 61:
+    case 63:
+      name = day ? "scattered_showers_day" : "scattered_showers_night";
+      break;
+    case 65:
+      name = "heavy_rain";
+      break;
+    case 66:
+    case 67:
+      name = "mixed_rain_hail_sleet";
+      break;
+    case 71:
+    case 73:
+      name = day
+        ? "scattered_snow_showers_day"
+        : "scattered_snow_showers_night";
+      break;
+    case 75:
+      name = "heavy_snow";
+      break;
+    case 77:
+      name = "flurries";
+      break;
+    case 80:
+    case 81:
+      name = "showers_rain";
+      break;
+    case 82:
+      name = "heavy_rain";
+      break;
+    case 85:
+      name = "showers_snow";
+      break;
+    case 86:
+      name = "blizzard";
+      break;
+    case 95:
+      name = day
+        ? "isolated_scattered_thunderstorms_day"
+        : "isolated_scattered_thunderstorms_night";
+      break;
+    case 96:
+    case 99:
+      name = "strong_thunderstorms";
+      break;
+    default:
+      name = day ? "cloudy" : "mostly_cloudy_night";
+      break;
+  }
+
+  return WEATHER_ICON_DIR + name + ".png";
+}
+
 async function publishWeatherData() {
   try {
     const loc = config.LOCATION || {};
@@ -530,12 +624,17 @@ async function publishWeatherData() {
     const lon = loc.LONGITUDE ?? -0.1276;
     const cityName = loc.CITY_NAME ?? "London";
 
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m&hourly=temperature_2m&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,is_day&hourly=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`;
 
     const raw = await webFetch(url);
     const data = typeof raw === "string" ? JSON.parse(raw) : raw;
 
     const currentTemp = Math.round(data.current.temperature_2m);
+    const currentIsDay = data.current.is_day;
+    const currentIcon = getWeatherIconPath(
+      data.current.weather_code,
+      currentIsDay,
+    );
     const currentHourPrefix = data.current.time.substring(0, 13);
     const hourIndex = data.hourly.time.indexOf(currentHourPrefix + ":00");
     const startIdx = hourIndex >= 0 ? hourIndex : 0;
@@ -547,6 +646,10 @@ async function publishWeatherData() {
         hourlyForecast.push({
           time: data.hourly.time[idx].split("T")[1].split(":")[0],
           temp: Math.round(data.hourly.temperature_2m[idx]),
+          icon: getWeatherIconPath(
+            data.hourly.weather_code[idx],
+            data.hourly.is_day[idx],
+          ),
         });
       }
     }
@@ -557,12 +660,14 @@ async function publishWeatherData() {
         day: SHORT_DAY_NAMES[new Date(data.daily.time[i]).getDay()],
         min: Math.round(data.daily.temperature_2m_min[i]),
         max: Math.round(data.daily.temperature_2m_max[i]),
+        icon: getWeatherIconPath(data.daily.weather_code[i], true),
       });
     }
 
     ipcMain.send("weatherUpdate", {
       cityName,
       currentTemp,
+      currentIcon,
       hourlyForecast,
       dailyForecast,
       todayHigh: dailyForecast[0]?.max ?? 0,
@@ -583,7 +688,7 @@ function updateWeatherStyle(style) {
   }
 
   weatherWindow.setContextMenu(
-    buildStyleMenu(weatherWindow, style, updateWeatherStyle),
+    buildStyleMenu(weatherWindow, style, updateWeatherStyle, "WEATHER"),
   );
   resizeWidget(weatherWindow, style);
   ipcMain.send("changeWeatherStyle", style);
@@ -608,6 +713,7 @@ function loadWeatherWidget() {
       weatherWindow,
       config.WINDOW_STYLES.WEATHER_WINDOW,
       updateWeatherStyle,
+      "WEATHER",
     ),
   );
   publishWeatherData();
@@ -641,7 +747,7 @@ function updatePlayerStyle(style) {
   }
 
   playerWindow.setContextMenu(
-    buildStyleMenu(playerWindow, style, updatePlayerStyle),
+    buildStyleMenu(playerWindow, style, updatePlayerStyle, "MUSIC"),
   );
   resizeWidget(playerWindow, style);
   ipcMain.send("changePlayerStyle", style);
@@ -664,6 +770,7 @@ function loadPlayerWidget() {
       playerWindow,
       config.WINDOW_STYLES.PLAYER_WINDOW,
       updatePlayerStyle,
+      "MUSIC",
     ),
   );
   publishNowPlayingData();
@@ -717,7 +824,7 @@ function updateVolumeStyle(style) {
   json.write(CONFIG_PATH, config);
 
   volumeWindow.setContextMenu(
-    buildStyleMenu(volumeWindow, style, updateVolumeStyle),
+    buildStyleMenu(volumeWindow, style, updateVolumeStyle, "VOLUME"),
   );
   resizeWidget(volumeWindow, style);
   ipcMain.send("changeVolumeStyle", style);
@@ -735,6 +842,7 @@ function loadVolumeWidget() {
       volumeWindow,
       config.WINDOW_STYLES.VOLUME_WINDOW || "large",
       updateVolumeStyle,
+      "VOLUME",
     ),
   );
   publishVolumeData();
@@ -799,7 +907,7 @@ function updateNotesStyle(style) {
   config.WINDOW_STYLES.NOTES_WINDOW = style;
   json.write(CONFIG_PATH, config);
   notesWindow.setContextMenu(
-    buildStyleMenu(notesWindow, style, updateNotesStyle),
+    buildStyleMenu(notesWindow, style, updateNotesStyle, "NOTES"),
   );
   resizeWidget(notesWindow, style);
   ipcMain.send("changeNotesStyle", style);
@@ -817,6 +925,7 @@ function loadNotesWidget() {
       notesWindow,
       config.WINDOW_STYLES.NOTES_WINDOW,
       updateNotesStyle,
+      "NOTES",
     ),
   );
   notesWindow.show();
@@ -988,6 +1097,10 @@ function setWidgetLoaded(widgetKey, loaded) {
   } else {
     entry.unload();
   }
+
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    settingsWindow.refresh();
+  }
 }
 
 function onToggleWidget(event, { widgetKey, loaded }) {
@@ -1006,6 +1119,7 @@ function loadSettingsWindow() {
     "SETTINGS_WINDOW",
     "ui/settingsWindow.ui.js",
   );
+  settingsWindow.disableContextMenu(true);
   settingsWindow.show();
   config.SETTINGS_WINDOW_OPEN = true;
   json.write(CONFIG_PATH, config);

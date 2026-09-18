@@ -15,6 +15,7 @@
 const JSON_DATA = ipcRenderer.invoke("getJSON");
 const SCALE = parseFloat(JSON_DATA.SCALE) || 1;
 const FONT_FACE = JSON_DATA.FONT_FACE;
+const DEFAULT_WEATHER_ICON = "assets/WeatherIcons/cloudy.png";
 let currentStyle = JSON_DATA.WINDOW_STYLES.WEATHER_WINDOW;
 
 function getThemeColors() {
@@ -54,7 +55,7 @@ function largeStyle() {
   ui.addText({
     id: "city-name-text",
     x: 20 * SCALE,
-    y: 20 * SCALE,
+    y: 18 * SCALE,
     text: "City",
     fontSize: 16 * SCALE,
     fontColor: getFontColor(),
@@ -62,12 +63,20 @@ function largeStyle() {
     fontWeight: "bold",
     textAlign: "left",
   });
+  ui.addImage({
+    id: "current-weather-icon",
+    x: 280 * SCALE,
+    y: 22 * SCALE,
+    width: 56 * SCALE,
+    height: 56 * SCALE,
+    path: DEFAULT_WEATHER_ICON,
+  });
   ui.addText({
     id: "current-temp-text",
     x: 20 * SCALE,
-    y: 50 * SCALE,
+    y: 48 * SCALE,
     text: "0°",
-    fontSize: 60 * SCALE,
+    fontSize: 56 * SCALE,
     fontColor: getFontColor(),
     fontFace: FONT_FACE,
     textAlign: "left",
@@ -75,9 +84,9 @@ function largeStyle() {
   ui.addText({
     id: "high-low-text",
     x: 340 * SCALE,
-    y: 75 * SCALE,
+    y: 88 * SCALE,
     text: "↓ 0° ↑ 0°",
-    fontSize: 14 * SCALE,
+    fontSize: 13 * SCALE,
     fontColor: getFontColor(),
     fontFace: FONT_FACE,
     textAlign: "right",
@@ -87,20 +96,28 @@ function largeStyle() {
     const bx = 20 * SCALE + i * 55 * SCALE;
     ui.addText({
       id: "hourly-time-" + i,
-      x: bx + 10 * SCALE,
-      y: 130 * SCALE,
+      x: bx + 14 * SCALE,
+      y: 122 * SCALE,
       text: "00",
       fontSize: 12 * SCALE,
       fontColor: getSubtleColor(),
       fontFace: FONT_FACE,
       textAlign: "center",
     });
+    ui.addImage({
+      id: "hourly-icon-" + i,
+      x: bx + 2 * SCALE,
+      y: 142 * SCALE,
+      width: 24 * SCALE,
+      height: 24 * SCALE,
+      path: DEFAULT_WEATHER_ICON,
+    });
     ui.addText({
       id: "hourly-temp-" + i,
-      x: bx + 10 * SCALE,
-      y: 160 * SCALE,
+      x: bx + 14 * SCALE,
+      y: 172 * SCALE,
       text: "0°",
-      fontSize: 16 * SCALE,
+      fontSize: 15 * SCALE,
       fontColor: getFontColor(),
       fontFace: FONT_FACE,
       textAlign: "center",
@@ -108,7 +125,7 @@ function largeStyle() {
   }
 
   for (let i = 0; i < 6; i++) {
-    const by = 210 * SCALE + i * 25 * SCALE;
+    const by = 210 * SCALE + i * 24 * SCALE;
     ui.addText({
       id: "daily-day-" + i,
       x: 20 * SCALE,
@@ -118,6 +135,14 @@ function largeStyle() {
       fontColor: getFontColor(),
       fontFace: FONT_FACE,
       textAlign: "left",
+    });
+    ui.addImage({
+      id: "daily-icon-" + i,
+      x: 70 * SCALE,
+      y: by - 2 * SCALE,
+      width: 18 * SCALE,
+      height: 18 * SCALE,
+      path: DEFAULT_WEATHER_ICON,
     });
     ui.addText({
       id: "daily-min-" + i,
@@ -180,7 +205,7 @@ function wideStyle() {
   ui.addText({
     id: "city-name-text",
     x: 20 * SCALE,
-    y: 15 * SCALE,
+    y: 12 * SCALE,
     text: "City",
     fontSize: 14 * SCALE,
     fontColor: getFontColor(),
@@ -188,12 +213,20 @@ function wideStyle() {
     fontWeight: "bold",
     textAlign: "left",
   });
+  ui.addImage({
+    id: "current-weather-icon",
+    x: 290 * SCALE,
+    y: 18 * SCALE,
+    width: 44 * SCALE,
+    height: 44 * SCALE,
+    path: DEFAULT_WEATHER_ICON,
+  });
   ui.addText({
     id: "current-temp-text",
     x: 20 * SCALE,
-    y: 40 * SCALE,
+    y: 36 * SCALE,
     text: "0°",
-    fontSize: 48 * SCALE,
+    fontSize: 42 * SCALE,
     fontColor: getFontColor(),
     fontFace: FONT_FACE,
     textAlign: "left",
@@ -203,20 +236,28 @@ function wideStyle() {
     const bx = 20 * SCALE + i * 55 * SCALE;
     ui.addText({
       id: "hourly-time-" + i,
-      x: bx + 10 * SCALE,
-      y: 110 * SCALE,
+      x: bx + 14 * SCALE,
+      y: 90 * SCALE,
       text: "00",
-      fontSize: 12 * SCALE,
+      fontSize: 11 * SCALE,
       fontColor: getSubtleColor(),
       fontFace: FONT_FACE,
       textAlign: "center",
     });
+    ui.addImage({
+      id: "hourly-icon-" + i,
+      x: bx + 3 * SCALE,
+      y: 108 * SCALE,
+      width: 22 * SCALE,
+      height: 22 * SCALE,
+      path: DEFAULT_WEATHER_ICON,
+    });
     ui.addText({
       id: "hourly-temp-" + i,
-      x: bx + 10 * SCALE,
-      y: 135 * SCALE,
+      x: bx + 14 * SCALE,
+      y: 134 * SCALE,
       text: "0°",
-      fontSize: 14 * SCALE,
+      fontSize: 13 * SCALE,
       fontColor: getFontColor(),
       fontFace: FONT_FACE,
       textAlign: "center",
@@ -239,21 +280,29 @@ function mediumStyle() {
   });
   ui.addText({
     id: "city-name-text",
-    x: 15 * SCALE,
-    y: 15 * SCALE,
+    x: 14 * SCALE,
+    y: 12 * SCALE,
     text: "City",
-    fontSize: 14 * SCALE,
+    fontSize: 13 * SCALE,
     fontColor: getFontColor(),
     fontFace: FONT_FACE,
     fontWeight: "bold",
     textAlign: "left",
   });
+  ui.addImage({
+    id: "current-weather-icon",
+    x: 108 * SCALE,
+    y: 48 * SCALE,
+    width: 40 * SCALE,
+    height: 40 * SCALE,
+    path: DEFAULT_WEATHER_ICON,
+  });
   ui.addText({
     id: "current-temp-text",
-    x: 15 * SCALE,
-    y: 45 * SCALE,
+    x: 14 * SCALE,
+    y: 48 * SCALE,
     text: "0°",
-    fontSize: 50 * SCALE,
+    fontSize: 42 * SCALE,
     fontColor: getFontColor(),
     fontFace: FONT_FACE,
     textAlign: "left",
@@ -273,12 +322,20 @@ function smallStyle() {
     strokeWidth: 0,
     fillColor: getBackgroundColor(),
   });
+  ui.addImage({
+    id: "current-weather-icon",
+    x: (SIZE - 28 * SCALE) / 2,
+    y: 8 * SCALE,
+    width: 28 * SCALE,
+    height: 28 * SCALE,
+    path: DEFAULT_WEATHER_ICON,
+  });
   ui.addText({
     id: "current-temp-text",
     x: SIZE / 2,
-    y: 20 * SCALE,
+    y: 40 * SCALE,
     text: "0°",
-    fontSize: 34 * SCALE,
+    fontSize: 22 * SCALE,
     fontColor: getFontColor(),
     fontFace: FONT_FACE,
     textAlign: "center",
@@ -299,13 +356,16 @@ function clearUI() {
     "background_Shape",
     "city-name-text",
     "current-temp-text",
+    "current-weather-icon",
     "high-low-text",
   ];
   for (let i = 0; i < 6; i++) {
     ids.push(
       "hourly-time-" + i,
+      "hourly-icon-" + i,
       "hourly-temp-" + i,
       "daily-day-" + i,
+      "daily-icon-" + i,
       "daily-min-" + i,
       "daily-bar-bg-" + i,
       "daily-bar-fg-" + i,
@@ -327,7 +387,7 @@ ipcRenderer.on("changeWeatherStyle", (event, style) => {
   ui.endUpdate();
 });
 
-// Update current temperature, hourly/daily forecasts, and temperature-range bars.
+// Update current temperature, icons, hourly/daily forecasts, and temperature-range bars.
 ipcRenderer.on("weatherUpdate", (event, data) => {
   ui.beginUpdate();
 
@@ -335,6 +395,8 @@ ipcRenderer.on("weatherUpdate", (event, data) => {
     ui.setElementProperty("city-name-text", "text", data.cityName);
   if (ui.isElementExist("current-temp-text"))
     ui.setElementProperty("current-temp-text", "text", data.currentTemp + "°");
+  if (ui.isElementExist("current-weather-icon") && data.currentIcon)
+    ui.setElementProperty("current-weather-icon", "path", data.currentIcon);
 
   if (currentStyle === "large" && ui.isElementExist("high-low-text")) {
     ui.setElementProperty(
@@ -348,6 +410,7 @@ ipcRenderer.on("weatherUpdate", (event, data) => {
     for (let i = 0; i < 6; i++) {
       const timeId = "hourly-time-" + i;
       const tempId = "hourly-temp-" + i;
+      const iconId = "hourly-icon-" + i;
       if (ui.isElementExist(timeId) && data.hourlyForecast[i]) {
         ui.setElementProperty(timeId, "text", data.hourlyForecast[i].time);
         ui.setElementProperty(
@@ -355,6 +418,9 @@ ipcRenderer.on("weatherUpdate", (event, data) => {
           "text",
           data.hourlyForecast[i].temp + "°",
         );
+        if (ui.isElementExist(iconId) && data.hourlyForecast[i].icon) {
+          ui.setElementProperty(iconId, "path", data.hourlyForecast[i].icon);
+        }
       }
     }
   }
@@ -378,12 +444,15 @@ ipcRenderer.on("weatherUpdate", (event, data) => {
       const minId = "daily-min-" + i;
       const maxId = "daily-max-" + i;
       const barId = "daily-bar-fg-" + i;
+      const iconId = "daily-icon-" + i;
 
       if (ui.isElementExist(dayId) && data.dailyForecast[i]) {
         const d = data.dailyForecast[i];
         ui.setElementProperty(dayId, "text", d.day);
         ui.setElementProperty(minId, "text", d.min + "°");
         ui.setElementProperty(maxId, "text", d.max + "°");
+        if (ui.isElementExist(iconId) && d.icon)
+          ui.setElementProperty(iconId, "path", d.icon);
 
         const barOffset = (d.min - globalMin) * pxPerDegree;
         let barWidth = (d.max - d.min) * pxPerDegree;
