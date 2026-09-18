@@ -50,6 +50,14 @@ function getCardColor() {
 function getCardHoverColor() {
   return getThemeColors().CARD_HOVER || getBackgroundSubtle();
 }
+function getCloseButtonFill() {
+  return isDarkTheme()
+    ? "rgba(255, 255, 255, 0.14)"
+    : "rgba(0, 0, 0, 0.12)";
+}
+function getCloseButtonHoverFill() {
+  return "rgba(232, 17, 35, 0.9)";
+}
 
 const SIDEBAR_IDLE_FILL = "rgba(0, 0, 0, 0)";
 
@@ -1011,12 +1019,39 @@ ui.addShape({
   height: 25 * SCALE,
   strokeWidth: 0,
   radius: 25 * SCALE,
-  fillColor: getBackgroundSubtle(),
-  ...shapeHoverHandlers(
-    "close",
-    getBackgroundSubtle(),
-    "rgba(232, 17, 35, 0.9)",
-  ),
+  fillColor: getCloseButtonFill(),
+  onMouseOver: () => {
+    ui.setElementProperty("close", "fillColor", getCloseButtonHoverFill());
+    if (ui.isElementExist("closeText")) {
+      ui.setElementProperty("closeText", "fontColor", "rgb(255, 255, 255)");
+    }
+  },
+  onMouseLeave: () => {
+    ui.setElementProperty("close", "fillColor", getCloseButtonFill());
+    if (ui.isElementExist("closeText")) {
+      ui.setElementProperty("closeText", "fontColor", getFontColor());
+    }
+  },
+  onLeftMouseUp: () => ipcRenderer.send("closeSettings"),
+});
+ui.addText({
+  id: "closeText",
+  text: "×",
+  x: BG_WIDTH - 22.5 * SCALE,
+  y: 20.5 * SCALE,
+  textAlign: "centercenter",
+  fontSize: 16 * SCALE,
+  fontWeight: 600,
+  fontFace: FONT_FACE,
+  fontColor: getFontColor(),
+  onMouseOver: () => {
+    ui.setElementProperty("close", "fillColor", getCloseButtonHoverFill());
+    ui.setElementProperty("closeText", "fontColor", "rgb(255, 255, 255)");
+  },
+  onMouseLeave: () => {
+    ui.setElementProperty("close", "fillColor", getCloseButtonFill());
+    ui.setElementProperty("closeText", "fontColor", getFontColor());
+  },
   onLeftMouseUp: () => ipcRenderer.send("closeSettings"),
 });
 

@@ -30,7 +30,7 @@ function getFontColor() {
   return getThemeColors().FONT;
 }
 function getSubtleColor() {
-  return getThemeColors().SUBTLE;
+  return getThemeColors().FONT_SUBTLE;
 }
 function getAccentColor() {
   return JSON_DATA.APPEARANCE.ACCENT_COLOR;
@@ -368,7 +368,7 @@ ipcRenderer.on("calendarUpdate", (event, data) => {
         let fontColor = col >= 5 ? getSubtleColor() : getFontColor();
 
         if (day === data.currentDate) {
-          fontColor = "white";
+          fontColor = "rgb(255, 255, 255)";
 
           const row = Math.floor(cellIndex / 7);
           let x, y, ox, oy;

@@ -30,7 +30,7 @@ function getFontColor() {
   return getThemeColors().FONT;
 }
 function getSubtleColor() {
-  return getThemeColors().SUBTLE;
+  return getThemeColors().FONT_SUBTLE;
 }
 
 function getWidgetSize() {
