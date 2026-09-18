@@ -858,6 +858,14 @@ function onOpenGithub() {
   execute("https://github.com/nstechbytes/FluentWidgets");
 }
 
+function onOpenPatreon() {
+  execute("https://patreon.com/cw/nstechbytes");
+}
+
+function onCheckForUpdate() {
+  execute("https://github.com/nstechbytes/FluentWidgets/releases");
+}
+
 function onSetSettingsActiveTab(event, tab) {
   config.SETTINGS_ACTIVE_TAB = tab;
   json.write(CONFIG_PATH, config);
@@ -900,6 +908,8 @@ function registerSettingsIpc() {
   ipcMain.on("settingsInput", onSettingsInput);
   ipcMain.on("setDarkMode", onSetDarkMode);
   ipcMain.on("openGithub", onOpenGithub);
+  ipcMain.on("openPatreon", onOpenPatreon);
+  ipcMain.on("checkForUpdate", onCheckForUpdate);
   ipcMain.on("setSettingsActiveTab", onSetSettingsActiveTab);
   ipcMain.on("closeSettings", onCloseSettings);
   ipcMain.on("setCornerStyle", onSetCornerStyle);
@@ -911,6 +921,8 @@ function unregisterSettingsIpc() {
   ipcMain.removeListener("settingsInput", onSettingsInput);
   ipcMain.removeListener("setDarkMode", onSetDarkMode);
   ipcMain.removeListener("openGithub", onOpenGithub);
+  ipcMain.removeListener("openPatreon", onOpenPatreon);
+  ipcMain.removeListener("checkForUpdate", onCheckForUpdate);
   ipcMain.removeListener("setSettingsActiveTab", onSetSettingsActiveTab);
   ipcMain.removeListener("closeSettings", onCloseSettings);
   ipcMain.removeListener("setCornerStyle", onSetCornerStyle);

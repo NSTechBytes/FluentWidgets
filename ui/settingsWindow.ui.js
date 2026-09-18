@@ -265,13 +265,24 @@ function clearTabContent() {
     "widgetsPlaceholder",
     "generalPlaceholder",
     "aboutPlaceholder",
+    "aboutPanel",
     "aboutLogo",
-    "aboutTitle",
+    "aboutAppName",
     "aboutVersion",
     "aboutAuthor",
+    "aboutDivider",
+    "aboutLicenseLabel",
     "aboutLicense",
+    "aboutGithubCard",
     "aboutGithubLogo",
-    "aboutGithubLink",
+    "aboutGithubTitle",
+    "aboutGithubDesc",
+    "aboutPatreonCard",
+    "aboutPatreonLogo",
+    "aboutPatreonTitle",
+    "aboutPatreonDesc",
+    "aboutUpdateBtn",
+    "aboutUpdateText",
   ].forEach((id) => {
     if (ui.isElementExist(id)) ui.removeElementById(id);
   });
@@ -580,87 +591,209 @@ function renderTabContent() {
       });
     }
   } else if (currentTab === "about") {
-    const contentWidth = BG_WIDTH - SIDEBAR_WIDTH;
-    const centerX = SIDEBAR_WIDTH + contentWidth / 2;
     const isDark = JSON_DATA.APPEARANCE.THEME === "dark";
-    const aboutSubtextColor = isDark
-      ? "rgba(255, 255, 255, 0.7)"
-      : "rgba(0, 0, 0, 0.65)";
+    const contentX = SIDEBAR_WIDTH + 30 * SCALE;
+    const contentW = BG_WIDTH - SIDEBAR_WIDTH - 60 * SCALE;
+    const muted = isDark ? "rgba(255, 255, 255, 0.72)" : "rgba(0, 0, 0, 0.62)";
+    const cardFill = isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.05)";
+    const cardHover = isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.09)";
+    const panelFill = isDark ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.035)";
+    const dividerColor = isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.12)";
+    const accent = getAccentColor();
+    const accentHover = isDark ? "rgba(0, 140, 230, 0.95)" : "rgba(0, 120, 212, 0.92)";
 
+    /** Shared full-width action row used for GitHub / Patreon cards. */
+    function addAboutActionCard(opts) {
+      const cardId = opts.id + "Card";
+      const logoId = opts.id + "Logo";
+      const titleId = opts.id + "Title";
+      const descId = opts.id + "Desc";
+      const hover = shapeHoverHandlers(cardId, cardFill, cardHover);
+
+      ui.addShape({
+        id: cardId,
+        type: "rectangle",
+        x: contentX,
+        y: opts.y,
+        width: contentW,
+        height: 64 * SCALE,
+        radius: 10 * SCALE,
+        strokeWidth: 0,
+        fillColor: cardFill,
+        ...hover,
+        onLeftMouseUp: opts.onClick,
+      });
+      ui.addImage({
+        id: logoId,
+        path: opts.icon,
+        x: contentX + 16 * SCALE,
+        y: opts.y + 14 * SCALE,
+        width: 36 * SCALE,
+        height: 36 * SCALE,
+        ...hover,
+        onLeftMouseUp: opts.onClick,
+      });
+      ui.addText({
+        id: titleId,
+        text: opts.title,
+        x: contentX + 68 * SCALE,
+        y: opts.y + 24 * SCALE,
+        textAlign: "leftcenter",
+        fontSize: 14 * SCALE,
+        fontWeight: 600,
+        fontFace: FONT_FACE,
+        fontColor: getFontColor(),
+        ...hover,
+        onLeftMouseUp: opts.onClick,
+      });
+      ui.addText({
+        id: descId,
+        text: opts.desc,
+        x: contentX + 68 * SCALE,
+        y: opts.y + 44 * SCALE,
+        textAlign: "leftcenter",
+        fontSize: 12 * SCALE,
+        fontFace: FONT_FACE,
+        fontColor: muted,
+        ...hover,
+        onLeftMouseUp: opts.onClick,
+      });
+    }
+
+    // Soft panel behind the about content for grouping
+    ui.addShape({
+      id: "aboutPanel",
+      type: "rectangle",
+      x: contentX - 8 * SCALE,
+      y: 88 * SCALE,
+      width: contentW + 16 * SCALE,
+      height: 470 * SCALE,
+      radius: 14 * SCALE,
+      strokeWidth: 0,
+      fillColor: panelFill,
+    });
+
+    // Identity row: logo + name / version / author
     ui.addImage({
       id: "aboutLogo",
       path: "assets/images/Settings/logo.png",
-      x: centerX - 36 * SCALE,
-      y: 100 * SCALE,
+      x: contentX + 12 * SCALE,
+      y: 110 * SCALE,
       width: 72 * SCALE,
       height: 72 * SCALE,
     });
     ui.addText({
-      id: "aboutTitle",
+      id: "aboutAppName",
       text: "FluentWidgets",
-      x: centerX,
-      y: 190 * SCALE,
-      fontSize: 18 * SCALE,
-      fontWeight: "bold",
+      x: contentX + 100 * SCALE,
+      y: 128 * SCALE,
+      textAlign: "leftcenter",
+      fontSize: 22 * SCALE,
+      fontWeight: 700,
       fontFace: FONT_FACE,
       fontColor: getFontColor(),
-      textAlign: "center",
     });
     ui.addText({
       id: "aboutVersion",
       text: "Version " + (JSON_DATA.version || "1.0.0.0"),
-      x: centerX,
-      y: 220 * SCALE,
+      x: contentX + 100 * SCALE,
+      y: 156 * SCALE,
+      textAlign: "leftcenter",
       fontSize: 13 * SCALE,
       fontFace: FONT_FACE,
-      fontColor: aboutSubtextColor,
-      textAlign: "center",
+      fontColor: muted,
     });
     ui.addText({
       id: "aboutAuthor",
       text: "Created by " + (JSON_DATA.author || "nstechbytes"),
-      x: centerX,
-      y: 250 * SCALE,
+      x: contentX + 100 * SCALE,
+      y: 176 * SCALE,
+      textAlign: "leftcenter",
       fontSize: 13 * SCALE,
       fontFace: FONT_FACE,
-      fontColor: aboutSubtextColor,
-      textAlign: "center",
+      fontColor: muted,
+    });
+
+    ui.addShape({
+      id: "aboutDivider",
+      type: "rectangle",
+      x: contentX + 12 * SCALE,
+      y: 208 * SCALE,
+      width: contentW - 24 * SCALE,
+      height: 1 * SCALE,
+      strokeWidth: 0,
+      fillColor: dividerColor,
+    });
+
+    ui.addText({
+      id: "aboutLicenseLabel",
+      text: "License",
+      x: contentX + 12 * SCALE,
+      y: 236 * SCALE,
+      textAlign: "leftcenter",
+      fontSize: 12 * SCALE,
+      fontWeight: 600,
+      fontFace: FONT_FACE,
+      fontColor: muted,
     });
     ui.addText({
       id: "aboutLicense",
-      text: "Licensed under the Apache License, Version 2.0",
-      x: centerX,
-      y: 280 * SCALE,
-      fontSize: 13 * SCALE,
+      text: "Apache License, Version 2.0",
+      x: contentX + 12 * SCALE,
+      y: 258 * SCALE,
+      textAlign: "leftcenter",
+      fontSize: 14 * SCALE,
       fontFace: FONT_FACE,
-      fontColor: aboutSubtextColor,
-      textAlign: "center",
+      fontColor: getFontColor(),
     });
-    ui.addImage({
-      id: "aboutGithubLogo",
-      path: "assets/images/Settings/github.png",
-      x: centerX - 20 * SCALE,
-      y: 330 * SCALE,
-      width: 40 * SCALE,
-      height: 40 * SCALE,
-      imageAlpha: 210,
-      ...imageHoverHandlers("aboutGithubLogo"),
-      onLeftMouseUp: () => ipcRenderer.send("openGithub"),
+
+    addAboutActionCard({
+      id: "aboutGithub",
+      y: 290 * SCALE,
+      icon: "assets/images/Settings/github.png",
+      title: "GitHub Repository",
+      desc: "View source code and contribute",
+      onClick: () => ipcRenderer.send("openGithub"),
+    });
+
+    addAboutActionCard({
+      id: "aboutPatreon",
+      y: 366 * SCALE,
+      icon: "assets/patreon.png",
+      title: "Support on Patreon",
+      desc: "Help keep FluentWidgets growing",
+      onClick: () => ipcRenderer.send("openPatreon"),
+    });
+
+    const updateY = 452 * SCALE;
+    const updateH = 44 * SCALE;
+    const updateHover = shapeHoverHandlers("aboutUpdateBtn", accent, accentHover);
+
+    ui.addShape({
+      id: "aboutUpdateBtn",
+      type: "rectangle",
+      x: contentX,
+      y: updateY,
+      width: contentW,
+      height: updateH,
+      radius: 10 * SCALE,
+      strokeWidth: 0,
+      fillColor: accent,
+      ...updateHover,
+      onLeftMouseUp: () => ipcRenderer.send("checkForUpdate"),
     });
     ui.addText({
-      id: "aboutGithubLink",
-      text: "View Repository on GitHub",
-      x: centerX,
-      y: 380 * SCALE,
-      fontSize: 13 * SCALE,
+      id: "aboutUpdateText",
+      text: "Check for Updates",
+      x: contentX + contentW / 2,
+      y: updateY + updateH / 2,
+      textAlign: "centercenter",
+      fontSize: 14 * SCALE,
+      fontWeight: 600,
       fontFace: FONT_FACE,
-      fontColor: getAccentColor(),
-      textAlign: "center",
-      onMouseOver: () =>
-        ui.setElementProperty("aboutGithubLink", "fontColor", getFontColor()),
-      onMouseLeave: () =>
-        ui.setElementProperty("aboutGithubLink", "fontColor", getAccentColor()),
-      onLeftMouseUp: () => ipcRenderer.send("openGithub"),
+      fontColor: "rgb(255, 255, 255)",
+      ...updateHover,
+      onLeftMouseUp: () => ipcRenderer.send("checkForUpdate"),
     });
   }
 
