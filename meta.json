@@ -3,19 +3,27 @@
   "main": "index.js",
   "version": "1.0.0.0",
   "author": "nstechbytes",
-  "description": "Widget Description",
+  "description": "Fluent Widgets",
   "icon": "assets/icon.ico",
   "preview": "defaultPreview.png",
-  "excludeItems": [],
+  "excludeItems": [
+    ".git",
+    ".vs",
+    "github"
+  ],
   "setup": {
     "createDesktopShortcut": true,
     "createStartupShortcut": false,
-    "runOnStartup": false,
+    "runOnStartup": true,
     "installDir": "%ProgramFiles%\\FluentWidgets",
     "startMenuFolder": "FluentWidgets",
-    "setupName": "setup",
+    "setupName": "FluentWidgets_v1.0.0.0_Setup",
     "setupIcon": "assets/icon.ico",
     "enableUninstall": true,
-    "launchAfterInstall": false
-  }
+    "launchAfterInstall": true
+  },
+  "addons":[
+    "BlurBehind",
+    "NowPlaying"
+  ]
 }

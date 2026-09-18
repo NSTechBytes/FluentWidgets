@@ -5,7 +5,7 @@
     "FONT_FACE_SEMIBOLD": "Segoe UI Semibold",
     "USE_24_HOUR_FORMAT": false,
     "LOADED_WIDGETS": {
-        "CLOCK": true,
+        "CLOCK": false,
         "CALENDAR": false,
         "MONITOR": false,
         "WEATHER": false,
