@@ -5,7 +5,7 @@
   "author": "nstechbytes",
   "description": "Fluent Widgets",
   "icon": "assets/icon.ico",
-  "preview": "defaultPreview.png",
+  "preview": "preview-square.jpg",
   "excludeItems": [
     ".git",
     ".vs",
