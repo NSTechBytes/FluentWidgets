@@ -60,6 +60,7 @@ function getCloseButtonHoverFill() {
 
 const SIDEBAR_IDLE_FILL = "rgba(0, 0, 0, 0)";
 const THEME_OPTIONS = ["dark", "light", "dracula", "github"];
+const BLUR_TYPE_OPTIONS = ["none", "acrylic", "blur"];
 
 function isDarkTheme() {
   return getThemeColors().MODE !== "light";
@@ -69,6 +70,11 @@ function getThemeLabel(themeId) {
   const key = String(themeId || "dark").toUpperCase();
   const palette = JSON_DATA.APPEARANCE[key];
   return (palette && palette.LABEL) || key.charAt(0) + key.slice(1).toLowerCase();
+}
+
+function getBlurTypeLabel(blurType) {
+  const type = String(blurType || "blur").toLowerCase();
+  return type === "none" ? "None" : type === "acrylic" ? "Acrylic" : "Blur";
 }
 
 function getSidebarActiveFill() {
@@ -141,6 +147,7 @@ function shapeHoverHandlers(
 let currentTab = JSON_DATA.SETTINGS_ACTIVE_TAB || "widgets";
 let isCornerDropdownOpen = false;
 let isThemeDropdownOpen = false;
+let isBlurTypeDropdownOpen = false;
 let lastCornerDropdownPointerLog = "";
 
 // Temporary diagnostic kept deliberately low-volume: it reports only when
@@ -151,7 +158,7 @@ ui.on("mouseMove", (e) => {
   const x = Math.round(e.__clientX);
   const y = Math.round(e.__clientY);
   const left = BG_WIDTH - 30 * SCALE - 120 * SCALE;
-  const top = 500 * SCALE + 40 * SCALE;
+  const top = 565 * SCALE + 40 * SCALE;
   let location = "outside";
   if (x >= left && x < left + 120 * SCALE && y >= top && y < top + 90 * SCALE) {
     const row = Math.floor((y - (top + 5 * SCALE)) / (28 * SCALE));
@@ -169,7 +176,7 @@ ui.on("mouseMove", (e) => {
 // the field excluded lets a second click close it through its normal
 // onLeftMouseUp handler.
 ui.on("mouseDown", (e) => {
-  if ((!isCornerDropdownOpen && !isThemeDropdownOpen) || !e) return;
+  if ((!isCornerDropdownOpen && !isThemeDropdownOpen && !isBlurTypeDropdownOpen) || !e) return;
 
   const x = e.__clientX;
   const y = e.__clientY;
@@ -185,14 +192,19 @@ ui.on("mouseDown", (e) => {
   };
 
   const inCornerDropdown = isInDropdown(
-    500 * SCALE + 4 * SCALE,
-    500 * SCALE + 40 * SCALE,
+    565 * SCALE + 4 * SCALE,
+    565 * SCALE + 40 * SCALE,
     90 * SCALE,
   );
   const inThemeDropdown = isInDropdown(
     110 * SCALE + 4 * SCALE,
     110 * SCALE + 40 * SCALE,
     5 * SCALE + THEME_OPTIONS.length * 28 * SCALE,
+  );
+  const inBlurTypeDropdown = isInDropdown(
+    175 * SCALE + 4 * SCALE,
+    175 * SCALE + 40 * SCALE,
+    5 * SCALE + BLUR_TYPE_OPTIONS.length * 28 * SCALE,
   );
 
   let closed = false;
@@ -205,6 +217,11 @@ ui.on("mouseDown", (e) => {
     isThemeDropdownOpen = false;
     closed = true;
     //console.log("[Theme dropdown] closed by outside click");
+  }
+  if (isBlurTypeDropdownOpen && !inBlurTypeDropdown) {
+    isBlurTypeDropdownOpen = false;
+    closed = true;
+    console.log("[Blur type dropdown] closed by outside click");
   }
 
   if (closed) {
@@ -219,6 +236,7 @@ function switchTab(tabName) {
   currentTab = tabName;
   isCornerDropdownOpen = false;
   isThemeDropdownOpen = false;
+  isBlurTypeDropdownOpen = false;
   ipcRenderer.send("setSettingsActiveTab", tabName);
   updateSidebarSelection();
   renderTabContent();
@@ -361,6 +379,16 @@ function clearTabContent() {
     "themeOptionDraculaBg",
     "themeOptionGithub",
     "themeOptionGithubBg",
+    "blurTypeText",
+    "blurTypeInputBg",
+    "blurTypeInputText",
+    "blurTypeDropdownBg",
+    "blurTypeOptionNone",
+    "blurTypeOptionNoneBg",
+    "blurTypeOptionAcrylic",
+    "blurTypeOptionAcrylicBg",
+    "blurTypeOptionBlur",
+    "blurTypeOptionBlurBg",
     "darkModeText",
     "darkModeToggleImage",
     "opacityText",
@@ -511,6 +539,7 @@ function renderTabContent() {
       onLeftMouseUp: () => {
         isThemeDropdownOpen = !isThemeDropdownOpen;
         isCornerDropdownOpen = false;
+        isBlurTypeDropdownOpen = false;
         clearTabContent();
         renderTabContent();
       },
@@ -534,9 +563,56 @@ function renderTabContent() {
       onLeftMouseUp: () => {
         isThemeDropdownOpen = !isThemeDropdownOpen;
         isCornerDropdownOpen = false;
+        isBlurTypeDropdownOpen = false;
         clearTabContent();
         renderTabContent();
       },
+    });
+
+    const currentBlurType = String(JSON_DATA.BB_STYLE.BLUR_TYPE || "blur").toLowerCase();
+    ui.addText({
+      id: "blurTypeText",
+      text: "Blur Effect",
+      x: SIDEBAR_WIDTH + 30 * SCALE,
+      y: 175 * SCALE + 20 * SCALE,
+      textAlign: "leftcenter",
+      fontSize: 16 * SCALE,
+      fontWeight: 600,
+      fontFace: FONT_FACE,
+      fontColor: getFontColor(),
+    });
+    const toggleBlurTypeDropdown = () => {
+      isBlurTypeDropdownOpen = !isBlurTypeDropdownOpen;
+      isThemeDropdownOpen = false;
+      isCornerDropdownOpen = false;
+      clearTabContent();
+      renderTabContent();
+    };
+    ui.addShape({
+      id: "blurTypeInputBg",
+      type: "rectangle",
+      x: BG_WIDTH - 30 * SCALE - 120 * SCALE,
+      y: 175 * SCALE + 4 * SCALE,
+      width: 120 * SCALE,
+      height: 32 * SCALE,
+      radius: 4 * SCALE,
+      strokeWidth: 1 * SCALE,
+      strokeColor: getFontSubtleColor(),
+      fillColor: getBackgroundSubtle(),
+      ...shapeHoverHandlers("blurTypeInputBg", getBackgroundSubtle(), getCardHoverColor(), getFontSubtleColor(), getAccentColor()),
+      onLeftMouseUp: toggleBlurTypeDropdown,
+    });
+    ui.addText({
+      id: "blurTypeInputText",
+      text: getBlurTypeLabel(currentBlurType),
+      x: BG_WIDTH - 30 * SCALE - 110 * SCALE,
+      y: 175 * SCALE + 20 * SCALE,
+      textAlign: "leftcenter",
+      fontSize: 14 * SCALE,
+      fontFace: FONT_FACE,
+      fontColor: getFontColor(),
+      ...shapeHoverHandlers("blurTypeInputBg", getBackgroundSubtle(), getCardHoverColor(), getFontSubtleColor(), getAccentColor()),
+      onLeftMouseUp: toggleBlurTypeDropdown,
     });
 
     const inputX = BG_WIDTH - 30 * SCALE - 120 * SCALE;
@@ -551,7 +627,7 @@ function renderTabContent() {
       id: "opacityText",
       text: "Background Opacity (0 - 1)",
       x: SIDEBAR_WIDTH + 30 * SCALE,
-      y: 175 * SCALE + 20 * SCALE,
+      y: 240 * SCALE + 20 * SCALE,
       textAlign: "leftcenter",
       fontSize: 16 * SCALE,
       fontWeight: 600,
@@ -561,7 +637,7 @@ function renderTabContent() {
     addSettingInputBox("opacityInput", {
       type: "opacity",
       x: inputX,
-      y: 175 * SCALE + 4 * SCALE,
+      y: 240 * SCALE + 4 * SCALE,
       width: inputW,
       height: inputH,
       value: opacityValue,
@@ -572,7 +648,7 @@ function renderTabContent() {
       id: "scaleText",
       text: "UI Scale (0.5 - 3.0)",
       x: SIDEBAR_WIDTH + 30 * SCALE,
-      y: 240 * SCALE + 20 * SCALE,
+      y: 305 * SCALE + 20 * SCALE,
       textAlign: "leftcenter",
       fontSize: 16 * SCALE,
       fontWeight: 600,
@@ -582,7 +658,7 @@ function renderTabContent() {
     addSettingInputBox("scaleInput", {
       type: "scale",
       x: inputX,
-      y: 240 * SCALE + 4 * SCALE,
+      y: 305 * SCALE + 4 * SCALE,
       width: inputW,
       height: inputH,
       value: JSON_DATA.SCALE,
@@ -593,7 +669,7 @@ function renderTabContent() {
       id: "latitudeText",
       text: "Weather Latitude",
       x: SIDEBAR_WIDTH + 30 * SCALE,
-      y: 305 * SCALE + 20 * SCALE,
+      y: 370 * SCALE + 20 * SCALE,
       textAlign: "leftcenter",
       fontSize: 16 * SCALE,
       fontWeight: 600,
@@ -603,7 +679,7 @@ function renderTabContent() {
     addSettingInputBox("latitudeInput", {
       type: "latitude",
       x: inputX,
-      y: 305 * SCALE + 4 * SCALE,
+      y: 370 * SCALE + 4 * SCALE,
       width: inputW,
       height: inputH,
       value: JSON_DATA.LOCATION.LATITUDE,
@@ -614,7 +690,7 @@ function renderTabContent() {
       id: "longitudeText",
       text: "Weather Longitude",
       x: SIDEBAR_WIDTH + 30 * SCALE,
-      y: 370 * SCALE + 20 * SCALE,
+      y: 435 * SCALE + 20 * SCALE,
       textAlign: "leftcenter",
       fontSize: 16 * SCALE,
       fontWeight: 600,
@@ -624,7 +700,7 @@ function renderTabContent() {
     addSettingInputBox("longitudeInput", {
       type: "longitude",
       x: inputX,
-      y: 370 * SCALE + 4 * SCALE,
+      y: 435 * SCALE + 4 * SCALE,
       width: inputW,
       height: inputH,
       value: JSON_DATA.LOCATION.LONGITUDE,
@@ -635,7 +711,7 @@ function renderTabContent() {
       id: "cityText",
       text: "Weather City Name",
       x: SIDEBAR_WIDTH + 30 * SCALE,
-      y: 435 * SCALE + 20 * SCALE,
+      y: 500 * SCALE + 20 * SCALE,
       textAlign: "leftcenter",
       fontSize: 16 * SCALE,
       fontWeight: 600,
@@ -645,7 +721,7 @@ function renderTabContent() {
     addSettingInputBox("cityInput", {
       type: "city",
       x: inputX,
-      y: 435 * SCALE + 4 * SCALE,
+      y: 500 * SCALE + 4 * SCALE,
       width: inputW,
       height: inputH,
       value: JSON_DATA.LOCATION.CITY_NAME,
@@ -656,7 +732,7 @@ function renderTabContent() {
       id: "cornerText",
       text: "Corner Style",
       x: SIDEBAR_WIDTH + 30 * SCALE,
-      y: 500 * SCALE + 20 * SCALE,
+      y: 565 * SCALE + 20 * SCALE,
       textAlign: "leftcenter",
       fontSize: 16 * SCALE,
       fontWeight: 600,
@@ -667,7 +743,7 @@ function renderTabContent() {
       id: "cornerInputBg",
       type: "rectangle",
       x: BG_WIDTH - 30 * SCALE - 120 * SCALE,
-      y: 500 * SCALE + 4 * SCALE,
+      y: 565 * SCALE + 4 * SCALE,
       width: 120 * SCALE,
       height: 32 * SCALE,
       radius: 4 * SCALE,
@@ -684,6 +760,7 @@ function renderTabContent() {
       onLeftMouseUp: () => {
         isCornerDropdownOpen = !isCornerDropdownOpen;
         isThemeDropdownOpen = false;
+        isBlurTypeDropdownOpen = false;
         clearTabContent();
         renderTabContent();
       },
@@ -692,7 +769,7 @@ function renderTabContent() {
       id: "cornerInputText",
       text: String(JSON_DATA.BB_STYLE.ROUND_TYPE),
       x: BG_WIDTH - 30 * SCALE - 110 * SCALE,
-      y: 500 * SCALE + 20 * SCALE,
+      y: 565 * SCALE + 20 * SCALE,
       textAlign: "leftcenter",
       fontSize: 14 * SCALE,
       fontFace: FONT_FACE,
@@ -707,6 +784,7 @@ function renderTabContent() {
       onLeftMouseUp: () => {
         isCornerDropdownOpen = !isCornerDropdownOpen;
         isThemeDropdownOpen = false;
+        isBlurTypeDropdownOpen = false;
         clearTabContent();
         renderTabContent();
       },
@@ -717,7 +795,7 @@ function renderTabContent() {
       id: "use24HourText",
       text: "24-Hour Clock",
       x: SIDEBAR_WIDTH + 30 * SCALE,
-      y: 565 * SCALE + 20 * SCALE,
+      y: 630 * SCALE + 20 * SCALE,
       textAlign: "leftcenter",
       fontSize: 16 * SCALE,
       fontWeight: 600,
@@ -730,13 +808,57 @@ function renderTabContent() {
         ? "assets/images/Settings/on.png"
         : "assets/images/Settings/off.png",
       x: BG_WIDTH - 30 * SCALE - 40 * SCALE,
-      y: 565 * SCALE,
+      y: 630 * SCALE,
       width: 40 * SCALE,
       height: 40 * SCALE,
       imageAlpha: 210,
       ...imageHoverHandlers("use24HourToggleImage"),
       onLeftMouseUp: () => toggle24HourClock(),
     });
+
+    // Render this overlay after the General controls so it stays on top of
+    // the opacity field below it.
+    if (isBlurTypeDropdownOpen) {
+      const dropdownTop = 175 * SCALE + 40 * SCALE;
+      const optionHoverFill = getCardHoverColor();
+      ui.addShape({
+        id: "blurTypeDropdownBg", type: "rectangle",
+        x: BG_WIDTH - 30 * SCALE - 120 * SCALE, y: dropdownTop,
+        width: 120 * SCALE, height: 5 * SCALE + BLUR_TYPE_OPTIONS.length * 28 * SCALE,
+        radius: 4 * SCALE, strokeWidth: 1 * SCALE, strokeColor: getFontSubtleColor(),
+        fillColor: isDarkTheme() ? "rgba(36, 36, 40, 0.96)" : "rgba(255, 255, 255, 0.94)",
+        mouseEventCursor: false, onLeftMouseDown: () => {}, onLeftMouseUp: () => {},
+      });
+      BLUR_TYPE_OPTIONS.forEach((opt, idx) => {
+        const suffix = opt.charAt(0).toUpperCase() + opt.slice(1);
+        const optId = "blurTypeOption" + suffix;
+        const optBgId = optId + "Bg";
+        const rowY = dropdownTop + 5 * SCALE + idx * 28 * SCALE;
+        const normalText = getFontColor();
+        const hover = {
+          onMouseOver: () => { ui.setElementProperty(optBgId, "fillColor", optionHoverFill); ui.setElementProperty(optId, "fontColor", getAccentColor()); },
+          onMouseLeave: () => { ui.setElementProperty(optBgId, "fillColor", "rgba(0,0,0,0)"); ui.setElementProperty(optId, "fontColor", normalText); },
+        };
+        const selectOption = () => {
+          JSON_DATA.BB_STYLE.BLUR_TYPE = opt;
+          ipcRenderer.send("setBlurType", opt);
+          isBlurTypeDropdownOpen = false;
+          clearTabContent();
+          renderTabContent();
+        };
+        ui.addShape({
+          id: optBgId, type: "rectangle", x: BG_WIDTH - 30 * SCALE - 116 * SCALE, y: rowY,
+          width: 112 * SCALE, height: 26 * SCALE, radius: 3 * SCALE, strokeWidth: 0,
+          fillColor: "rgba(0,0,0,0)", mouseEventCursor: true, mouseEventCursorName: "hand",
+          ...hover, onLeftMouseUp: selectOption,
+        });
+        ui.addText({
+          id: optId, text: getBlurTypeLabel(opt), x: BG_WIDTH - 30 * SCALE - 110 * SCALE,
+          y: rowY + 13 * SCALE, width: 100 * SCALE, height: 26 * SCALE,
+          textAlign: "leftcenter", fontSize: 14 * SCALE, fontFace: FONT_FACE, fontColor: normalText,
+        });
+      });
+    }
 
     if (isThemeDropdownOpen) {
       const dropdownFill = isDarkTheme()
@@ -823,7 +945,7 @@ function renderTabContent() {
         id: "cornerDropdownBg",
         type: "rectangle",
         x: BG_WIDTH - 30 * SCALE - 120 * SCALE,
-        y: 500 * SCALE + 40 * SCALE,
+        y: 565 * SCALE + 40 * SCALE,
         width: 120 * SCALE,
         height: 90 * SCALE,
         radius: 4 * SCALE,
@@ -841,7 +963,7 @@ function renderTabContent() {
           idx === 0 ? "None" : idx === 1 ? "RoundSmall" : "Round";
         const optId = "cornerOption" + suffix;
         const optBgId = optId + "Bg";
-        const rowY = 500 * SCALE + 40 * SCALE + 5 * SCALE + idx * 28 * SCALE;
+        const rowY = 565 * SCALE + 40 * SCALE + 5 * SCALE + idx * 28 * SCALE;
         const normalText = getFontColor();
         const selectOption = () => {
           JSON_DATA.BB_STYLE.ROUND_TYPE = opt;

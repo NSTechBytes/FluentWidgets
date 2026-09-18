@@ -219,6 +219,11 @@ function applyBlurBehind(win, attempt = 0) {
   }
 
   try {
+    const blurType = String(config.BB_STYLE.BLUR_TYPE || "blur").toLowerCase();
+    if (blurType === "none") {
+      blurBehind.disable(hwnd);
+      return;
+    }
     blurBehind.apply(
       // Keep this as a number. String() may format large handles in scientific
       // notation, which the add-on's handle parser intentionally rejects.
@@ -1089,6 +1094,26 @@ function onSetCornerStyle(event, style) {
   }
 }
 
+function onSetBlurType(event, type) {
+  const blurType = String(type || "").toLowerCase();
+  if (!["none", "acrylic", "blur"].includes(blurType)) return;
+
+  config.BB_STYLE.BLUR_TYPE = blurType;
+  json.write(CONFIG_PATH, config);
+  [
+    monitorWindow,
+    clockWindow,
+    calendarWindow,
+    weatherWindow,
+    playerWindow,
+    notesWindow,
+    volumeWindow,
+    settingsWindow,
+  ].forEach((w) => {
+    if (w && !w.isDestroyed()) applyBlurBehind(w);
+  });
+}
+
 function onSet24HourFormat(event, use24) {
   config.USE_24_HOUR_FORMAT = use24;
   json.write(CONFIG_PATH, config);
@@ -1106,6 +1131,7 @@ function registerSettingsIpc() {
   ipcMain.on("setSettingsActiveTab", onSetSettingsActiveTab);
   ipcMain.on("closeSettings", onCloseSettings);
   ipcMain.on("setCornerStyle", onSetCornerStyle);
+  ipcMain.on("setBlurType", onSetBlurType);
   ipcMain.on("set24HourFormat", onSet24HourFormat);
   ipcMain.on("toggleWidget", onToggleWidget);
 }
@@ -1120,6 +1146,7 @@ function unregisterSettingsIpc() {
   ipcMain.removeListener("setSettingsActiveTab", onSetSettingsActiveTab);
   ipcMain.removeListener("closeSettings", onCloseSettings);
   ipcMain.removeListener("setCornerStyle", onSetCornerStyle);
+  ipcMain.removeListener("setBlurType", onSetBlurType);
   ipcMain.removeListener("set24HourFormat", onSet24HourFormat);
   ipcMain.removeListener("toggleWidget", onToggleWidget);
 }
