@@ -164,6 +164,55 @@ ui.on("mouseMove", (e) => {
   }
 });
 
+// Dropdowns are overlays, not modal controls. Close the open one when the
+// next pointer press is outside its popup and its own toggle field. Keeping
+// the field excluded lets a second click close it through its normal
+// onLeftMouseUp handler.
+ui.on("mouseDown", (e) => {
+  if ((!isCornerDropdownOpen && !isThemeDropdownOpen) || !e) return;
+
+  const x = e.__clientX;
+  const y = e.__clientY;
+  const left = BG_WIDTH - 30 * SCALE - 120 * SCALE;
+  const isInDropdown = (inputTop, popupTop, popupHeight) => {
+    const inInput =
+      x >= left && x < left + 120 * SCALE &&
+      y >= inputTop && y < inputTop + 32 * SCALE;
+    const inPopup =
+      x >= left && x < left + 120 * SCALE &&
+      y >= popupTop && y < popupTop + popupHeight;
+    return inInput || inPopup;
+  };
+
+  const inCornerDropdown = isInDropdown(
+    500 * SCALE + 4 * SCALE,
+    500 * SCALE + 40 * SCALE,
+    90 * SCALE,
+  );
+  const inThemeDropdown = isInDropdown(
+    110 * SCALE + 4 * SCALE,
+    110 * SCALE + 40 * SCALE,
+    5 * SCALE + THEME_OPTIONS.length * 28 * SCALE,
+  );
+
+  let closed = false;
+  if (isCornerDropdownOpen && !inCornerDropdown) {
+    isCornerDropdownOpen = false;
+    closed = true;
+    console.log("[Corner dropdown] closed by outside click");
+  }
+  if (isThemeDropdownOpen && !inThemeDropdown) {
+    isThemeDropdownOpen = false;
+    closed = true;
+    console.log("[Theme dropdown] closed by outside click");
+  }
+
+  if (closed) {
+    clearTabContent();
+    renderTabContent();
+  }
+});
+
 function switchTab(tabName) {
   if (currentTab === tabName) return;
   clearTabContent();
