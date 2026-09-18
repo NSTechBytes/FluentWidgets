@@ -50,7 +50,6 @@ function getAccentColor() {
 }
 
 let notesStyle = JSON_DATA.WINDOW_STYLES.NOTES_WINDOW;
-let editingField = null;
 let titleDraft = JSON_DATA.NOTES_TOP_TITLE;
 let notesDraft = JSON_DATA.NOTES_TEXT;
 
@@ -60,72 +59,23 @@ function getWidgetSize(styleKey) {
   return { w: s.WIDTH * SCALE, h: s.HEIGHT * SCALE };
 }
 
-// Remove an active edit input and restore display elements.
-function endEdit(restoreTitleHint) {
-  if (ui.isElementExist("title_edit")) ui.removeElementById("title_edit");
-  if (ui.isElementExist("notes_edit")) ui.removeElementById("notes_edit");
-  editingField = null;
-
-  if (
-    restoreTitleHint !== false &&
-    ui.isElementExist("top_Shape_Element_Title")
-  ) {
-    ui.setElementProperties("top_Shape_Element_Title", {
-      show: true,
-      text: titleDraft,
-    });
-  }
-  if (ui.isElementExist("notes_display")) {
-    ui.setElementProperties("notes_display", { show: true, text: notesDraft });
-  }
-}
-
-// Save notes body via IPC when the multiline input loses focus.
-function commitNotesEdit() {
-  if (editingField !== "notes") return;
-  const text = ui.getElementProperty("notes_edit", "text") ?? "";
+function saveNotes() {
+  const text = ui.getElementProperty("notesInput", "text") ?? "";
   notesDraft = text;
   JSON_DATA.NOTES_TEXT = text;
-  editingField = null;
-  if (ui.isElementExist("notes_edit")) ui.removeElementById("notes_edit");
-  if (ui.isElementExist("notes_display")) {
-    ui.setElementProperties("notes_display", { show: true, text: text });
-  }
-  if (ui.isElementExist("top_Shape_Element_Title")) {
-    ui.setElementProperties("top_Shape_Element_Title", { text: titleDraft });
-  }
   ipcRenderer.send("notesInput", { text });
 }
 
-// Save notes title via IPC when the single-line input submits or blurs.
-function commitTitleEdit() {
-  if (editingField !== "title") return;
-  const text = ui.getElementProperty("title_edit", "text") ?? "";
+function saveTitle() {
+  const text = ui.getElementProperty("titleInput", "text") ?? "";
   titleDraft = text;
   JSON_DATA.NOTES_TOP_TITLE = text;
-  editingField = null;
-  if (ui.isElementExist("title_edit")) ui.removeElementById("title_edit");
-  if (ui.isElementExist("top_Shape_Element_Title")) {
-    ui.setElementProperties("top_Shape_Element_Title", {
-      show: true,
-      text: text,
-    });
-  }
   ipcRenderer.send("notesTitleInput", { text });
 }
 
-function startTitleEdit(opts) {
-  if (editingField === "title") return;
-  if (editingField === "notes") commitNotesEdit();
-
-  editingField = "title";
-  if (ui.isElementExist("top_Shape_Element_Title")) {
-    ui.setElementProperties("top_Shape_Element_Title", { show: false });
-  }
-  if (ui.isElementExist("title_edit")) ui.removeElementById("title_edit");
-
+function addTitleInput(opts) {
   ui.addInputBox({
-    id: "title_edit",
+    id: "titleInput",
     x: opts.x,
     y: opts.y,
     width: opts.width,
@@ -138,31 +88,14 @@ function startTitleEdit(opts) {
     fillColor: getAccentColor(),
     borderWidth: 0,
     padding: [0, 0],
-    onEnter: () => {
-      ui.blurInputBox("title_edit");
-    },
-    onBlur: () => commitTitleEdit(),
+    onEnter: () => ui.blurInputBox("titleInput"),
+    onBlur: saveTitle,
   });
-  ui.focusInputBox("title_edit");
 }
 
-function startNotesEdit(opts) {
-  if (editingField === "notes") return;
-  if (editingField === "title") commitTitleEdit();
-
-  editingField = "notes";
-  if (ui.isElementExist("notes_display")) {
-    ui.setElementProperties("notes_display", { show: false });
-  }
-  if (ui.isElementExist("top_Shape_Element_Title")) {
-    ui.setElementProperties("top_Shape_Element_Title", {
-      text: "Click away to save",
-    });
-  }
-  if (ui.isElementExist("notes_edit")) ui.removeElementById("notes_edit");
-
+function addNotesInput(opts) {
   ui.addInputBox({
-    id: "notes_edit",
+    id: "notesInput",
     x: opts.x,
     y: opts.y,
     width: opts.width,
@@ -175,9 +108,8 @@ function startNotesEdit(opts) {
     fillColor: "transparent",
     borderWidth: 0,
     padding: [0, 0],
-    onBlur: () => commitNotesEdit(),
+    onBlur: saveNotes,
   });
-  ui.focusInputBox("notes_edit");
 }
 
 function largeStyle() {
@@ -210,32 +142,18 @@ function largeStyle() {
     y: 0,
   });
 
-  ui.addText({
-    id: "top_Shape_Element_Title",
-    text: titleDraft,
+  addTitleInput({
     x: PAD,
-    y: HEADER_H / 2,
+    y: 0,
     width: SIZE - PAD,
     height: HEADER_H,
     fontSize: 16 * SCALE,
     fontColor: getFontColor(),
     fontFace: JSON_DATA.FONT_FACE,
     fontWeight: 700,
-    textAlign: "leftcenter",
-    textClip: "ellipsis",
-    onLeftMouseUp: () =>
-      startTitleEdit({
-        x: PAD,
-        y: HEADER_H / 2 - 10,
-        width: SIZE - PAD - 10,
-        height: HEADER_H / 2,
-        fontSize: FONT_SIZE,
-      }),
   });
 
-  ui.addText({
-    id: "notes_display",
-    text: notesDraft,
+  addNotesInput({
     x: PAD,
     y: NOTES_Y,
     width: NOTES_W,
@@ -243,15 +161,6 @@ function largeStyle() {
     fontSize: FONT_SIZE,
     fontColor: getFontColor(),
     fontFace: JSON_DATA.FONT_FACE,
-    textAlign: "lefttop",
-    onLeftMouseUp: () =>
-      startNotesEdit({
-        x: PAD,
-        y: NOTES_Y,
-        width: NOTES_W,
-        height: NOTES_H,
-        fontSize: FONT_SIZE,
-      }),
   });
 
   ui.addShape({
@@ -307,32 +216,18 @@ function wideStyle() {
     y: 0,
   });
 
-  ui.addText({
-    id: "top_Shape_Element_Title",
-    text: titleDraft,
+  addTitleInput({
     x: PAD,
-    y: HEADER_H / 2,
+    y: 0,
     width: W - PAD * 2,
     height: HEADER_H,
     fontSize: 14 * SCALE,
     fontColor: getFontColor(),
     fontFace: JSON_DATA.FONT_FACE,
     fontWeight: 700,
-    textAlign: "leftcenter",
-    textClip: "ellipsis",
-    onLeftMouseUp: () =>
-      startTitleEdit({
-        x: PAD,
-        y: HEADER_H / 2 - 9.8,
-        width: W - PAD * 2,
-        height: HEADER_H / 2,
-        fontSize: FONT_SIZE,
-      }),
   });
 
-  ui.addText({
-    id: "notes_display",
-    text: notesDraft,
+  addNotesInput({
     x: PAD,
     y: NOTES_Y,
     width: NOTES_W,
@@ -340,15 +235,6 @@ function wideStyle() {
     fontSize: FONT_SIZE,
     fontColor: getFontColor(),
     fontFace: JSON_DATA.FONT_FACE,
-    textAlign: "lefttop",
-    onLeftMouseUp: () =>
-      startNotesEdit({
-        x: PAD,
-        y: NOTES_Y,
-        width: NOTES_W,
-        height: NOTES_H,
-        fontSize: FONT_SIZE,
-      }),
   });
 
   ui.addShape({
@@ -404,32 +290,18 @@ function mediumStyle() {
     y: 0,
   });
 
-  ui.addText({
-    id: "top_Shape_Element_Title",
-    text: titleDraft,
+  addTitleInput({
     x: PAD,
-    y: HEADER_H / 2,
+    y: 0,
     width: SIZE - PAD * 2,
     height: HEADER_H,
     fontSize: 13 * SCALE,
     fontColor: getFontColor(),
     fontFace: JSON_DATA.FONT_FACE,
     fontWeight: 700,
-    textAlign: "leftcenter",
-    textClip: "ellipsis",
-    onLeftMouseUp: () =>
-      startTitleEdit({
-        x: PAD,
-        y: HEADER_H / 2 - 11,
-        width: SIZE - PAD * 2,
-        height: HEADER_H / 2,
-        fontSize: FONT_SIZE,
-      }),
   });
 
-  ui.addText({
-    id: "notes_display",
-    text: notesDraft,
+  addNotesInput({
     x: PAD,
     y: NOTES_Y,
     width: NOTES_W,
@@ -437,15 +309,6 @@ function mediumStyle() {
     fontSize: FONT_SIZE,
     fontColor: getFontColor(),
     fontFace: JSON_DATA.FONT_FACE,
-    textAlign: "lefttop",
-    onLeftMouseUp: () =>
-      startNotesEdit({
-        x: PAD,
-        y: NOTES_Y,
-        width: NOTES_W,
-        height: NOTES_H,
-        fontSize: FONT_SIZE,
-      }),
   });
 
   ui.addShape({
@@ -486,9 +349,7 @@ function smallStyle() {
     fillColor: getBackgroundColor(),
   });
 
-  ui.addText({
-    id: "notes_display",
-    text: notesDraft,
+  addNotesInput({
     x: PAD,
     y: PAD,
     width: SIZE - PAD * 2,
@@ -496,15 +357,6 @@ function smallStyle() {
     fontSize: FONT_SIZE,
     fontColor: getFontColor(),
     fontFace: JSON_DATA.FONT_FACE,
-    textAlign: "lefttop",
-    onLeftMouseUp: () =>
-      startNotesEdit({
-        x: PAD,
-        y: PAD,
-        width: SIZE - PAD * 2,
-        height: SIZE - PAD * 2,
-        fontSize: FONT_SIZE,
-      }),
   });
   ui.endUpdate();
 }
@@ -518,16 +370,13 @@ function render() {
 }
 
 function clearUI() {
-  endEdit(false);
   [
     "background_Shape",
     "top_Shape_Element",
-    "top_Shape_Element_Title",
-    "notes_display",
+    "titleInput",
+    "notesInput",
     "bottom_Shape_Element",
     "notes_Saved_Time_Label",
-    "title_edit",
-    "notes_edit",
   ].forEach((id) => {
     if (ui.isElementExist(id)) ui.removeElementById(id);
   });
