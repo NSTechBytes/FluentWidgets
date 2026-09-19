@@ -1625,4 +1625,6 @@ ui.addText({
 });
 
 updateSidebarSelection();
-renderTabContent(true);
+// Initial render and settings-driven refreshes stay immediate. The entrance
+// transition is reserved for switchTab(), where the user changes tabs.
+renderTabContent();
