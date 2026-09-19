@@ -168,6 +168,56 @@ function addDropdownChevron(id, x, y, expanded) {
   });
 }
 
+function animateOpenDropdown() {
+  let ids = [];
+  let chevronId = "";
+  if (isThemeDropdownOpen) {
+    ids = ["themeDropdownBg", ...THEME_OPTIONS.map((opt) => {
+      const suffix = opt.charAt(0).toUpperCase() + opt.slice(1);
+      return ["themeOption" + suffix + "Bg", "themeOption" + suffix];
+    }).flat()];
+    chevronId = "themeInputChevron";
+  } else if (isBlurTypeDropdownOpen) {
+    ids = ["blurTypeDropdownBg", ...BLUR_TYPE_OPTIONS.map((opt) => {
+      const suffix = opt.charAt(0).toUpperCase() + opt.slice(1);
+      return ["blurTypeOption" + suffix + "Bg", "blurTypeOption" + suffix];
+    }).flat()];
+    chevronId = "blurTypeInputChevron";
+  } else if (isCornerDropdownOpen) {
+    ids = [
+      "cornerDropdownBg", "cornerOptionNoneBg", "cornerOptionNone",
+      "cornerOptionRoundSmallBg", "cornerOptionRoundSmall",
+      "cornerOptionRoundBg", "cornerOptionRound",
+    ];
+    chevronId = "cornerInputChevron";
+  } else {
+    return;
+  }
+
+  ids.forEach((id) => {
+    if (!ui.isElementExist(id)) return;
+    const y = Number(ui.getElementProperty(id, "y"));
+    if (!Number.isFinite(y)) return;
+    ui.animate({
+      id,
+      duration: 140,
+      easing: "ease-out",
+      from: { y: y - 6 * SCALE },
+      to: { y },
+    });
+  });
+
+  if (chevronId && ui.isElementExist(chevronId)) {
+    ui.animate({
+      id: chevronId,
+      duration: 140,
+      easing: "ease-out",
+      from: { rotate: -90 },
+      to: { rotate: 0 },
+    });
+  }
+}
+
 let currentTab = JSON_DATA.SETTINGS_ACTIVE_TAB || "widgets";
 let isCornerDropdownOpen = false;
 let isThemeDropdownOpen = false;
@@ -1379,6 +1429,10 @@ function renderTabContent(animate = false) {
     });
     animateTabContentEntrance();
   }
+
+  // Popup opening is local to the dropdown itself; it deliberately does not
+  // re-run the tab transition or animate input controls.
+  animateOpenDropdown();
 }
 
 const configuredSettingsRadius = parseFloat(JSON_DATA.APPEARANCE.BACKGROUND_RADIUS);
