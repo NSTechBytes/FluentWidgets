@@ -1022,8 +1022,11 @@ function onSettingsInput(event, data) {
   json.write(CONFIG_PATH, config);
   if (settingsWindow && !settingsWindow.isDestroyed()) settingsWindow.refresh();
 
-  if (data.type === "scale" || data.type === "opacity" ||
-      data.type === "backgroundRadius") {
+  if (
+    data.type === "scale" ||
+    data.type === "opacity" ||
+    data.type === "backgroundRadius"
+  ) {
     refreshAllWidgets();
   } else if (
     data.type === "latitude" ||
@@ -1236,6 +1239,9 @@ function unloadSettingsWindow() {
 
 // ---- Launch Widgets ----
 
+// Build every enabled widget while hidden, then reveal the finished windows
+// together. This prevents startup from visibly stepping through widgets.
+app.beginWindowBatch();
 if (config.LOADED_WIDGETS) {
   if (config.LOADED_WIDGETS.MONITOR) loadMonitorWidget();
   if (config.LOADED_WIDGETS.CLOCK) loadClockWidget();
@@ -1244,13 +1250,13 @@ if (config.LOADED_WIDGETS) {
   if (config.LOADED_WIDGETS.MUSIC) loadPlayerWidget();
   if (config.LOADED_WIDGETS.NOTES) loadNotesWidget();
   if (config.LOADED_WIDGETS.VOLUME) loadVolumeWidget();
+  if (config.SETTINGS_WINDOW_OPEN !== false) {
+    loadSettingsWindow();
+  }
 } else {
   loadNotesWidget();
 }
-
-if (config.SETTINGS_WINDOW_OPEN !== false) {
-  loadSettingsWindow();
-}
+app.endWindowBatch();
 
 // ---- System Tray ----
 
