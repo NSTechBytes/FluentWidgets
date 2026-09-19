@@ -9,7 +9,7 @@
   "excludeItems": [
     ".git",
     ".vs",
-    "github"
+    ".github"
   ],
   "setup": {
     "createDesktopShortcut": true,
