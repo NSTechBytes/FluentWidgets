@@ -1,7 +1,7 @@
 {
   "name": "FluentWidgets",
   "main": "index.js",
-  "version": "1.0.0.0",
+  "version": "1.0",
   "author": "nstechbytes",
   "description": "Fluent Widgets",
   "icon": "assets/icon.ico",
@@ -17,7 +17,7 @@
     "runOnStartup": true,
     "installDir": "%ProgramFiles%\\FluentWidgets",
     "startMenuFolder": "FluentWidgets",
-    "setupName": "FluentWidgets_v1.0.0.0_Setup",
+    "setupName": "FluentWidgets_v1.0_Setup",
     "setupIcon": "assets/icon.ico",
     "enableUninstall": true,
     "launchAfterInstall": true

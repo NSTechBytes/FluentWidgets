@@ -1312,7 +1312,7 @@ function renderTabContent(animate = false) {
     });
     ui.addText({
       id: "aboutVersion",
-      text: "Version " + (JSON_DATA.version || "1.0.0.0"),
+      text: "Version " + (JSON_DATA.version || "1.0"),
       x: contentX + 100 * SCALE,
       y: 156 * SCALE,
       textAlign: "leftcenter",
